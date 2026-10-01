@@ -1,0 +1,26 @@
+{
+	"name": "personal-publishing-platform",
+	"version": "0.1.0",
+	"private": true,
+	"license": "GPL-3.0-only",
+	"author": "Camiu (https://github.com/camiu01)",
+	"type": "module",
+	"packageManager": "pnpm@10.15.0",
+	"scripts": {
+		"dev:frontend": "pnpm --filter blog-frontend dev",
+		"dev:api": "pnpm --filter blog-api dev",
+		"build": "pnpm -r build",
+		"test": "pnpm -r test",
+		"check": "pnpm --filter blog-frontend check",
+		"lint": "pnpm --filter blog-frontend lint",
+		"format": "pnpm --filter blog-frontend format",
+		"db:generate": "pnpm --filter blog-api db:generate",
+		"db:migrate": "pnpm --filter blog-api db:migrate",
+		"content:import": "pnpm --filter blog-api content:import",
+		"seed": "pnpm --filter blog-api seed",
+		"docker:up": "docker compose up --build",
+		"docker:down": "docker compose down",
+		"docker:logs": "docker compose logs -f"
+	},
+	"devDependencies": {}
+}

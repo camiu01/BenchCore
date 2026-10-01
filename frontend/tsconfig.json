@@ -1,0 +1,24 @@
+{
+	"extends": "$app/tsconfig",
+	"include": ["src", "tests", "*"],
+	"exclude": ["src/service-worker"],
+	"compilerOptions": {
+		"allowJs": true,
+		"checkJs": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"sourceMap": true,
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"noImplicitOverride": true,
+		"exactOptionalPropertyTypes": true,
+		"noFallthroughCasesInSwitch": true,
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"target": "ESNext",
+		"types": ["$app/types", "node"],
+		"lib": ["ESNext", "DOM", "DOM.Iterable"]
+	}
+}

@@ -1,0 +1,92 @@
+<script lang="ts">
+	import type { PageData } from './$types';
+	import DocShell from '../../lib/components/DocShell.svelte';
+	import Seo from '../../lib/components/Seo.svelte';
+	import { siteBase } from '../../lib/site.js';
+
+	let { data }: { data: PageData } = $props();
+
+	const nav = [
+		{ href: '/', label: '[01] index' },
+		{ href: '/tags', label: '[02] tags' },
+		{ href: '/admin', label: '[03] admin' }
+	];
+</script>
+
+<Seo
+	title="Records — Engineering Log"
+	description="Every published record, newest first."
+	canonical="{siteBase()}/posts"
+/>
+
+<DocShell
+	docId="FORM: BLOG-2026 // REF: RECORDS"
+	title="RECORDS"
+	sub="Every published record, newest first. {data.total} filed."
+	{nav}
+	footerLeft="PAGE {data.page} OF {data.totalPages}"
+	footerRight="PER PAGE: {data.perPage}"
+>
+	<main>
+		{#if !data.online}
+			<article class="record">
+				<div class="record-header">
+					<span class="record-title">UPLINK // NO CARRIER</span>
+					<span class="stamp">API OFFLINE</span>
+				</div>
+				<p class="summary">Start the API with <code>pnpm dev:api</code>.</p>
+			</article>
+		{:else if data.items.length === 0}
+			<article class="record">
+				<div class="record-header">
+					<span class="record-title">ARCHIVE // EMPTY</span>
+					<span class="stamp">NO RECORDS</span>
+				</div>
+				<p class="summary">Nothing filed on this page.</p>
+			</article>
+		{:else}
+			{#each data.items as post (post.id)}
+				<article class="record">
+					<div class="record-header">
+						<span class="record-title">
+							<a href="/posts/{post.slug}" style="color: inherit; text-decoration: none;"
+								>{post.title}</a
+							>
+						</span>
+						<span class="stamp">PUBLISHED</span>
+					</div>
+					<p class="summary">{post.description}</p>
+					<table class="spec-table">
+						<tbody>
+							<tr>
+								<td class="label">FILED</td>
+								<td>{post.publishedAt ?? 'undated'}</td>
+							</tr>
+							{#if post.tags.length > 0}
+								<tr>
+									<td class="label">TAGS</td>
+									<td>
+										{#each post.tags as tag, index (tag)}<a href="/tags/{encodeURIComponent(tag)}"
+												>{tag}</a
+											>{#if index < post.tags.length - 1},
+											{/if}{/each}
+									</td>
+								</tr>
+							{/if}
+						</tbody>
+					</table>
+				</article>
+			{/each}
+		{/if}
+		{#if data.totalPages > 1}
+			<div class="btn-row">
+				{#if data.page > 1}
+					<a class="btn" href="/posts?page={data.page - 1}">← PREV</a>
+				{/if}
+				{#if data.page < data.totalPages}
+					<a class="btn" href="/posts?page={data.page + 1}">NEXT →</a>
+				{/if}
+			</div>
+		{/if}
+	</main>
+</DocShell>
