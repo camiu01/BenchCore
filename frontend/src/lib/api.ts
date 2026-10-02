@@ -1,22 +1,24 @@
 /**
- * Typed read client for the standalone API. Server-only: load functions,
+ * @file api.ts
+ * @brief Typed read client for the standalone API. Server-only: load functions,
  * server routes and hooks (uses process.env, no $env module dependency).
  * Every response is validated with Zod; unreachable APIs resolve to null
  * so pages render an offline stamp instead of throwing 500s.
  */
 import { z } from 'zod';
+import { apiFetch } from './server/transport.js';
 
 /**
  * @brief A public post list item DTO.
  */
 export const postListItemSchema = z.object({
-	id: z.string(),
+	id: z.string().uuid(),
 	slug: z.string(),
 	title: z.string(),
 	description: z.string(),
 	tags: z.array(z.string()),
 	authorName: z.string().nullable(),
-	publishedAt: z.string().nullable()
+	publishedAt: z.iso.datetime({ offset: true }).nullable()
 });
 
 /**
@@ -29,7 +31,7 @@ export type PostListItem = z.infer<typeof postListItemSchema>;
  */
 export const postsPageSchema = z.object({
 	items: z.array(postListItemSchema),
-	total: z.number()
+	total: z.number().int().nonnegative()
 });
 
 /**
@@ -51,7 +53,7 @@ export const backlinkSchema = z.object({
 export const postDetailSchema = postListItemSchema.extend({
 	contentHtml: z.string(),
 	coverImage: z.string().nullable(),
-	readingMinutes: z.number(),
+	readingMinutes: z.number().int().positive(),
 	backlinks: z.array(backlinkSchema)
 });
 
@@ -66,7 +68,7 @@ export type PostDetail = z.infer<typeof postDetailSchema>;
 export const tagWithCountSchema = z.object({
 	name: z.string(),
 	slug: z.string(),
-	count: z.number()
+	count: z.number().int().nonnegative()
 });
 
 /**
@@ -79,7 +81,7 @@ export type TagWithCount = z.infer<typeof tagWithCountSchema>;
  * @returns The configured API base URL.
  */
 export function apiBase(): string {
-	return process.env['PUBLIC_API_URL'] || 'http://localhost:3001';
+	return process.env['PUBLIC_API_URL'] || 'http://localhost:5181';
 }
 
 /**
@@ -88,13 +90,23 @@ export function apiBase(): string {
  * @returns The absolute URL or null.
  */
 export function resolveMediaUrl(value: string | null): string | null {
-	if (value === null || value === '') {
+	if (value === null || value === '' || value.startsWith('//')) {
 		return null;
 	}
-	if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('/')) {
+	if (value.startsWith('http://') || value.startsWith('https://')) {
+		try {
+			const url = new URL(value);
+			return url.username || url.password ? null : url.href;
+		} catch {
+			return null;
+		}
+	}
+	if (value.startsWith('/')) {
 		return value;
 	}
-	return `${apiBase()}/api/media/${value}`;
+	return /^[A-Za-z0-9]{32}\.(png|jpg|jpeg|webp|gif)$/.test(value)
+		? `/api/media/${encodeURIComponent(value)}`
+		: null;
 }
 
 /**
@@ -105,7 +117,7 @@ export function resolveMediaUrl(value: string | null): string | null {
  */
 async function getDto<T>(schema: z.ZodType<T>, path: string): Promise<T | null> {
 	try {
-		const response = await fetch(`${apiBase()}${path}`);
+		const response = await apiFetch(`${apiBase()}${path}`, { signal: AbortSignal.timeout(5000) });
 		if (!response.ok) {
 			return null;
 		}
@@ -129,10 +141,19 @@ export function getRecentPosts(limit = 5): Promise<PostsPage | null> {
  * @brief Loads one page of published posts.
  * @param limit The page size.
  * @param offset The page offset.
+ * @param search The optional search text.
  * @returns The page DTO or null when the API is unreachable.
  */
-export function getPostsPage(limit: number, offset: number): Promise<PostsPage | null> {
-	return getDto(postsPageSchema, `/api/posts?limit=${limit}&offset=${offset}`);
+export function getPostsPage(
+	limit: number,
+	offset: number,
+	search = ''
+): Promise<PostsPage | null> {
+	const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+	if (search !== '') {
+		query.set('search', search);
+	}
+	return getDto(postsPageSchema, `/api/posts?${query}`);
 }
 
 /**

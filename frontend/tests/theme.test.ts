@@ -1,5 +1,6 @@
 /**
- * Theme helper tests.
+ * @file theme.test.ts
+ * @brief * Theme helper tests.
  * Covers pure presentation logic; document access is SSR-guarded.
  */
 import { describe, expect, it } from 'vitest';

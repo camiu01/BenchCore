@@ -21,8 +21,9 @@ export const frontmatterSchema = z.object({
 	slug: slugField,
 	description: z.string().max(500).default(''),
 	status: z.enum(['draft', 'published', 'archived']).default('draft'),
-	tags: z.array(z.string().min(1).max(60)).max(20).default([]),
+	tags: z.array(z.string().trim().min(1).max(60)).max(20).default([]),
 	published_at: z.iso.datetime({ offset: true }).optional(),
+	publish_at: z.iso.datetime({ offset: true }).optional(),
 	cover_image: z.string().max(500).optional()
 });
 

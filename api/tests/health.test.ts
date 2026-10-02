@@ -29,7 +29,7 @@ describe('GET /health', () => {
 		const response = await fetch(`${baseUrl}/health`);
 		expect(response.status).toBe(200);
 		expect(response.headers.get('content-type')).toContain('application/json');
-		expect(await response.json()).toEqual({ status: 'ok', service: 'blog-api' });
+		expect(await response.json()).toEqual({ status: 'ok', service: 'benchcore-api' });
 	});
 
 	it('returns JSON 404 for unknown routes', async () => {
@@ -39,7 +39,7 @@ describe('GET /health', () => {
 	});
 
 	it('returns JSON 405 for wrong methods on known routes', async () => {
-		const response = await fetch(`${baseUrl}/health`, { method: 'POST' });
+		const response = await fetch(`${baseUrl}/health`, { method: 'POST', headers: { origin: 'http://localhost:5173' } });
 		expect(response.status).toBe(405);
 		expect(await response.json()).toEqual({ error: 'method_not_allowed' });
 	});

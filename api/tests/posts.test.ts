@@ -97,9 +97,65 @@ describe('post service', () => {
 		expect(await deletePost(deps, beta.id)).toBe(false);
 		await expect(updatePost(deps, 'missing', { title: 'x' })).rejects.toBeInstanceOf(PostError);
 	});
+
+	it('publishes due drafts once and never publishes archived or future posts', async () => {
+		const due = await createPost(deps, {
+			title: 'Scheduled', slug: 'scheduled', contentMarkdown: 'Body.', publishAt: '2020-01-01T00:00:00Z'
+		});
+		await createPost(deps, {
+			title: 'Future', slug: 'future', contentMarkdown: 'Body.', publishAt: '2099-01-01T00:00:00Z'
+		});
+		expect(await getPublishedPost(deps, 'scheduled')).toBeNull();
+		expect(await repos.posts.publishDue(new Date('2021-01-01T00:00:00Z'))).toBe(1);
+		expect(await repos.posts.publishDue(new Date('2021-01-01T00:00:00Z'))).toBe(0);
+		expect((await repos.posts.findById(due.id))?.publishAt).toBeNull();
+		expect((await getPublishedPost(deps, 'scheduled'))?.publishedAt).toBe('2020-01-01T00:00:00.000Z');
+		expect(await getPublishedPost(deps, 'future')).toBeNull();
+	});
+
+	it('validates schedules, allows cancellation and stamps published null dates', async () => {
+		await expect(createPost(deps, {
+			title: 'Invalid', slug: 'invalid', contentMarkdown: 'x', status: 'published', publishAt: '2099-01-01T00:00:00Z'
+		})).rejects.toBeInstanceOf(PostError);
+		const post = await createPost(deps, {
+			title: 'Schedule', slug: 'schedule', contentMarkdown: 'x', publishAt: '2020-01-01T00:00:00Z', coverImage: '/old.png'
+		});
+		await updatePost(deps, post.id, { publishAt: null, coverImage: null, status: 'published', publishedAt: null });
+		const row = await repos.posts.findById(post.id);
+		expect(row?.publishAt).toBeNull();
+		expect(row?.coverImage).toBeNull();
+		expect(row?.publishedAt).toBeInstanceOf(Date);
+	});
+
+	it('prefixes relative media sources on public detail reads', async () => {
+		await createPost(deps, { title: 'Image', slug: 'image', status: 'published', contentMarkdown: '![Photo](photo.png)' });
+		expect((await getPublishedPost(deps, 'image'))?.contentHtml).toContain('src="/api/media/photo.png"');
+	});
+
+	it('returns canonical tags and rejects whitespace-only tag names', async () => {
+		const item = await createPost(deps, {
+			title: 'Tags', slug: 'tags', contentMarkdown: 'Body', tags: [' engineering ', 'engineering']
+		});
+		expect(item.tags).toEqual(['engineering']);
+		await expect(createPost(deps, {
+			title: 'Bad tags', slug: 'bad-tags', contentMarkdown: 'Body', tags: [' ']
+		})).rejects.toBeInstanceOf(PostError);
+	});
 });
 
 describe('importDirectory', () => {
+	it('imports Windows CRLF sources and resolves forward wikilinks', async () => {
+		const dir = mkdtempSync(join(tmpdir(), 'blog-crlf-'));
+		writeFileSync(join(dir, 'a.md'),
+			'+++\r\ntitle = "A"\r\nslug = "a"\r\nstatus = "published"\r\n+++\r\n\r\nSee [[b]].\r\n');
+		writeFileSync(join(dir, 'b.md'), '+++\ntitle = "B"\nslug = "b"\nstatus = "published"\n+++\n\nBody.\n');
+		const result = await importDirectory(dir, deps);
+		expect(result.errors).toEqual([]);
+		expect(result.created).toEqual(['a', 'b']);
+		expect((await repos.posts.findBySlug('a'))?.contentHtml).toContain('class="wikilink"');
+		expect((await repos.posts.findBySlug('a'))?.contentHtml).not.toContain('broken');
+	});
+
 	it('creates, updates and reports per-file errors', async () => {
 		const dir = mkdtempSync(join(tmpdir(), 'blog-import-'));
 		writeFileSync(

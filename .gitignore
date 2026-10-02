@@ -4,4 +4,10 @@ build/
 node_modules/
 .env
 .env.local
+.env.*
+!.env.example
+!.env.production.example
+data/
 dist/
+.preview/
+artifacts/

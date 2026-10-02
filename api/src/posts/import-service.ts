@@ -1,91 +1,97 @@
 /**
  * @file import-service.ts
- * @brief Imports Markdown+TOML files into posts. Upserts by slug, never duplicates.
+ * @brief Two-pass Markdown import with order-independent wikilink validation and slug upserts.
  */
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parseTomlBlock, splitFrontmatter } from '../markdown/frontmatter.js';
-import { validateFrontmatter } from '../markdown/schema.js';
+import { validateFrontmatter, type Frontmatter } from '../markdown/schema.js';
 import { createPost, updatePost, type PostServiceDeps } from './post-service.js';
 
-/**
- * @brief Per-file import failure.
- */
 export interface ImportFileError {
 	file: string;
 	message: string;
 }
 
-/**
- * @brief Aggregate result of one import run.
- */
 export interface ImportResult {
 	created: string[];
 	updated: string[];
 	errors: ImportFileError[];
 }
 
+interface ImportEntry {
+	file: string;
+	value: Frontmatter;
+	body: string;
+}
+
 /**
- * @brief Imports every .md file in a directory into the post store.
- * @param dir The content directory.
- * @param deps The post service repositories.
- * @param authorId The author id stamped on created posts, if any.
- * @return The created/updated slugs plus per-file errors.
+ * @brief Parses one source file before writes start.
+ * @param dir Content directory.
+ * @param file Relative source filename.
+ * @return Validated entry.
  */
-export async function importDirectory(
-	dir: string,
-	deps: PostServiceDeps,
-	authorId?: string
-): Promise<ImportResult> {
-	const result: ImportResult = { created: [], updated: [], errors: [] };
-	let entries: string[];
-	try {
-		entries = (await readdir(dir)).filter((entry) => entry.endsWith('.md')).sort();
-	} catch {
-		return { created: [], updated: [], errors: [{ file: dir, message: 'cannot read directory' }] };
+async function parseEntry(dir: string, file: string): Promise<ImportEntry> {
+	const source = await readFile(join(dir, file), 'utf8');
+	const split = splitFrontmatter(source, file);
+	if (!split.ok) { throw new Error(split.issue.message); }
+	const toml = parseTomlBlock(split.toml, file);
+	if (!toml.ok) { throw new Error(toml.issue.message); }
+	const frontmatter = validateFrontmatter(toml.data);
+	if (!frontmatter.ok) { throw new Error(frontmatter.issues.join('; ')); }
+	return { file, value: frontmatter.value, body: split.body };
+}
+
+/**
+ * @brief Upserts a validated source without duplicating publication rules.
+ * @param entry Validated source.
+ * @param deps Repositories.
+ * @param knownSlugs Complete source slug set.
+ * @param authorId Optional author.
+ * @return Whether the row was created or updated.
+ */
+async function importEntry(entry: ImportEntry, deps: PostServiceDeps,
+	knownSlugs: Set<string>, authorId?: string): Promise<'created' | 'updated'> {
+	const { value, body } = entry;
+	const existing = await deps.posts.findBySlug(value.slug);
+	const payload = {
+		title: value.title, slug: value.slug, description: value.description, status: value.status,
+		tags: value.tags, publishedAt: value.published_at, publishAt: value.publish_at ?? null,
+		contentMarkdown: body, coverImage: value.cover_image ?? null
+	};
+	if (existing === null) {
+		await createPost(deps, payload, authorId, knownSlugs);
+		return 'created';
 	}
-	const knownSlugs = new Set<string>();
-	for (const file of entries) {
+	await updatePost(deps, existing.id, payload);
+	return 'updated';
+}
+
+/**
+ * @brief Imports all Markdown sources with independent errors per file.
+ * @param dir Content directory.
+ * @param deps Repositories.
+ * @param authorId Optional author for new rows.
+ * @return Created and updated slugs plus file failures.
+ */
+export async function importDirectory(dir: string, deps: PostServiceDeps,
+	authorId?: string): Promise<ImportResult> {
+	const result: ImportResult = { created: [], updated: [], errors: [] };
+	let files: string[];
+	try { files = (await readdir(dir)).filter((file) => file.endsWith('.md')).sort(); }
+	catch { return { ...result, errors: [{ file: dir, message: 'cannot read directory' }] }; }
+	const entries: ImportEntry[] = [];
+	for (const file of files) {
+		try { entries.push(await parseEntry(dir, file)); }
+		catch (error) { result.errors.push({ file, message: error instanceof Error ? error.message : 'invalid source' }); }
+	}
+	const knownSlugs = new Set(entries.map((entry) => entry.value.slug));
+	for (const entry of entries) {
 		try {
-			const source = await readFile(join(dir, file), 'utf8');
-			const split = splitFrontmatter(source, file);
-			if (!split.ok) {
-				result.errors.push({ file, message: split.issue.message });
-				continue;
-			}
-			const toml = parseTomlBlock(split.toml, file);
-			if (!toml.ok) {
-				result.errors.push({ file, message: toml.issue.message });
-				continue;
-			}
-			const frontmatter = validateFrontmatter(toml.data);
-			if (!frontmatter.ok) {
-				result.errors.push({ file, message: frontmatter.issues.join('; ') });
-				continue;
-			}
-			const value = frontmatter.value;
-			const existing = await deps.posts.findBySlug(value.slug);
-			const payload = {
-				title: value.title,
-				slug: value.slug,
-				description: value.description,
-				status: value.status,
-				tags: value.tags,
-				publishedAt: value.published_at,
-				contentMarkdown: split.body,
-				coverImage: value.cover_image
-			};
-			if (existing === null) {
-				await createPost(deps, payload, authorId, knownSlugs);
-				result.created.push(value.slug);
-			} else {
-				await updatePost(deps, existing.id, payload);
-				result.updated.push(value.slug);
-			}
-			knownSlugs.add(value.slug);
+			const kind = await importEntry(entry, deps, knownSlugs, authorId);
+			result[kind].push(entry.value.slug);
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'unknown import failure';
-			result.errors.push({ file, message });
+			result.errors.push({ file: entry.file, message: error instanceof Error ? error.message : 'import failed' });
 		}
 	}
 	return result;

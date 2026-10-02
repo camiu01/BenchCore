@@ -1,10 +1,10 @@
+<!-- @file +page.svelte @brief Engineering-log page and presentation component. -->
 <script lang="ts">
-	import type { ActionData } from './$types';
+	import type { ActionData, PageData } from './$types';
 	import DocShell from '../../lib/components/DocShell.svelte';
 	import Seo from '../../lib/components/Seo.svelte';
-	import { siteBase } from '../../lib/site.js';
 
-	let { form }: { form: ActionData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const nav = [
 		{ href: '/', label: '[01] index' },
@@ -13,16 +13,12 @@
 	];
 </script>
 
-<Seo
-	title="Login — Engineering Log"
-	description="Operator sign-in."
-	canonical="{siteBase()}/login"
-/>
+<Seo title="Login — BenchCore" description="Operator sign-in." canonical="{data.siteBase}/login" />
 
 <DocShell
-	docId="FORM: BLOG-2026 // REF: AUTH"
-	title="OPERATOR LOGIN"
-	sub="Session cookie, 30-day expiry. Seeded via ADMIN_EMAIL / ADMIN_PASSWORD."
+	docId="FORM: BENCHCORE-2026 // REF: AUTH"
+	title="ACCOUNT LOGIN"
+	sub="Username or email. Session cookie, 30-day expiry."
 	{nav}
 	footerLeft="AUTH: SESSION"
 	footerRight="HTTPONLY + LAX"
@@ -39,12 +35,13 @@
 			<form method="POST" action="?/login">
 				<div class="form-grid">
 					<div>
-						<label class="field-label" for="email">Email</label>
+						<label class="field-label" for="email">Username or email</label>
 						<input
 							class="field-input"
 							id="email"
 							name="email"
-							type="email"
+							type="text"
+							maxlength="254"
 							required
 							autocomplete="username"
 							value={form?.email ?? ''}
@@ -64,6 +61,7 @@
 				</div>
 				<div class="btn-row">
 					<button class="btn btn-accent" type="submit">SIGN IN →</button>
+					<a class="btn" href="/register">CREATE READER ACCOUNT</a>
 				</div>
 			</form>
 		</article>

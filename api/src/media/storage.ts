@@ -8,6 +8,9 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { z } from 'zod';
+
+export { createDatabaseStorage } from './database.js';
 
 /** Accepted upload MIME types mapped to file extensions. */
 const ALLOWED_MIME: Record<string, string> = {
@@ -19,6 +22,30 @@ const ALLOWED_MIME: Record<string, string> = {
 
 /** Maximum accepted upload size: 5 MiB. */
 export const MAX_MEDIA_BYTES = 5 * 1024 * 1024;
+
+/** @brief Validated sidecar metadata, never trusted as a filesystem path. */
+const mediaRecord = z.object({
+	key: z.string().regex(/^[A-Za-z0-9]{32}\.(png|jpg|jpeg|webp|gif)$/),
+	filename: z.string(),
+	mime: z.enum(['image/png', 'image/jpeg', 'image/webp', 'image/gif']),
+	sizeBytes: z.number().int().positive().max(MAX_MEDIA_BYTES)
+});
+
+/**
+ * @brief Applies the same MIME and size guards to every backend.
+ * @param data The upload bytes.
+ * @param mime The declared MIME type.
+ * @return The allowed filename extension.
+ */
+export function validateUpload(data: Buffer, mime: string): string {
+	if (!Object.hasOwn(ALLOWED_MIME, mime)) {
+		throw new Error(`unsupported media type: ${mime}`);
+	}
+	if (data.length === 0 || data.length > MAX_MEDIA_BYTES) {
+		throw new Error(`media size out of bounds: ${data.length} bytes`);
+	}
+	return ALLOWED_MIME[mime]!;
+}
 
 /**
  * @brief A stored media record.
@@ -70,87 +97,122 @@ export function sanitizeKey(raw: string): string | null {
 	return /^[A-Za-z0-9]{32}\.(png|jpg|jpeg|webp|gif)$/.test(raw) ? raw : null;
 }
 
+/** @brief Local media provider with validated JSON sidecars. */
+class LocalStorage implements StorageProvider {
+	/**
+	 * @brief Retains the media directory.
+	 * @param dir The media directory.
+	 */
+	constructor(private readonly dir: string) {}
+
+	/**
+	 * @brief Resolves a key to an absolute path inside the directory.
+	 * @param key The validated storage key.
+	 * @return The absolute file path.
+	 */
+	private filePath(key: string): string {
+		return join(this.dir, key);
+	}
+
+	/**
+	 * @brief Validates and persists an upload with metadata.
+	 * @param data The bytes.
+	 * @param filename The original filename.
+	 * @param mime The declared MIME.
+	 * @return The metadata.
+	 */
+	async save(data: Buffer, filename: string, mime: string): Promise<StoredMedia> {
+		const extension = validateUpload(data, mime);
+		await mkdir(this.dir, { recursive: true });
+		const key = `${randomUUID().replace(/-/g, '')}.${extension}`;
+		const record: StoredMedia = { key, filename, mime, sizeBytes: data.length };
+		await writeFile(this.filePath(key), data);
+		await writeFile(`${this.filePath(key)}.json`, JSON.stringify(record));
+		return record;
+	}
+
+	/**
+	 * @brief Loads bytes only when metadata is valid and consistent.
+	 * @param key The storage key.
+	 * @return Bytes and MIME or null.
+	 */
+	async load(key: string): Promise<{ data: Buffer; mime: string } | null> {
+		const safe = sanitizeKey(key);
+		if (safe === null) {
+			return null;
+		}
+		try {
+			const [data, sidecar] = await Promise.all([
+				readFile(this.filePath(safe)),
+				readFile(`${this.filePath(safe)}.json`, 'utf8')
+			]);
+			const record = mediaRecord.parse(JSON.parse(sidecar));
+			if (record.key !== safe || record.sizeBytes !== data.length) {
+				return null;
+			}
+			return { data, mime: record.mime };
+		} catch {
+			return null;
+		}
+	}
+
+	/**
+	 * @brief Deletes upload bytes and their optional sidecar.
+	 * @param key The storage key.
+	 * @return Whether upload bytes existed.
+	 */
+	async remove(key: string): Promise<boolean> {
+		const safe = sanitizeKey(key);
+		if (safe === null) {
+			return false;
+		}
+		try {
+			await unlink(this.filePath(safe));
+		} catch {
+			return false;
+		}
+		await unlink(`${this.filePath(safe)}.json`).catch(() => undefined);
+		return true;
+	}
+
+	/**
+	 * @brief Reads validated metadata only for its matching file.
+	 * @param entry The directory entry.
+	 * @return Metadata or null for corrupt and unrelated entries.
+	 */
+	private async metadata(entry: string): Promise<StoredMedia | null> {
+		if (!entry.endsWith('.json')) { return null; }
+		try {
+			const record = mediaRecord.parse(JSON.parse(await readFile(join(this.dir, entry), 'utf8')));
+			if (`${record.key}.json` !== entry) { return null; }
+			const info = await stat(this.filePath(record.key));
+			return info.isFile() && info.size === record.sizeBytes ? record : null;
+		} catch {
+			return null;
+		}
+	}
+
+	/**
+	 * @brief Lists valid sidecars backed by matching upload files.
+	 * @return Metadata ordered by filename.
+	 */
+	async list(): Promise<StoredMedia[]> {
+		try {
+			const entries = await readdir(this.dir);
+			const records = await Promise.all(entries.map((entry) => this.metadata(entry)));
+			return records.filter((record): record is StoredMedia => record !== null)
+				.sort((a, b) => a.filename.localeCompare(b.filename));
+		} catch {
+			return [];
+		}
+	}
+}
+
 /**
  * @brief Creates a local-filesystem storage provider.
  * @param dir The directory holding media files plus JSON sidecars.
  * @return The provider.
  */
 export function createLocalStorage(dir: string): StorageProvider {
-	/**
-	 * @brief Resolves a key to an absolute path inside the directory.
-	 * @param key The validated storage key.
-	 * @return The absolute file path.
-	 */
-	function filePath(key: string): string {
-		return join(dir, key);
-	}
-
-	return {
-		async save(data: Buffer, filename: string, mime: string): Promise<StoredMedia> {
-			const extension = ALLOWED_MIME[mime];
-			if (extension === undefined) {
-				throw new Error(`unsupported media type: ${mime}`);
-			}
-			if (data.length === 0 || data.length > MAX_MEDIA_BYTES) {
-				throw new Error(`media size out of bounds: ${data.length} bytes`);
-			}
-			await mkdir(dir, { recursive: true });
-			const key = `${randomUUID().replace(/-/g, '')}.${extension}`;
-			const record: StoredMedia = { key, filename, mime, sizeBytes: data.length };
-			await writeFile(filePath(key), data);
-			await writeFile(`${filePath(key)}.json`, JSON.stringify(record));
-			return record;
-		},
-		async load(key: string): Promise<{ data: Buffer; mime: string } | null> {
-			const safe = sanitizeKey(key);
-			if (safe === null) {
-				return null;
-			}
-			try {
-				const [data, sidecar] = await Promise.all([
-					readFile(filePath(safe)),
-					readFile(`${filePath(safe)}.json`, 'utf8')
-				]);
-				const record = JSON.parse(sidecar) as StoredMedia;
-				return { data, mime: record.mime };
-			} catch {
-				return null;
-			}
-		},
-		async remove(key: string): Promise<boolean> {
-			const safe = sanitizeKey(key);
-			if (safe === null) {
-				return false;
-			}
-			try {
-				await Promise.all([unlink(filePath(safe)), unlink(`${filePath(safe)}.json`)]);
-				return true;
-			} catch {
-				return false;
-			}
-		},
-		async list(): Promise<StoredMedia[]> {
-			try {
-				const entries = await readdir(dir);
-				const records: StoredMedia[] = [];
-				for (const entry of entries) {
-					if (!entry.endsWith('.json')) {
-						continue;
-					}
-					try {
-						const record = JSON.parse(await readFile(join(dir, entry), 'utf8')) as StoredMedia;
-						const info = await stat(filePath(record.key));
-						if (info.isFile()) {
-							records.push(record);
-						}
-					} catch {
-						continue;
-					}
-				}
-				return records.sort((a, b) => a.filename.localeCompare(b.filename));
-			} catch {
-				return [];
-			}
-		}
-	};
+	return new LocalStorage(dir);
 }

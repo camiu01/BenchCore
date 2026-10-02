@@ -1,4 +1,6 @@
+/* @file app.css @brief Engineering-log design tokens and public layout styles. */
 @import 'tailwindcss';
+@import './lib/forms.css';
 
 /* Engineering-log design system. Monospace spec-sheet aesthetic with
    light / dark / oled themes switched via the data-theme attribute. */
@@ -12,7 +14,8 @@ html[data-theme='light'] {
 	--muted: #5e666f;
 	--border: #262c33;
 	--border-light: #cfc9bd;
-	--accent: #b93822;
+	--accent: #9f2e1f;
+	--accent-ink: #ffffff;
 	--accent-bg: rgba(185, 56, 34, 0.08);
 }
 
@@ -22,10 +25,11 @@ html[data-theme='dark'] {
 	--card-bg: #14171b;
 	--grid: rgba(255, 255, 255, 0.035);
 	--ink: #dbe0e6;
-	--muted: #74808d;
+	--muted: #9aa7b6;
 	--border: #36404d;
 	--border-light: #242c35;
 	--accent: #ff6b54;
+	--accent-ink: #14171b;
 	--accent-bg: rgba(255, 107, 84, 0.12);
 }
 
@@ -35,10 +39,11 @@ html[data-theme='oled'] {
 	--card-bg: #050505;
 	--grid: transparent;
 	--ink: #eeeeee;
-	--muted: #666666;
+	--muted: #999999;
 	--border: #2c3238;
 	--border-light: #161a1e;
-	--accent: #e03c22;
+	--accent: #ff6b54;
+	--accent-ink: #000000;
 	--accent-bg: #1f0805;
 }
 
@@ -99,7 +104,7 @@ body {
 
 .theme-btn.active {
 	background: var(--accent);
-	color: #fff;
+	color: var(--accent-ink);
 	border-color: var(--accent);
 	font-weight: bold;
 }
@@ -158,12 +163,15 @@ body {
 	border-bottom: 1px solid var(--border);
 	padding-bottom: 8px;
 	margin-bottom: 12px;
+	gap: 12px;
+	flex-wrap: wrap;
 }
 
 .record-title {
 	font-weight: bold;
 	font-size: 14px;
 	letter-spacing: 0.5px;
+	overflow-wrap: anywhere;
 }
 
 .stamp {
@@ -331,90 +339,42 @@ body {
 	border-bottom: 1px dashed var(--muted);
 }
 
-/* Forms (login + admin editor). */
-.form-grid {
-	display: grid;
-	gap: 12px;
-	margin: 14px 0;
-}
-
-.field-label {
-	display: block;
-	font-size: 11px;
-	color: var(--muted);
-	letter-spacing: 0.5px;
-	margin-bottom: 4px;
-	text-transform: uppercase;
-}
-
-.field-input {
-	width: 100%;
-	background: var(--sheet-bg);
-	border: 1px solid var(--border);
-	color: var(--ink);
-	font-family: inherit;
-	font-size: 13px;
-	line-height: 1.6;
-	padding: 8px 10px;
-	box-sizing: border-box;
-}
-
-textarea.field-input {
-	min-height: 320px;
-	resize: vertical;
-}
-
-.field-row {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 12px;
-}
-
-.btn {
-	background: none;
-	border: 1px solid var(--border);
-	color: var(--ink);
-	font-family: inherit;
-	font-size: 11px;
-	letter-spacing: 0.5px;
-	padding: 6px 14px;
-	cursor: pointer;
-	text-transform: uppercase;
-	text-decoration: none;
-	display: inline-block;
-}
-
-.btn:hover {
-	border-color: var(--accent);
-	color: var(--accent);
-}
-
-.btn-accent {
-	background: var(--accent);
-	border-color: var(--accent);
-	color: #fff;
-	font-weight: bold;
-}
-
-.btn-accent:hover {
-	color: #fff;
-}
-
-.btn-row {
-	display: flex;
-	gap: 10px;
-	flex-wrap: wrap;
-	margin-top: 14px;
-}
-
-.error-stamp {
-	display: inline-block;
-	font-size: 11px;
-	font-weight: bold;
-	color: var(--accent);
-	border: 1px solid var(--accent);
-	background: var(--accent-bg);
-	padding: 4px 10px;
-	margin: 10px 0;
-	letter-spacing: 0.5px;
+@media (max-width: 600px) {
+	body {
+		padding: 16px 10px;
+	}
+	.wrapper {
+		padding: 18px;
+	}
+	.record {
+		padding: 14px;
+	}
+	.doc-meta-bar {
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+	.doc-nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+	.doc-nav a {
+		margin-right: 0;
+	}
+	.spec-table {
+		table-layout: fixed;
+	}
+	.spec-table td {
+		overflow-wrap: anywhere;
+	}
+	.spec-table td.label {
+		width: 32%;
+	}
+	.doc-footer {
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+	.field-row {
+		grid-template-columns: 1fr;
+	}
 }

@@ -4,71 +4,35 @@
  */
 import { randomUUID } from 'node:crypto';
 import type {
-	PostRepository,
-	PostWithTags,
 	SessionRepository,
 	TagRepository,
 	UserRepository
 } from './repositories.js';
-import type { PostRow, SessionRow, TagRow, UserRow } from './schema.js';
-
-/**
- * @brief Sorts posts newest-first by published/created date.
- * @param rows The rows to sort.
- * @return The sorted rows.
- */
-function newestFirst(rows: PostRow[]): PostRow[] {
-	return [...rows].sort((a, b) => {
-		const left = (a.publishedAt ?? a.createdAt).getTime();
-		const right = (b.publishedAt ?? b.createdAt).getTime();
-		return right - left;
-	});
-}
-
-/**
- * @brief Creates an in-memory user repository.
- * @return The repository.
- */
-export function createMemoryUsers(): UserRepository {
-	const rows = new Map<string, UserRow>();
-	return {
-		async findByEmail(email: string): Promise<UserRow | null> {
-			for (const row of rows.values()) {
-				if (row.email === email) {
-					return row;
-				}
-			}
-			return null;
-		},
-		async findById(id: string): Promise<UserRow | null> {
-			return rows.get(id) ?? null;
-		},
-		async create(input: Omit<UserRow, 'createdAt'>): Promise<UserRow> {
-			const row: UserRow = { ...input, createdAt: new Date() };
-			rows.set(row.id, row);
-			return row;
-		}
-	};
-}
+import type { SessionRow, TagRow, UserRow } from './schema.js';
+export { createMemoryPosts } from './memory-posts.js';
+export { createMemoryUsers } from './memory-users.js';
 
 /**
  * @brief Creates an in-memory session repository.
- * @param users The user repository used to join session owners.
+ * @param users Accounts used to join session owners.
  * @return The repository.
  */
 export function createMemorySessions(users: UserRepository): SessionRepository {
 	const rows = new Map<string, SessionRow>();
 	return {
+		/** @brief Creates a session. @param input Session fields. @return The created row. */
 		async create(input: {
 			id: string;
 			tokenHash: string;
 			userId: string;
 			expiresAt: Date;
+			userVersion?: number;
 		}): Promise<SessionRow> {
-			const row: SessionRow = { ...input, createdAt: new Date() };
+			const row: SessionRow = { ...input, userVersion: input.userVersion ?? 0, createdAt: new Date() };
 			rows.set(row.tokenHash, row);
 			return row;
 		},
+		/** @brief Resolves session ownership. @param tokenHash The hash. @return The joined row or null. */
 		async findByTokenHash(tokenHash: string): Promise<(SessionRow & { user: UserRow }) | null> {
 			const row = rows.get(tokenHash) ?? null;
 			if (row === null) {
@@ -77,9 +41,11 @@ export function createMemorySessions(users: UserRepository): SessionRepository {
 			const user = await users.findById(row.userId);
 			return user === null ? null : { ...row, user };
 		},
+		/** @brief Deletes a session. @param tokenHash The hash. @return Completion. */
 		async deleteByTokenHash(tokenHash: string): Promise<void> {
 			rows.delete(tokenHash);
 		},
+		/** @brief Deletes expired sessions. @param now The reference time. @return The deletion count. */
 		async deleteExpired(now: Date): Promise<number> {
 			let deleted = 0;
 			for (const [key, row] of rows) {
@@ -93,138 +59,75 @@ export function createMemorySessions(users: UserRepository): SessionRepository {
 	};
 }
 
+/** @brief In-memory tags using the same name/slug resolution as PostgreSQL. */
+class MemoryTags implements TagRepository {
+	private readonly rows = new Map<string, TagRow>();
+	private readonly byName = new Map<string, TagRow>();
+	private readonly bySlug = new Map<string, TagRow>();
+
+	/** @brief Retains shared links. @param links The post-tag link store. */
+	constructor(private readonly links: Map<string, Set<string>>) {}
+
+	/** @brief Lists tags. @return Rows ordered by name. */
+	async list(): Promise<TagRow[]> {
+		return [...this.rows.values()].sort((a, b) => a.name.localeCompare(b.name));
+	}
+
+	/**
+	 * @brief Resolves names and slug aliases without duplicate result ids.
+	 * @param names The submitted names.
+	 * @return Canonical tag rows.
+	 */
+	async upsertByName(names: string[]): Promise<TagRow[]> {
+		const result: TagRow[] = [];
+		for (const raw of names) {
+			const name = raw.trim();
+			if (name === '') { continue; }
+			const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+			const existing = this.byName.get(name) ?? this.bySlug.get(slug);
+			if (existing !== undefined) {
+				if (!result.some((row) => row.id === existing.id)) { result.push(existing); }
+				continue;
+			}
+			const row = { id: randomUUID(), slug: slug || randomUUID(), name };
+			this.rows.set(row.id, row);
+			this.byName.set(name, row);
+			this.bySlug.set(row.slug, row);
+			result.push(row);
+		}
+		return result;
+	}
+
+	/**
+	 * @brief Replaces a post's tag links.
+	 * @param postId The post id.
+	 * @param tagIds The desired tag ids.
+	 * @return Completion.
+	 */
+	async setPostTags(postId: string, tagIds: string[]): Promise<void> {
+		this.links.set(postId, new Set(tagIds));
+	}
+
+	/**
+	 * @brief Loads the names linked to a post.
+	 * @param postId The post id.
+	 * @return Sorted tag names.
+	 */
+	async getPostTagNames(postId: string): Promise<string[]> {
+		const names: string[] = [];
+		for (const id of this.links.get(postId) ?? []) {
+			const row = this.rows.get(id);
+			if (row !== undefined) { names.push(row.name); }
+		}
+		return names.sort();
+	}
+}
+
 /**
  * @brief Creates an in-memory tag repository sharing link state with posts.
  * @param links The shared postId -> tagId link store.
  * @return The repository.
  */
 export function createMemoryTags(links: Map<string, Set<string>>): TagRepository {
-	const rows = new Map<string, TagRow>();
-	const byName = new Map<string, TagRow>();
-	return {
-		async list(): Promise<TagRow[]> {
-			return [...rows.values()].sort((a, b) => a.name.localeCompare(b.name));
-		},
-		async upsertByName(names: string[]): Promise<TagRow[]> {
-			const result: TagRow[] = [];
-			for (const raw of names) {
-				const name = raw.trim();
-				if (name === '') {
-					continue;
-				}
-				const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-				const existing = byName.get(name.toLowerCase());
-				if (existing !== undefined) {
-					result.push(existing);
-					continue;
-				}
-				const row: TagRow = { id: randomUUID(), slug: slug === '' ? randomUUID() : slug, name };
-				rows.set(row.id, row);
-				byName.set(name.toLowerCase(), row);
-				result.push(row);
-			}
-			return result;
-		},
-		async setPostTags(postId: string, tagIds: string[]): Promise<void> {
-			links.set(postId, new Set(tagIds));
-		},
-		async getPostTagNames(postId: string): Promise<string[]> {
-			const ids = links.get(postId) ?? new Set<string>();
-			const names: string[] = [];
-			for (const id of ids) {
-				const row = rows.get(id);
-				if (row !== undefined) {
-					names.push(row.name);
-				}
-			}
-			return names.sort();
-		}
-	};
-}
-
-/**
- * @brief Creates an in-memory post repository.
- * @param tags The tag repository used to attach tag names.
- * @param links The shared postId -> tagId link store.
- * @return The repository.
- */
-export function createMemoryPosts(tags: TagRepository, links: Map<string, Set<string>>): PostRepository {
-	const rows = new Map<string, PostRow>();
-
-	/**
-	 * @brief Attaches tag names to a post row.
-	 * @param row The post row.
-	 * @return The row with tag names.
-	 */
-	async function withTags(row: PostRow): Promise<PostWithTags> {
-		return { ...row, tags: await tags.getPostTagNames(row.id) };
-	}
-
-	return {
-		async create(input: Omit<PostRow, 'createdAt' | 'updatedAt'>): Promise<PostRow> {
-			const now = new Date();
-			const row: PostRow = { ...input, createdAt: now, updatedAt: now };
-			rows.set(row.id, row);
-			return row;
-		},
-		async update(id: string, patch: Partial<PostRow>): Promise<PostRow | null> {
-			const row = rows.get(id) ?? null;
-			if (row === null) {
-				return null;
-			}
-			const next: PostRow = { ...row, ...patch, id: row.id, updatedAt: new Date() };
-			rows.set(id, next);
-			return next;
-		},
-		async remove(id: string): Promise<boolean> {
-			links.delete(id);
-			return rows.delete(id);
-		},
-		async findById(id: string): Promise<PostRow | null> {
-			return rows.get(id) ?? null;
-		},
-		async findBySlug(slug: string): Promise<PostRow | null> {
-			for (const row of rows.values()) {
-				if (row.slug === slug) {
-					return row;
-				}
-			}
-			return null;
-		},
-		async listPublished(options: {
-			limit: number;
-			offset: number;
-			tag?: string | undefined;
-			now: Date;
-		}): Promise<{ items: PostWithTags[]; total: number }> {
-			const visible = newestFirst(
-				[...rows.values()].filter(
-					(row) =>
-						row.status === 'published' && row.publishedAt !== null && row.publishedAt <= options.now
-				)
-			);
-			const filtered: PostRow[] = [];
-			for (const row of visible) {
-				if (options.tag !== undefined) {
-					const names = await tags.getPostTagNames(row.id);
-					if (!names.includes(options.tag)) {
-						continue;
-					}
-				}
-				filtered.push(row);
-			}
-			const items: PostWithTags[] = [];
-			for (const row of filtered.slice(options.offset, options.offset + options.limit)) {
-				items.push(await withTags(row));
-			}
-			return { items, total: filtered.length };
-		},
-		async listAll(): Promise<PostWithTags[]> {
-			const items: PostWithTags[] = [];
-			for (const row of newestFirst([...rows.values()])) {
-				items.push(await withTags(row));
-			}
-			return items;
-		}
-	};
+	return new MemoryTags(links);
 }

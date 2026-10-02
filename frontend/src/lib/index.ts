@@ -1,7 +1,9 @@
 /**
- * Placeholder page data for the Milestone 1 scaffolding homepage.
- * Real post loading is introduced in Milestone 4 (public site).
+ * @file index.ts
+ * @brief Public homepage identity and engineering-log description.
+ * Post data is loaded from the standalone API.
  */
+import { PROJECT_NAME, PROJECT_TITLE } from './branding.js';
 
 /** Homepage data returned by the page server load function. */
 export interface HomepageData {
@@ -10,12 +12,12 @@ export interface HomepageData {
 }
 
 /**
- * Returns static placeholder data for the scaffolding homepage.
+ * @brief Returns static identity data for the public homepage.
  * @returns The homepage title and description.
  */
 export function getHomepageData(): HomepageData {
 	return {
-		title: 'Personal Publishing Platform',
-		description: 'Milestone 1 scaffolding is running. Blog content arrives in later milestones.'
+		title: PROJECT_NAME,
+		description: PROJECT_TITLE
 	};
 }

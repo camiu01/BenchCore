@@ -1,6 +1,6 @@
 {
-	"name": "blog-frontend",
-	"version": "0.1.0",
+	"name": "benchcore-frontend",
+	"version": "0.6.0-beta.1",
 	"private": true,
 	"license": "GPL-3.0-only",
 	"author": "Camiu (https://github.com/camiu01)",
@@ -9,6 +9,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
+		"start": "node server.mjs",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -16,11 +17,7 @@
 		"format": "prettier --check .",
 		"format:write": "prettier --write .",
 		"test": "vitest run",
-		"test:watch": "vitest",
-		"db:generate": "echo 'Milestone 3: drizzle-kit generate'",
-		"db:migrate": "echo 'Milestone 3: drizzle-kit migrate'",
-		"db:studio": "echo 'Milestone 3: drizzle-kit studio'",
-		"content:import": "echo 'Milestone 3: tsx scripts/content-import.ts'"
+		"test:watch": "vitest"
 	},
 	"dependencies": {
 		"zod": "4.6.5"

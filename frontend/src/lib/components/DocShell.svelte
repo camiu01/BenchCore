@@ -1,3 +1,4 @@
+<!-- @file DocShell.svelte @brief Engineering-log page and presentation component. -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import ThemePicker from './ThemePicker.svelte';

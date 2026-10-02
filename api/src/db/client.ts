@@ -12,6 +12,7 @@ import * as schema from './schema.js';
 export type AppDb = PostgresJsDatabase<typeof schema>;
 
 let cached: AppDb | null = null;
+let client: ReturnType<typeof postgres> | null = null;
 
 /**
  * @brief Returns the shared Drizzle database handle.
@@ -23,7 +24,34 @@ export function getDb(): AppDb {
 		throw new Error('DATABASE_URL is not set');
 	}
 	if (cached === null) {
-		cached = drizzle(postgres(url), { schema });
+		client = postgres(url, { connect_timeout: 5, connection: { statement_timeout: 10_000 } });
+		cached = drizzle(client, { schema });
 	}
 	return cached;
+}
+
+/**
+ * @brief Closes the shared pool during a graceful shutdown.
+ * @return Completion.
+ */
+export async function closeDb(): Promise<void> {
+	const current = client;
+	client = null;
+	cached = null;
+	await current?.end({ timeout: 5 });
+}
+
+/**
+ * @brief Checks connectivity and required migrated columns without reading application rows.
+ * @return Completion, or a rejected connection check.
+ */
+export async function checkDb(): Promise<void> {
+	const db = getDb();
+	await client!`select 1`;
+	await db.select().from(schema.users).limit(0);
+	await db.select().from(schema.sessions).limit(0);
+	await db.select().from(schema.posts).limit(0);
+	await db.select().from(schema.tags).limit(0);
+	await db.select().from(schema.postTags).limit(0);
+	await db.select().from(schema.mediaBlobs).limit(0);
 }

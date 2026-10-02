@@ -26,13 +26,16 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-blog}:${POSTGRES_PASSWORD:-blog}@db:5432/${POSTGRES_DB:-blog}
-      PORT: 3001
+      PORT: 5181
       MEDIA_DIR: /data/media
+      MEDIA_STORAGE: ${MEDIA_STORAGE:-local}
+      SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:5180}
+      API_ALLOWED_ORIGINS: ${API_ALLOWED_ORIGINS:-http://localhost:5180}
       NODE_ENV: production
     volumes:
       - mediadata:/data/media
     ports:
-      - '3001:3001'
+      - '5181:5181'
 
   frontend:
     build:
@@ -42,12 +45,13 @@ services:
     depends_on:
       - api
     environment:
-      PORT: 3000
-      PUBLIC_API_URL: http://api:3001
-      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:3000}
+      PORT: 5180
+      PUBLIC_API_URL: http://api:5181
+      BODY_SIZE_LIMIT: 8M
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:5180}
       NODE_ENV: production
     ports:
-      - '3000:3000'
+      - '5180:5180'
 
 volumes:
   pgdata:

@@ -1,6 +1,6 @@
 # TODO
 
-Development task management for the personal publishing platform (blog frontend + standalone API).
+Development task management for BenchCore (research frontend + standalone API).
 
 ## Done
 
@@ -49,17 +49,54 @@ Development task management for the personal publishing platform (blog frontend 
 - [x] `/admin` ledger, `/admin/posts/new`, `/admin/posts/[id]` (save/preview/delete/upload), `/admin/tags` registry #admin
 - [x] Docker: `api/Dockerfile`, `frontend/Dockerfile` (adapter-node), `docker-compose.yml` (postgres 17 + api + frontend), `.dockerignore`; `pnpm docker:up` #ops
 
+### v0.5.0 milestone — Hardening & release (prepared locally)
+
+- [x] CSRF exact Origin checks on mutating API routes, bounded rate limits, security headers; administrator role enforcement and non-cacheable private responses #security #tests
+- [x] Strict nonce-backed script/style CSP (no unsafe-inline), contrast-safe themes, no-telemetry policy and threat model #security #docs #ux
+- [x] Scheduled publishing: nullable `publish_at`, atomic due-draft promotion, non-overlapping minute job; migrated `revisions` groundwork (no automatic capture/restore UI) #posts #db #tests
+- [x] Full-text search: generated Postgres `tsvector`, GIN index, parameterized web search, public search form and pagination #search #tests
+- [x] Pluggable data storage: local-filesystem and PostgreSQL blob StorageProvider backends; shared validation, same-origin media proxy and working 5 MiB frontend uploads #media #data #tests
+- [x] CI: both package typechecks, tests, frontend lint and recursive build on push/pull request #ci
+- [x] Release 0.5.0 prepared locally: package version bumps and Conventional-Commit-based changelog; no tag, push or hosted release created #release
+- [x] Whole-project review fixes: repository contracts, cookie handling, tag privacy, duplicate tag links, Windows frontmatter/stdin, editor state, XML feeds, sitemap pagination and runtime dependencies #quality #tests
+- [x] Haguruma-style documentation: contributor/security/conduct policies, architecture, authoring, API, operations, testing, troubleshooting, threat model and review record #docs
+- [x] Username/email login, private-stdin database user creation, ignored local `.env` without `ADMIN_*`; authorized PostgreSQL migrations and persistent-account login verified #auth #ops
+- [x] Runtime canonical-origin bootstrap and default frontend/API ports 5180/5181, leaving 3000/3001 for other applications #ops #dx
+
+Validation: 85 API + 41 frontend tests passed; both typechecks, frontend lint/format
+and both builds passed. Three migrations verified in embedded PostgreSQL and
+applied to the authorized configured PostgreSQL. Production browser checks cover
+login, preview, search, themes, private headers and full-size uploads.
+Docker/Compose execution and a backup/restore drill were not run locally.
+
+### v0.6.0-beta.1 — Online beta preparation
+
+- [x] One public Node service for frontend and `/api/*` on 5180; private loopback SSR bridge preserves visitor quotas #runtime #security
+- [x] HTTPS origin checks, explicitly trusted proxies, coalesced DB/schema readiness and bounded shutdown #ops
+- [x] Public reader-only registration, admin user listing/creation/roles and account disabling/reactivation #auth
+- [x] Own-password changes and explicit CLI recovery, atomic revocation of all sessions, last-active-admin protection #auth #security
+- [x] Account/session migration and case-folded unique emails; authorized fourth migration applied without password/content changes #db
+- [x] Reusable GitHub CI with PostgreSQL integration checks; CD delivers an allowlisted Node archive/checksum without GHCR #ci #cd
+- [x] Tag-matched, environment-gated beta prerelease workflow; no tag or hosted release created locally #release
+- [x] Production-only dependency bundle, single-origin hosting/backup/recovery guide and documented beta limits #docs #ops
+- [x] BenchCore identity and expanded project title across pages, Open Graph, RSS, packages, documentation and delivery artifacts #branding #tests
+- [x] Remove the development milestone ledger from the homepage; version CD artifact names by run/attempt with a download link #ux #cd
+
+Validation: 95 API + 54 frontend tests, typechecks (including runtime/scripts),
+lint, formatting, builds and source-size checks pass. All four migrations pass
+embedded PostgreSQL checks. Source and packaged beta smoke tests pass with real
+SQL repositories over the PGlite wire protocol, including reader isolation,
+disable/reactivate and the browser password action/session revocation.
+The configured PostgreSQL accepted the fourth migration; the unified preview
+is active on 5180 and the owned split API listener on 5181 was stopped.
+Registration passes selected automated accessibility checks and a 390px viewport
+has no horizontal overflow. Native PostgreSQL 17 concurrency and Linux artifact
+checks are configured in GitHub but have not run remotely; public hosting,
+branch/environment protection and backup/restore remain operator release gates.
+The BenchCore homepage also passes selected WCAG 2 A/AA checks with zero
+violations/incomplete checks, displays the expanded name and has no mobile overflow.
+
 ## Pending
-
-### v0.5.0 milestone — Hardening & release
-
-- [ ] CSRF Origin check on mutating API routes, rate limits, security headers #security
-- [ ] Strict CSP + no-telemetry statement #security #docs
-- [ ] Scheduled publishing + revisions groundwork (nullable `publish_at` job, `revisions` table sketch) #posts
-- [ ] Full-text search (Postgres `tsvector`) #search
-- [ ] Pluggable data storage: second StorageProvider backend (database blobs or S3) behind the existing seam #media #data
-- [ ] CI: typecheck + tests + build on every push #ci
-- [ ] Release 0.5.0: changelog from Conventional Commits, version bumps #release
 
 ### Deferred (do not implement yet)
 

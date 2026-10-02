@@ -1,6 +1,6 @@
+<!-- @file PostEditor.svelte @brief Engineering-log page and presentation component. -->
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import type { EditorValues } from '../server/admin-api.js';
+	import type { EditorValues } from '../server/editor-values.js';
 
 	/**
 	 * Obsidian-style record editor: write mode plus API-rendered preview,
@@ -15,21 +15,13 @@
 	}
 
 	let { values, previewHtml, uploadedUrl, errorMsg, isNew }: Props = $props();
-
-	let contentEl: HTMLTextAreaElement | undefined = $state(undefined);
-
-	onMount(() => {
-		if (uploadedUrl !== null && contentEl !== undefined) {
-			contentEl.value = `${contentEl.value}\n\n![](${uploadedUrl})\n`;
-		}
-	});
 </script>
 
 {#if errorMsg !== null}
 	<span class="error-stamp">{errorMsg}</span>
 {/if}
 
-<form method="POST">
+<form method="POST" enctype="multipart/form-data">
 	<div class="form-grid">
 		<div class="field-row">
 			<div>
@@ -76,30 +68,45 @@
 			</div>
 		</div>
 		<div>
-			<label class="field-label" for="content">Content (Markdown + [[wikilinks]])</label>
-			<textarea class="field-input" id="content" name="content" bind:this={contentEl}
-				>{values.content}</textarea
+			<label class="field-label" for="publish_at"
+				>Schedule publication (ISO with timezone, blank = none)</label
 			>
+			<input
+				class="field-input"
+				id="publish_at"
+				name="publish_at"
+				placeholder="2026-10-01T18:00:00Z"
+				value={values.publishAt}
+			/>
+		</div>
+		<div>
+			<label class="field-label" for="content">Content (Markdown + [[wikilinks]])</label>
+			<textarea class="field-input" id="content" name="content">{values.content}</textarea>
 		</div>
 	</div>
 	<div class="btn-row">
 		<button class="btn btn-accent" type="submit" formaction="?/save">SAVE →</button>
-		<button class="btn" type="submit" formaction="?/preview">PREVIEW</button>
+		<button class="btn" type="submit" formaction="?/preview" formnovalidate>PREVIEW</button>
 		{#if !isNew}
-			<button class="btn" type="submit" formaction="?/delete">DELETE</button>
+			<button class="btn" type="submit" formaction="?/delete" formnovalidate>DELETE</button>
 		{/if}
 	</div>
-</form>
 
-<form method="POST" action="?/upload" enctype="multipart/form-data" style="margin-top: 16px;">
+	<hr />
 	<label class="field-label" for="image">Attach image (png/jpg/webp/gif, max 5 MiB)</label>
-	<input class="field-input" id="image" name="image" type="file" accept="image/*" required />
+	<input
+		class="field-input"
+		id="image"
+		name="image"
+		type="file"
+		accept="image/png,image/jpeg,image/webp,image/gif"
+	/>
 	<div class="btn-row">
-		<button class="btn" type="submit">UPLOAD →</button>
+		<button class="btn" type="submit" formaction="?/upload" formnovalidate>UPLOAD →</button>
 	</div>
 	{#if uploadedUrl !== null}
-		<p class="summary" style="margin-top: 8px;">
-			Filed at <code>{uploadedUrl}</code> (inserted above).
+		<p class="summary upload-note">
+			Filed at <code>{uploadedUrl}</code> (appended to the content above).
 		</p>
 	{/if}
 </form>

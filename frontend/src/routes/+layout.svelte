@@ -1,3 +1,4 @@
+<!-- @file +layout.svelte @brief Engineering-log page and presentation component. -->
 <script lang="ts">
 	import '../app.css';
 	import { onMount } from 'svelte';

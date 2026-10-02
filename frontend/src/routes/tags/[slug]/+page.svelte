@@ -1,8 +1,8 @@
+<!-- @file +page.svelte @brief Engineering-log page and presentation component. -->
 <script lang="ts">
 	import type { PageData } from './$types';
 	import DocShell from '../../../lib/components/DocShell.svelte';
 	import Seo from '../../../lib/components/Seo.svelte';
-	import { siteBase } from '../../../lib/site.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -14,13 +14,13 @@
 </script>
 
 <Seo
-	title="Tag {data.tag} — Engineering Log"
+	title="Tag {data.tag} — BenchCore"
 	description="Records filed under {data.tag}."
-	canonical="{siteBase()}/tags/{encodeURIComponent(data.tag)}"
+	canonical="{data.siteBase}/tags/{encodeURIComponent(data.tag)}"
 />
 
 <DocShell
-	docId="FORM: BLOG-2026 // REF: TAG-{data.tag.toUpperCase()}"
+	docId="FORM: BENCHCORE-2026 // REF: TAG-{data.tag.toUpperCase()}"
 	title="TAG // {data.tag}"
 	sub="{data.total} record(s) filed under this tag."
 	{nav}
@@ -41,9 +41,7 @@
 				<article class="record">
 					<div class="record-header">
 						<span class="record-title">
-							<a href="/posts/{post.slug}" style="color: inherit; text-decoration: none;"
-								>{post.title}</a
-							>
+							<a href="/posts/{encodeURIComponent(post.slug)}">{post.title}</a>
 						</span>
 						<span class="stamp">PUBLISHED</span>
 					</div>

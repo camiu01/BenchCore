@@ -1,5 +1,6 @@
 /**
- * Edit-record page: loads a post by id with save/preview/delete/upload actions.
+ * @file +page.server.ts
+ * @brief * Edit-record page: loads a post by id with save/preview/delete/upload actions.
  */
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
@@ -9,13 +10,15 @@ import {
 	adminRenderPreview,
 	adminSavePost,
 	adminUploadMedia,
+	withUploadedImage,
 	valuesFromForm,
 	type EditorValues
 } from '../../../../lib/server/admin-api.js';
 
 /**
- * Loads the post into editor values.
+ * @brief Loads the post into editor values.
  * @returns The values with no preview.
+ * @param event The current request event.
  */
 export const load: PageServerLoad = async ({ params, request }) => {
 	const post = await adminGetPost(request.headers.get('cookie'), params.id);
@@ -29,6 +32,7 @@ export const load: PageServerLoad = async ({ params, request }) => {
 		status: post.status,
 		tags: post.tags.join(', '),
 		publishedAt: post.publishedAt ?? '',
+		publishAt: post.publishAt ?? '',
 		coverImage: post.coverImage ?? '',
 		content: post.contentMarkdown
 	};
@@ -38,6 +42,8 @@ export const load: PageServerLoad = async ({ params, request }) => {
 export const actions: Actions = {
 	/**
 	 * @brief Updates the post through the API.
+	 * @param event The current request event.
+	 * @return The result, or a redirect for completed mutations.
 	 */
 	save: async ({ request, params }) => {
 		const values = valuesFromForm(await request.formData());
@@ -49,6 +55,8 @@ export const actions: Actions = {
 	},
 	/**
 	 * @brief Renders a preview fragment through the API.
+	 * @param event The current request event.
+	 * @return The result, or a redirect for completed mutations.
 	 */
 	preview: async ({ request }) => {
 		const values = valuesFromForm(await request.formData());
@@ -57,6 +65,8 @@ export const actions: Actions = {
 	},
 	/**
 	 * @brief Deletes the post through the API.
+	 * @param event The current request event.
+	 * @return The result, or a redirect for completed mutations.
 	 */
 	delete: async ({ request, params }) => {
 		const ok = await adminDeletePost(request.headers.get('cookie'), params.id);
@@ -68,6 +78,8 @@ export const actions: Actions = {
 	},
 	/**
 	 * @brief Uploads an image and echoes values for cursor insertion.
+	 * @param event The current request event.
+	 * @return The result, or a redirect for completed mutations.
 	 */
 	upload: async ({ request }) => {
 		const form = await request.formData();
@@ -85,6 +97,11 @@ export const actions: Actions = {
 		if (!result.ok) {
 			return fail(400, { values, previewHtml: null, uploadedUrl: null, error: result.error });
 		}
-		return { values, previewHtml: null, uploadedUrl: result.url, error: null };
+		return {
+			values: withUploadedImage(values, result.url),
+			previewHtml: null,
+			uploadedUrl: result.url,
+			error: null
+		};
 	}
 };

@@ -1,83 +1,76 @@
 /**
- * Login page: redirects authenticated users, forwards credentials to the API.
+ * @file +page.server.ts
+ * @brief * Login page: redirects authenticated users, forwards credentials to the API.
  */
-import { fail, redirect, type Cookies } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
+import { z } from 'zod';
+import { applySessionCookie } from '../../lib/server/auth-cookie.js';
 import type { Actions, PageServerLoad } from './$types';
+import { mutationOrigin } from '../../lib/site.js';
 import { apiBase } from '../../lib/api.js';
+import { apiFetch } from '../../lib/server/transport.js';
+import { sessionSchema } from '../../lib/server/session.js';
 
 /**
  * @brief Redirects authenticated visitors to the dashboard.
+ * @param event The current request event.
+ * @return The result, or a redirect for completed mutations.
  */
 export const load: PageServerLoad = ({ locals }) => {
 	if (locals.user !== null) {
-		throw redirect(303, '/admin');
+		throw redirect(303, locals.user.role === 'admin' ? '/admin' : '/account');
 	}
 	return {};
 };
 
-/**
- * @brief Applies upstream Set-Cookie headers to the browser response.
- * @param cookies The SvelteKit cookie jar.
- * @param headers The upstream Set-Cookie values.
- */
-function applySetCookies(cookies: Cookies, headers: string[]): void {
-	for (const entry of headers) {
-		const segments = entry.split(';').map((part) => part.trim());
-		const pair = segments[0] ?? '';
-		const separator = pair.indexOf('=');
-		if (separator === -1) {
-			continue;
-		}
-		const name = pair.slice(0, separator);
-		const value = decodeURIComponent(pair.slice(separator + 1));
-		let sameSite: 'lax' | 'strict' | 'none' = 'lax';
-		let secure = false;
-		let maxAge: number | undefined = undefined;
-		for (const attribute of segments.slice(1)) {
-			const [rawKey, rawValue] = attribute.split('=');
-			const key = (rawKey ?? '').trim().toLowerCase();
-			if (key === 'max-age' && rawValue !== undefined && Number.isInteger(Number(rawValue))) {
-				maxAge = Number(rawValue);
-			}
-			if (key === 'secure') {
-				secure = true;
-			}
-			if (key === 'samesite' && rawValue !== undefined) {
-				const mode = rawValue.trim().toLowerCase();
-				sameSite = mode === 'strict' ? 'strict' : mode === 'none' ? 'none' : 'lax';
-			}
-		}
-		const base = { path: '/', httpOnly: true, sameSite, secure } as const;
-		if (maxAge === undefined) {
-			cookies.set(name, value, { ...base });
-		} else {
-			cookies.set(name, value, { ...base, maxAge });
-		}
-	}
-}
-
 export const actions: Actions = {
 	/**
 	 * @brief Authenticates against the API and stores the session cookie.
+	 * @param event The current request event.
+	 * @return The result, or a redirect for completed mutations.
 	 */
 	login: async ({ request, cookies }) => {
 		const form = await request.formData();
 		const email = String(form.get('email') ?? '');
-		const password = String(form.get('password') ?? '');
+		const password = form.get('password');
+		const input = z
+			.object({
+				email: z.union([z.email().max(254), z.string().regex(/^[a-z][a-z0-9_-]{2,31}$/i)]),
+				password: z.string().min(1).max(200)
+			})
+			.safeParse({ email, password });
+		if (!input.success) {
+			return fail(400, { error: 'Enter a valid username or email and password.', email });
+		}
 		let response: Response;
 		try {
-			response = await fetch(`${apiBase()}/api/auth/login`, {
+			response = await apiFetch(`${apiBase()}/api/auth/login`, {
 				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ email, password })
+				headers: { 'content-type': 'application/json', origin: mutationOrigin() },
+				signal: AbortSignal.timeout(10000),
+				body: JSON.stringify(input.data)
 			});
 		} catch {
 			return fail(503, { error: 'API unreachable. Start it with pnpm dev:api.', email });
 		}
 		if (!response.ok) {
-			return fail(401, { error: 'Invalid credentials.', email });
+			const status = response.status === 429 ? 429 : response.status >= 500 ? 503 : 401;
+			const error =
+				status === 429
+					? 'Too many attempts. Please retry later.'
+					: status === 503
+						? 'API unavailable. Please retry.'
+						: 'Invalid credentials.';
+			return fail(status, { error, email });
 		}
-		applySetCookies(cookies, response.headers.getSetCookie());
-		throw redirect(303, '/admin');
+		const result = sessionSchema.safeParse(await response.json().catch(() => null));
+		if (
+			!result.success ||
+			!result.data.user ||
+			!applySessionCookie(cookies, response.headers.getSetCookie())
+		) {
+			return fail(502, { error: 'Invalid API session response.', email });
+		}
+		throw redirect(303, result.data.user.role === 'admin' ? '/admin' : '/account');
 	}
 };

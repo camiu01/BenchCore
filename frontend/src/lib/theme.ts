@@ -1,5 +1,6 @@
 /**
- * Theme preference helpers for the engineering-log design system.
+ * @file theme.ts
+ * @brief * Theme preference helpers for the engineering-log design system.
  * Presentation-only state (localStorage + data-theme attribute).
  * No business logic lives here.
  */
@@ -14,7 +15,7 @@ export type Theme = (typeof THEMES)[number];
 const STORAGE_KEY = 'site-theme';
 
 /**
- * Checks whether a value is a known theme identifier.
+ * @brief Checks whether a value is a known theme identifier.
  * @param value - The value to check.
  * @returns True when the value is a valid theme.
  */
@@ -23,7 +24,7 @@ export function isTheme(value: string): value is Theme {
 }
 
 /**
- * Reads the persisted theme, defaulting to light when unavailable or invalid.
+ * @brief Reads the persisted theme, defaulting to light when unavailable or invalid.
  * Safe to call during SSR (no document/localStorage access that can throw).
  * @returns The stored theme or 'light'.
  */
@@ -40,9 +41,10 @@ export function getStoredTheme(): Theme {
 }
 
 /**
- * Applies a theme to the document and persists the preference.
+ * @brief Applies a theme to the document and persists the preference.
  * No-op during SSR.
  * @param theme - The theme to apply.
+ * @return The result, or a redirect for completed mutations.
  */
 export function applyTheme(theme: Theme): void {
 	if (typeof document === 'undefined') {

@@ -1,8 +1,8 @@
+<!-- @file +page.svelte @brief Engineering-log page and presentation component. -->
 <script lang="ts">
 	import type { PageData } from './$types';
 	import DocShell from '../../../lib/components/DocShell.svelte';
 	import Seo from '../../../lib/components/Seo.svelte';
-	import { siteBase } from '../../../lib/site.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -13,10 +13,14 @@
 	];
 </script>
 
-<Seo title="Tags — Admin" description="Tag catalog." canonical="{siteBase()}/admin/tags" />
+<Seo
+	title="Tags — BenchCore Admin"
+	description="Tag catalog."
+	canonical="{data.siteBase}/admin/tags"
+/>
 
 <DocShell
-	docId="FORM: BLOG-2026 // REF: TAGS"
+	docId="FORM: BENCHCORE-2026 // REF: TAGS"
 	title="TAG REGISTRY"
 	sub="Tags are filed from the record editor; empty tags vanish on save."
 	{nav}

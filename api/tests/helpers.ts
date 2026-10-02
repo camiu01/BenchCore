@@ -44,5 +44,6 @@ export function createTestRepos(): TestRepos {
  * @return The handler dependencies.
  */
 export function createTestDeps(repos: TestRepos): ApiDeps {
-	return { ...repos, cookieSecure: false };
+	return { ...repos, cookieSecure: false, allowedOrigins: ['http://localhost:5173'],
+		rateLimit: { windowMs: 60_000, requests: 1000, loginRequests: 1000 } };
 }

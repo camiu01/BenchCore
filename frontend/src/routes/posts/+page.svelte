@@ -1,8 +1,8 @@
+<!-- @file +page.svelte @brief Engineering-log page and presentation component. -->
 <script lang="ts">
 	import type { PageData } from './$types';
 	import DocShell from '../../lib/components/DocShell.svelte';
 	import Seo from '../../lib/components/Seo.svelte';
-	import { siteBase } from '../../lib/site.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -14,13 +14,13 @@
 </script>
 
 <Seo
-	title="Records — Engineering Log"
+	title="Records — BenchCore"
 	description="Every published record, newest first."
-	canonical="{siteBase()}/posts"
+	canonical="{data.siteBase}/posts"
 />
 
 <DocShell
-	docId="FORM: BLOG-2026 // REF: RECORDS"
+	docId="FORM: BENCHCORE-2026 // REF: RECORDS"
 	title="RECORDS"
 	sub="Every published record, newest first. {data.total} filed."
 	{nav}
@@ -28,6 +28,21 @@
 	footerRight="PER PAGE: {data.perPage}"
 >
 	<main>
+		<form method="GET" action="/posts" class="form-grid">
+			<label class="field-label" for="search">Search records</label>
+			<input
+				class="field-input"
+				id="search"
+				name="search"
+				type="search"
+				maxlength="200"
+				value={data.search}
+			/>
+			<div class="btn-row">
+				<button class="btn" type="submit">SEARCH</button>
+				{#if data.search}<a class="btn" href="/posts">CLEAR</a>{/if}
+			</div>
+		</form>
 		{#if !data.online}
 			<article class="record">
 				<div class="record-header">
@@ -49,9 +64,7 @@
 				<article class="record">
 					<div class="record-header">
 						<span class="record-title">
-							<a href="/posts/{post.slug}" style="color: inherit; text-decoration: none;"
-								>{post.title}</a
-							>
+							<a href="/posts/{encodeURIComponent(post.slug)}">{post.title}</a>
 						</span>
 						<span class="stamp">PUBLISHED</span>
 					</div>
@@ -81,10 +94,14 @@
 		{#if data.totalPages > 1}
 			<div class="btn-row">
 				{#if data.page > 1}
-					<a class="btn" href="/posts?page={data.page - 1}">← PREV</a>
+					<a class="btn" href="/posts?page={data.page - 1}&search={encodeURIComponent(data.search)}"
+						>← PREV</a
+					>
 				{/if}
 				{#if data.page < data.totalPages}
-					<a class="btn" href="/posts?page={data.page + 1}">NEXT →</a>
+					<a class="btn" href="/posts?page={data.page + 1}&search={encodeURIComponent(data.search)}"
+						>NEXT →</a
+					>
 				{/if}
 			</div>
 		{/if}

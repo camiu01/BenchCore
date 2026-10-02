@@ -1,44 +1,22 @@
 /**
  * @file drizzle.ts
- * @brief Drizzle-backed repository implementations. Only this module holds SQL.
+ * @brief Drizzle-backed user, session and tag repositories with post wiring.
  */
-import { and, count, desc, eq, inArray, lte } from 'drizzle-orm';
+import { eq, lte, or } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { AppDb } from './client.js';
+import { createDrizzlePosts } from './drizzle-posts.js';
 import type {
 	PostRepository,
-	PostWithTags,
 	SessionRepository,
 	TagRepository,
 	UserRepository
 } from './repositories.js';
-import { posts, postTags, sessions, tags, users, type PostRow, type UserRow } from './schema.js';
+import { postTags, sessions, tags, users, type TagRow } from './schema.js';
 
-/**
- * @brief Creates the Drizzle user repository.
- * @param db The database handle.
- * @return The repository.
- */
-export function createDrizzleUsers(db: AppDb): UserRepository {
-	return {
-		async findByEmail(email: string) {
-			const rows = await db.select().from(users).where(eq(users.email, email)).limit(1);
-			return rows[0] ?? null;
-		},
-		async findById(id: string) {
-			const rows = await db.select().from(users).where(eq(users.id, id)).limit(1);
-			return rows[0] ?? null;
-		},
-		async create(input: Omit<UserRow, 'createdAt'>) {
-			const rows = await db.insert(users).values(input).returning();
-			const row = rows[0];
-			if (row === undefined) {
-				throw new Error('user insert returned no row');
-			}
-			return row;
-		}
-	};
-}
+export { createDrizzlePosts } from './drizzle-posts.js';
+import { createDrizzleUsers } from './drizzle-users.js';
+export { createDrizzleUsers } from './drizzle-users.js';
 
 /**
  * @brief Creates the Drizzle session repository.
@@ -47,7 +25,8 @@ export function createDrizzleUsers(db: AppDb): UserRepository {
  */
 export function createDrizzleSessions(db: AppDb): SessionRepository {
 	return {
-		async create(input: { id: string; tokenHash: string; userId: string; expiresAt: Date }) {
+		/** @brief Creates a session. @param input Session fields. @return The created row. */
+		async create(input: { id: string; tokenHash: string; userId: string; expiresAt: Date; userVersion?: number }) {
 			const rows = await db.insert(sessions).values(input).returning();
 			const row = rows[0];
 			if (row === undefined) {
@@ -55,6 +34,7 @@ export function createDrizzleSessions(db: AppDb): SessionRepository {
 			}
 			return row;
 		},
+		/** @brief Resolves session ownership. @param tokenHash The hash. @return The joined row or null. */
 		async findByTokenHash(tokenHash: string) {
 			const rows = await db
 				.select({ session: sessions, user: users })
@@ -65,14 +45,71 @@ export function createDrizzleSessions(db: AppDb): SessionRepository {
 			const row = rows[0];
 			return row === undefined ? null : { ...row.session, user: row.user };
 		},
+		/** @brief Deletes a session. @param tokenHash The hash. @return Completion. */
 		async deleteByTokenHash(tokenHash: string): Promise<void> {
 			await db.delete(sessions).where(eq(sessions.tokenHash, tokenHash));
 		},
+		/** @brief Deletes expired sessions. @param now The reference time. @return The deletion count. */
 		async deleteExpired(now: Date): Promise<number> {
 			const rows = await db.delete(sessions).where(lte(sessions.expiresAt, now)).returning();
 			return rows.length;
 		}
 	};
+}
+
+/** @brief SQL-backed tags with deduplicated transactional link replacement. */
+class DrizzleTags implements TagRepository {
+	/** @brief Retains the database. @param db The database handle. */
+	constructor(private readonly db: AppDb) {}
+
+	/** @brief Lists tags. @return Rows ordered by name. */
+	async list(): Promise<TagRow[]> {
+		return this.db.select().from(tags).orderBy(tags.name);
+	}
+
+	/**
+	 * @brief Resolves names and slug aliases without duplicate result ids.
+	 * @param names The submitted tag names.
+	 * @return The canonical tag rows.
+	 */
+	async upsertByName(names: string[]): Promise<TagRow[]> {
+		const result: TagRow[] = [];
+		for (const raw of names) {
+			const name = raw.trim();
+			if (name === '') { continue; }
+			const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+			await this.db.insert(tags).values({ id: randomUUID(), slug: slug || randomUUID(), name }).onConflictDoNothing();
+			const rows = await this.db.select().from(tags).where(or(eq(tags.name, name), eq(tags.slug, slug))).limit(1);
+			const row = rows[0];
+			if (row !== undefined && !result.some((tag) => tag.id === row.id)) { result.push(row); }
+		}
+		return result;
+	}
+
+	/**
+	 * @brief Replaces links atomically and ignores duplicate ids.
+	 * @param postId The post id.
+	 * @param tagIds The desired tag ids.
+	 * @return Completion.
+	 */
+	async setPostTags(postId: string, tagIds: string[]): Promise<void> {
+		await this.db.transaction(async (tx) => {
+			await tx.delete(postTags).where(eq(postTags.postId, postId));
+			const ids = [...new Set(tagIds)];
+			if (ids.length > 0) { await tx.insert(postTags).values(ids.map((tagId) => ({ postId, tagId }))); }
+		});
+	}
+
+	/**
+	 * @brief Loads the names linked to a post.
+	 * @param postId The post id.
+	 * @return Sorted tag names.
+	 */
+	async getPostTagNames(postId: string): Promise<string[]> {
+		const rows = await this.db.select({ name: tags.name }).from(postTags)
+			.innerJoin(tags, eq(postTags.tagId, tags.id)).where(eq(postTags.postId, postId)).orderBy(tags.name);
+		return rows.map((row) => row.name);
+	}
 }
 
 /**
@@ -81,149 +118,7 @@ export function createDrizzleSessions(db: AppDb): SessionRepository {
  * @return The repository.
  */
 export function createDrizzleTags(db: AppDb): TagRepository {
-	return {
-		async list() {
-			return db.select().from(tags).orderBy(tags.name);
-		},
-		async upsertByName(names: string[]) {
-			const result = [];
-			for (const raw of names) {
-				const name = raw.trim();
-				if (name === '') {
-					continue;
-				}
-				const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-				await db
-					.insert(tags)
-					.values({ id: randomUUID(), slug: slug === '' ? randomUUID() : slug, name })
-					.onConflictDoNothing();
-				const rows = await db.select().from(tags).where(eq(tags.name, name)).limit(1);
-				const row = rows[0];
-				if (row !== undefined) {
-					result.push(row);
-				}
-			}
-			return result;
-		},
-		async setPostTags(postId: string, tagIds: string[]): Promise<void> {
-			await db.delete(postTags).where(eq(postTags.postId, postId));
-			if (tagIds.length > 0) {
-				await db.insert(postTags).values(tagIds.map((tagId) => ({ postId, tagId })));
-			}
-		},
-		async getPostTagNames(postId: string): Promise<string[]> {
-			const rows = await db
-				.select({ name: tags.name })
-				.from(postTags)
-				.innerJoin(tags, eq(postTags.tagId, tags.id))
-				.where(eq(postTags.postId, postId))
-				.orderBy(tags.name);
-			return rows.map((row) => row.name);
-		}
-	};
-}
-
-/**
- * @brief Creates the Drizzle post repository.
- * @param db The database handle.
- * @param tagRepo The tag repository used to attach tag names.
- * @return The repository.
- */
-export function createDrizzlePosts(db: AppDb, tagRepo: TagRepository): PostRepository {
-	/**
-	 * @brief Attaches tag names to post rows.
-	 * @param rows The post rows.
-	 * @return The rows with tag names.
-	 */
-	async function withTags(rows: PostRow[]): Promise<PostWithTags[]> {
-		const ids = rows.map((row) => row.id);
-		const links =
-			ids.length === 0
-				? []
-				: await db
-						.select({ postId: postTags.postId, name: tags.name })
-						.from(postTags)
-						.innerJoin(tags, eq(postTags.tagId, tags.id))
-						.where(inArray(postTags.postId, ids));
-		const namesByPost = new Map<string, string[]>();
-		for (const link of links) {
-			const names = namesByPost.get(link.postId) ?? [];
-			names.push(link.name);
-			namesByPost.set(link.postId, names);
-		}
-		return rows.map((row) => ({ ...row, tags: (namesByPost.get(row.id) ?? []).sort() }));
-	}
-
-	return {
-		async create(input: Omit<PostRow, 'createdAt' | 'updatedAt'>) {
-			const rows = await db.insert(posts).values(input).returning();
-			const row = rows[0];
-			if (row === undefined) {
-				throw new Error('post insert returned no row');
-			}
-			return row;
-		},
-		async update(id: string, patch: Partial<PostRow>) {
-			const rows = await db
-				.update(posts)
-				.set({ ...patch, updatedAt: new Date() })
-				.where(eq(posts.id, id))
-				.returning();
-			return rows[0] ?? null;
-		},
-		async remove(id: string): Promise<boolean> {
-			const rows = await db.delete(posts).where(eq(posts.id, id)).returning({ id: posts.id });
-			return rows.length > 0;
-		},
-		async findById(id: string) {
-			const rows = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
-			return rows[0] ?? null;
-		},
-		async findBySlug(slug: string) {
-			const rows = await db.select().from(posts).where(eq(posts.slug, slug)).limit(1);
-			return rows[0] ?? null;
-		},
-		async listPublished(options: { limit: number; offset: number; tag?: string; now: Date }) {
-			const visible = and(
-				eq(posts.status, 'published'),
-				lte(posts.publishedAt, options.now)
-			);
-			if (options.tag !== undefined) {
-				const tagRows = await db.select().from(tags).where(eq(tags.name, options.tag)).limit(1);
-				const tag = tagRows[0];
-				if (tag === undefined) {
-					return { items: [], total: 0 };
-				}
-				const linked = await db
-					.select({ post: posts })
-					.from(postTags)
-					.innerJoin(posts, eq(postTags.postId, posts.id))
-					.where(and(eq(postTags.tagId, tag.id), visible))
-					.orderBy(desc(posts.publishedAt))
-					.limit(options.limit)
-					.offset(options.offset);
-				const totalRows = await db
-					.select({ value: count() })
-					.from(postTags)
-					.innerJoin(posts, eq(postTags.postId, posts.id))
-					.where(and(eq(postTags.tagId, tag.id), visible));
-				return { items: await withTags(linked.map((row) => row.post)), total: totalRows[0]?.value ?? 0 };
-			}
-			const rows = await db
-				.select()
-				.from(posts)
-				.where(visible)
-				.orderBy(desc(posts.publishedAt))
-				.limit(options.limit)
-				.offset(options.offset);
-			const totalRows = await db.select({ value: count() }).from(posts).where(visible);
-			return { items: await withTags(rows), total: totalRows[0]?.value ?? 0 };
-		},
-		async listAll() {
-			const rows = await db.select().from(posts).orderBy(desc(posts.createdAt));
-			return withTags(rows);
-		}
-	};
+	return new DrizzleTags(db);
 }
 
 /**

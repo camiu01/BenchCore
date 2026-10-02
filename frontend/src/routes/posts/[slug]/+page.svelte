@@ -1,9 +1,8 @@
+<!-- @file +page.svelte @brief Engineering-log page and presentation component. -->
 <script lang="ts">
 	import type { PageData } from './$types';
 	import DocShell from '../../../lib/components/DocShell.svelte';
 	import Seo from '../../../lib/components/Seo.svelte';
-	import { resolveMediaUrl } from '../../../lib/api.js';
-	import { siteBase } from '../../../lib/site.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -12,19 +11,19 @@
 		{ href: '/posts', label: '[02] records' },
 		{ href: '/tags', label: '[03] tags' }
 	];
-	const cover = $derived(resolveMediaUrl(data.post.coverImage));
-	const canonical = $derived(`${siteBase()}/posts/${data.post.slug}`);
+	const cover = $derived(data.cover);
+	const canonical = $derived(`${data.siteBase}/posts/${encodeURIComponent(data.post.slug)}`);
 </script>
 
 <Seo
-	title="{data.post.title} — Engineering Log"
+	title="{data.post.title} — BenchCore"
 	description={data.post.description || data.post.title}
 	{canonical}
-	image={cover}
+	image={data.coverAbsolute}
 />
 
 <DocShell
-	docId="FORM: BLOG-2026 // REF: {data.post.slug.toUpperCase()}"
+	docId="FORM: BENCHCORE-2026 // REF: {data.post.slug.toUpperCase()}"
 	title={data.post.title}
 	sub={data.post.description || 'No summary filed.'}
 	{nav}
@@ -63,12 +62,8 @@
 				</tbody>
 			</table>
 			{#if cover !== null}
-				<figure style="margin: 0 0 16px 0; border: 1px solid var(--border); padding: 3px;">
-					<img
-						src={cover}
-						alt={data.post.title}
-						style="width: 100%; display: block; filter: grayscale(35%) contrast(110%);"
-					/>
+				<figure class="cover-figure">
+					<img src={cover} alt={data.post.title} class="cover-image" />
 				</figure>
 			{/if}
 			<!-- contentHtml is sanitized by the API render pipeline before storage. -->
@@ -92,7 +87,7 @@
 							<tr>
 								<td class="code">BK-{String(index + 1).padStart(2, '0')}</td>
 								<td class="item">{link.title}</td>
-								<td class="dim"><a href="/posts/{link.slug}">open →</a></td>
+								<td class="dim"><a href="/posts/{encodeURIComponent(link.slug)}">open →</a></td>
 							</tr>
 						{/each}
 					</tbody>

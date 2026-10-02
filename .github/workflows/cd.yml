@@ -1,0 +1,126 @@
+# @file cd.yml
+# @brief Deliver a unified BenchCore Node beta artifact and tag-gated prereleases.
+name: CD
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*-beta.*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: beta-delivery-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    uses: ./.github/workflows/ci.yml
+  bundle:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: beta
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: publishing_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U beta -d publishing_test"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://beta:ci-only-password@127.0.0.1:5432/publishing_test
+      BETA_PG_CONCURRENCY: "1"
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      artifact_name: benchcore-${{ steps.version.outputs.version }}-linux-x64-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Verify version and tag
+        id: version
+        env:
+          RELEASE_REF: ${{ github.ref }}
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$ ]]; then
+            echo "The delivery version must be a beta semver"; exit 1
+          fi
+          if [[ "$RELEASE_REF" == refs/tags/* && "$RELEASE_REF" != "refs/tags/v$VERSION" ]]; then
+            echo "Tag and manifest version do not match"; exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Build and assemble production-only Node bundle
+        run: pnpm build && pnpm beta:package
+      - name: Test the actual packaged application
+        env:
+          BETA_BUNDLE: artifacts/benchcore-${{ steps.version.outputs.version }}
+        run: pnpm test:bundle
+      - name: Archive and checksum
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          tar -czf "artifacts/benchcore-$VERSION-linux-x64.tar.gz" -C artifacts "benchcore-$VERSION"
+          cd artifacts
+          sha256sum "benchcore-$VERSION-linux-x64.tar.gz" > SHA256SUMS
+      - name: Upload delivery artifact
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchcore-${{ steps.version.outputs.version }}-linux-x64-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            artifacts/*.tar.gz
+            artifacts/SHA256SUMS
+          retention-days: 30
+          if-no-files-found: error
+          compression-level: 0
+      - name: Add artifact download to job summary
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        run: |
+          {
+            printf '## BenchCore beta %s\n\n' "$VERSION"
+            printf '[Download BenchCore frontend + API artifact](%s)\n\n' "$ARTIFACT_URL"
+            printf 'Includes the Linux x64 archive and SHA256SUMS. Retention: 30 days.\n'
+            printf 'Requires Node.js 24 and PostgreSQL. No production secrets or content are bundled.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+  prerelease:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: beta-release
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.bundle.outputs.artifact_name }}
+          path: artifacts
+      - name: Publish tagged beta prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          cd artifacts
+          sha256sum --check SHA256SUMS
+          gh release create "$RELEASE_TAG" --verify-tag --prerelease --generate-notes *.tar.gz SHA256SUMS

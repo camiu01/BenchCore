@@ -71,7 +71,7 @@ export function clearSessionCookieHeader(): string {
  * @return The parsed cookies.
  */
 export function parseCookies(header: string | undefined): Record<string, string> {
-	const cookies: Record<string, string> = {};
+	const cookies: Record<string, string> = Object.create(null) as Record<string, string>;
 	if (header === undefined || header === '') {
 		return cookies;
 	}
@@ -83,7 +83,11 @@ export function parseCookies(header: string | undefined): Record<string, string>
 		const name = pair.slice(0, separator).trim();
 		const value = pair.slice(separator + 1).trim();
 		if (name !== '') {
-			cookies[name] = decodeURIComponent(value);
+			try {
+				cookies[name] = decodeURIComponent(value);
+			} catch {
+				continue;
+			}
 		}
 	}
 	return cookies;

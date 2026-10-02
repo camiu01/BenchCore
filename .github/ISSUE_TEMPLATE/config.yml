@@ -1,0 +1,4 @@
+# @file config.yml
+# @brief Route issue reports toward structured templates and private security reporting.
+blank_issues_enabled: false
+contact_links: [{name: Security vulnerability, url: 'https://github.com/camiu01/legendary-octo-bassoon/security/advisories/new', about: 'Report exploitable issues privately; see SECURITY.md for fallback contact.'}]

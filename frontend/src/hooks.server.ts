@@ -1,50 +1,58 @@
 /**
- * Server hooks: resolves the API session into locals and guards /admin.
+ * @file hooks.server.ts
+ * @brief Resolves validated sessions, guards admin access and hardens frontend responses.
  */
 import type { Handle } from '@sveltejs/kit/hooks';
-import { redirect } from '@sveltejs/kit';
-import { apiBase } from './lib/api.js';
+import { isRedirect } from '@sveltejs/kit';
+import { resolveSessionUser } from './lib/server/session.js';
+import { secureResponse } from './lib/server/security.js';
 
 /**
- * @brief Session user shape returned by the API.
- */
-interface SessionUser {
-	id: string;
-	email: string;
-	name: string;
-	role: string;
-}
-
-/**
- * @brief Resolves the session cookie against the API.
- * @param cookie The raw Cookie header, if any.
- * @returns The session user or null.
- */
-async function resolveSessionUser(cookie: string | null): Promise<SessionUser | null> {
-	if (cookie === null) {
-		return null;
-	}
-	try {
-		const response = await fetch(`${apiBase()}/api/auth/me`, { headers: { cookie } });
-		if (!response.ok) {
-			return null;
-		}
-		const body = (await response.json()) as { user?: SessionUser };
-		return body.user ?? null;
-	} catch {
-		return null;
-	}
-}
-
-/**
- * @brief SvelteKit handle hook with session locals and admin guard.
+ * @brief Guards private routes and same-origin mutations before resolving a request.
+ * @param input The SvelteKit event and response resolver.
+ * @return A secured page, redirect, or rejected mutation response.
  */
 export const handle: Handle = async ({ event, resolve }) => {
-	event.locals.user = await resolveSessionUser(event.request.headers.get('cookie'));
-	if (event.url.pathname === '/admin' || event.url.pathname.startsWith('/admin/')) {
-		if (event.locals.user === null) {
-			throw redirect(303, '/login');
-		}
+	const method = event.request.method;
+	if (
+		!['GET', 'HEAD', 'OPTIONS'].includes(method) &&
+		event.request.headers.get('origin') !== event.url.origin
+	) {
+		return secureResponse(new Response('Forbidden origin', { status: 403 }), event);
 	}
-	return resolve(event);
+	event.locals.user = await resolveSessionUser(event.request.headers.get('cookie'));
+	if (
+		(event.url.pathname === '/account' ||
+			event.url.pathname === '/admin' ||
+			event.url.pathname.startsWith('/admin/')) &&
+		event.locals.user === null
+	) {
+		return secureResponse(
+			new Response(null, {
+				status: 303,
+				headers: { location: '/login' }
+			}),
+			event
+		);
+	}
+	if (
+		(event.url.pathname === '/admin' || event.url.pathname.startsWith('/admin/')) &&
+		event.locals.user?.role !== 'admin'
+	) {
+		return secureResponse(new Response('Administrator access required', { status: 403 }), event);
+	}
+	try {
+		return secureResponse(await resolve(event), event);
+	} catch (cause) {
+		if (!isRedirect(cause)) {
+			throw cause;
+		}
+		return secureResponse(
+			new Response(null, {
+				status: cause.status,
+				headers: { location: cause.location }
+			}),
+			event
+		);
+	}
 };

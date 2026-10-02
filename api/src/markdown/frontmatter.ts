@@ -30,7 +30,7 @@ const FENCE = '+++';
  * @return The TOML block plus body, or a structured issue.
  */
 export function splitFrontmatter(source: string, file: string): SplitResult {
-	const lines = source.split('\n');
+	const lines = source.replace(/\r\n?/g, '\n').split('\n');
 	if (lines[0]?.trim() !== FENCE) {
 		return {
 			ok: false,

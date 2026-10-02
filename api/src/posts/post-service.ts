@@ -5,7 +5,7 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { PostRepository, PostWithTags, TagRepository, UserRepository } from '../db/repositories.js';
-import type { PostStatus } from '../db/schema.js';
+import type { PostRow, PostStatus } from '../db/schema.js';
 import { renderMarkdown } from '../markdown/render.js';
 import { flattenIssues, slugField } from '../markdown/schema.js';
 import { canTransition, isPublic, normalizeSlug } from './publishing.js';
@@ -44,10 +44,11 @@ export const createPostSchema = z.object({
 	slug: slugField,
 	description: z.string().max(500).default(''),
 	status: z.enum(['draft', 'published', 'archived']).default('draft'),
-	tags: z.array(z.string().min(1).max(60)).max(20).default([]),
+	tags: z.array(z.string().trim().min(1).max(60)).max(20).default([]),
 	publishedAt: z.iso.datetime({ offset: true }).nullable().optional(),
+	publishAt: z.iso.datetime({ offset: true }).nullable().optional(),
 	contentMarkdown: z.string().min(1).max(200_000),
-	coverImage: z.string().max(500).optional()
+	coverImage: z.string().max(500).nullable().optional()
 });
 
 /**
@@ -151,12 +152,13 @@ async function toListItem(deps: PostServiceDeps, row: PostWithTags): Promise<Pos
  */
 export async function listPublishedPosts(
 	deps: PostServiceDeps,
-	options: { limit?: number | undefined; offset?: number | undefined; tag?: string | undefined; now?: Date | undefined } = {}
+	options: { limit?: number | undefined; offset?: number | undefined; tag?: string | undefined;
+		search?: string | undefined; now?: Date | undefined } = {}
 ): Promise<{ items: PostListItem[]; total: number }> {
 	const limit = Math.min(Math.max(options.limit ?? 10, 1), 200);
 	const offset = Math.max(options.offset ?? 0, 0);
 	const now = options.now ?? new Date();
-	const page = await deps.posts.listPublished({ limit, offset, tag: options.tag, now });
+	const page = await deps.posts.listPublished({ limit, offset, tag: options.tag, search: options.search, now });
 	const items: PostListItem[] = [];
 	for (const row of page.items) {
 		items.push(await toListItem(deps, row));
@@ -181,10 +183,10 @@ export async function getPublishedPost(
 		return null;
 	}
 	const item = await toListItem(deps, { ...row, tags: await deps.tags.getPostTagNames(row.id) });
-	const rendered = await renderMarkdown(row.contentMarkdown);
+	const rendered = await renderMarkdown(row.contentMarkdown, { mediaPrefix: '/api/media' });
 	return {
 		...item,
-		contentHtml: row.contentHtml,
+		contentHtml: rendered.html,
 		coverImage: row.coverImage,
 		readingMinutes: rendered.readingMinutes,
 		backlinks: await findBacklinks(deps, row.slug, now)
@@ -211,13 +213,8 @@ export async function createPost(
 	if (existing !== null) {
 		throw new PostError('conflict', `slug already exists: ${slug}`);
 	}
-	const publishedAt =
-		parsed.publishedAt === undefined || parsed.publishedAt === null
-			? parsed.status === 'published'
-				? new Date()
-				: null
-			: new Date(parsed.publishedAt);
-	const rendered = await renderMarkdown(parsed.contentMarkdown, { knownSlugs });
+	const dates = publishingDates(parsed, null);
+	const rendered = await renderMarkdown(parsed.contentMarkdown, { knownSlugs, mediaPrefix: '/api/media' });
 	const row = await deps.posts.create({
 		id: randomUUID(),
 		slug,
@@ -226,16 +223,15 @@ export async function createPost(
 		contentMarkdown: parsed.contentMarkdown,
 		contentHtml: rendered.html,
 		coverImage: parsed.coverImage ?? null,
-		status: parsed.status as PostStatus,
 		authorId: authorId ?? null,
-		publishedAt
+		...dates
 	});
 	const tagRows = await deps.tags.upsertByName(parsed.tags);
 	await deps.tags.setPostTags(
 		row.id,
 		tagRows.map((tag) => tag.id)
 	);
-	return toListItem(deps, { ...row, tags: parsed.tags });
+	return toListItem(deps, { ...row, tags: await deps.tags.getPostTagNames(row.id) });
 }
 
 /**
@@ -255,39 +251,8 @@ export async function updatePost(
 	if (row === null) {
 		throw new PostError('not_found', `post not found: ${id}`);
 	}
-	if (parsed.status !== undefined && !canTransition(row.status, parsed.status as PostStatus)) {
-		throw new PostError('transition', `illegal transition ${row.status} -> ${parsed.status}`);
-	}
-	let slug = row.slug;
-	if (parsed.slug !== undefined) {
-		slug = normalizeSlug(parsed.slug);
-		const clash = await deps.posts.findBySlug(slug);
-		if (clash !== null && clash.id !== id) {
-			throw new PostError('conflict', `slug already exists: ${slug}`);
-		}
-	}
-	const contentMarkdown = parsed.contentMarkdown ?? row.contentMarkdown;
-	const rendered =
-		parsed.contentMarkdown === undefined
-			? null
-			: await renderMarkdown(parsed.contentMarkdown, {});
-	const nextStatus = (parsed.status ?? row.status) as PostStatus;
-	let publishedAt: Date | null;
-	if (parsed.publishedAt === undefined) {
-		publishedAt = nextStatus === 'published' && row.publishedAt === null ? new Date() : row.publishedAt;
-	} else {
-		publishedAt = parsed.publishedAt === null ? null : new Date(parsed.publishedAt);
-	}
-	const updated = await deps.posts.update(id, {
-		title: parsed.title ?? row.title,
-		slug,
-		description: parsed.description ?? row.description,
-		status: nextStatus,
-		contentMarkdown,
-		contentHtml: rendered?.html ?? row.contentHtml,
-		coverImage: parsed.coverImage ?? row.coverImage,
-		publishedAt
-	});
+	const patch = await buildUpdatePatch(deps, row, parsed);
+	const updated = await deps.posts.update(id, patch);
 	if (updated === null) {
 		throw new PostError('not_found', `post not found: ${id}`);
 	}
@@ -299,6 +264,53 @@ export async function updatePost(
 		);
 	}
 	return toListItem(deps, { ...updated, tags: await deps.tags.getPostTagNames(id) });
+}
+
+/**
+ * @brief Resolves publication dates and enforces draft-only scheduling.
+ * @param input Validated publication fields.
+ * @param row Previous row, if any.
+ * @return Status and publication dates.
+ */
+function publishingDates(input: z.output<typeof updatePostSchema>, row: PostRow | null): {
+	status: PostStatus; publishedAt: Date | null; publishAt: Date | null;
+} {
+	const status = input.status ?? row?.status ?? 'draft';
+	const publishAt = input.publishAt === undefined ? row?.publishAt ?? null
+		: input.publishAt === null ? null : new Date(input.publishAt);
+	if (publishAt && status !== 'draft') {
+		throw new PostError('validation', 'scheduled posts must remain drafts until the job publishes them');
+	}
+	let publishedAt = input.publishedAt === undefined ? row?.publishedAt ?? null
+		: input.publishedAt === null ? null : new Date(input.publishedAt);
+	if (status === 'published' && publishedAt === null) { publishedAt = new Date(); }
+	return { status, publishedAt, publishAt };
+}
+
+/**
+ * @brief Builds a validated post patch without duplicating publication rules.
+ * @param deps Repositories.
+ * @param row Existing post.
+ * @param parsed Validated update.
+ * @return Persistence patch.
+ */
+async function buildUpdatePatch(deps: PostServiceDeps, row: PostRow,
+	parsed: z.output<typeof updatePostSchema>): Promise<Partial<PostRow>> {
+	if (parsed.status !== undefined && !canTransition(row.status, parsed.status)) {
+		throw new PostError('transition', `illegal transition ${row.status} -> ${parsed.status}`);
+	}
+	const slug = parsed.slug === undefined ? row.slug : normalizeSlug(parsed.slug);
+	const clash = await deps.posts.findBySlug(slug);
+	if (clash !== null && clash.id !== row.id) { throw new PostError('conflict', `slug already exists: ${slug}`); }
+	const rendered = parsed.contentMarkdown === undefined ? null
+		: await renderMarkdown(parsed.contentMarkdown, { mediaPrefix: '/api/media' });
+	return {
+		title: parsed.title ?? row.title, slug, description: parsed.description ?? row.description,
+		contentMarkdown: parsed.contentMarkdown ?? row.contentMarkdown,
+		contentHtml: rendered?.html ?? row.contentHtml,
+		coverImage: parsed.coverImage === undefined ? row.coverImage : parsed.coverImage,
+		...publishingDates(parsed, row)
+	};
 }
 
 /**

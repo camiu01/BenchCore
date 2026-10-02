@@ -1,9 +1,9 @@
+<!-- @file +page.svelte @brief Engineering-log page and presentation component. -->
 <script lang="ts">
 	import type { ActionData, PageData } from './$types';
 	import DocShell from '../../../../lib/components/DocShell.svelte';
 	import PostEditor from '../../../../lib/components/PostEditor.svelte';
 	import Seo from '../../../../lib/components/Seo.svelte';
-	import { siteBase } from '../../../../lib/site.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -20,13 +20,13 @@
 </script>
 
 <Seo
-	title="New record — Admin"
+	title="New record — BenchCore Admin"
 	description="File a new record."
-	canonical="{siteBase()}/admin/posts/new"
+	canonical="{data.siteBase}/admin/posts/new"
 />
 
 <DocShell
-	docId="FORM: BLOG-2026 // REF: NEW"
+	docId="FORM: BENCHCORE-2026 // REF: NEW"
 	title="NEW RECORD"
 	sub="Markdown with [[wikilinks]], previewed through the API render pipeline."
 	{nav}

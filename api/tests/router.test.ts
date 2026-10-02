@@ -44,7 +44,7 @@ afterAll(async () => {
 async function loginCookie(): Promise<string> {
 	const response = await fetch(`${baseUrl}/api/auth/login`, {
 		method: 'POST',
-		headers: { 'content-type': 'application/json' },
+		headers: { 'content-type': 'application/json', origin: 'http://localhost:5173' },
 		body: JSON.stringify({ email: 'admin@example.com', password: 'secret' })
 	});
 	expect(response.status).toBe(200);
@@ -68,6 +68,7 @@ function apiFetch(
 		...rest,
 		headers: {
 			'content-type': 'application/json',
+			origin: 'http://localhost:5173',
 			...(cookie !== undefined ? { cookie } : {}),
 			...rest.headers
 		}
@@ -92,7 +93,7 @@ describe('auth endpoints', () => {
 		expect(((await me.json()) as { user: { email: string } }).user.email).toBe('admin@example.com');
 		const logout = await fetch(`${baseUrl}/api/auth/logout`, {
 			method: 'POST',
-			headers: { cookie }
+			headers: { cookie, origin: 'http://localhost:5173' }
 		});
 		expect(logout.status).toBe(200);
 		const after = await fetch(`${baseUrl}/api/auth/me`, { headers: { cookie } });
@@ -155,6 +156,21 @@ describe('post endpoints', () => {
 });
 
 describe('media endpoints', () => {
+	it('accepts the complete advertised 5 MiB limit without regex stack overflow', async () => {
+		const cookie = await loginCookie();
+		const uploaded = await apiFetch('/api/media', {
+			method: 'POST', cookie,
+			body: JSON.stringify({
+				filename: 'limit.png', mime: 'image/png', contentBase64: Buffer.alloc(5 * 1024 * 1024).toString('base64')
+			})
+		});
+		expect(uploaded.status).toBe(201);
+		const record = await uploaded.json() as { key: string; sizeBytes: number };
+		expect(record.sizeBytes).toBe(5 * 1024 * 1024);
+		const removed = await apiFetch(`/api/media/${record.key}`, { method: 'DELETE', cookie });
+		expect(removed.status).toBe(204);
+	});
+
 	it('uploads, serves and deletes images behind auth', async () => {
 		const cookie = await loginCookie();
 		const png =
@@ -176,7 +192,7 @@ describe('media endpoints', () => {
 		expect(served.headers.get('content-type')).toBe('image/png');
 		const removed = await fetch(`${baseUrl}/api/media/${record.key}`, {
 			method: 'DELETE',
-			headers: { cookie }
+			headers: { cookie, origin: 'http://localhost:5173' }
 		});
 		expect(removed.status).toBe(204);
 		expect((await fetch(`${baseUrl}${record.url}`)).status).toBe(404);

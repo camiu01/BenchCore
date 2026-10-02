@@ -1,0 +1,79 @@
+# @file ci.yml
+# @brief Validate both workspace packages on pushes and pull requests.
+name: CI
+
+on:
+  push:
+    branches-ignore: [main]
+    tags-ignore: ["**"]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck both packages
+        run: pnpm check
+      - name: Test
+        run: pnpm test
+      - name: Lint frontend
+        run: pnpm lint
+      - name: Check frontend formatting
+        run: pnpm format
+      - name: Build both packages
+        run: pnpm build
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: beta
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: publishing_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U beta -d publishing_test"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://beta:ci-only-password@127.0.0.1:5432/publishing_test
+      BETA_PG_CONCURRENCY: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build the unified beta
+        run: pnpm build
+      - name: Apply release migrations to isolated PostgreSQL
+        run: pnpm beta:migrate
+      - name: Run single-origin production integration tests
+        run: pnpm test:beta

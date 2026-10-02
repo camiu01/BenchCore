@@ -1,5 +1,6 @@
 /**
- * SvelteKit app-level type declarations.
+ * @file app.d.ts
+ * @brief * SvelteKit app-level type declarations.
  * See https://svelte.dev/docs/kit/types#app.d.ts
  */
 declare global {

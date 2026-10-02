@@ -5,6 +5,7 @@
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { hashPassword } from '../src/auth/password.js';
+import { usernameField } from '../src/auth/credentials.js';
 import { getDb } from '../src/db/client.js';
 import { createDrizzleRepos } from '../src/db/drizzle.js';
 import { importDirectory } from '../src/posts/import-service.js';
@@ -12,6 +13,8 @@ import { importDirectory } from '../src/posts/import-service.js';
 const email = process.env['ADMIN_EMAIL']?.toLowerCase();
 const password = process.env['ADMIN_PASSWORD'];
 const name = process.env['ADMIN_NAME'] ?? 'Admin';
+const rawUsername = process.env['ADMIN_USERNAME'];
+const username = rawUsername === undefined || rawUsername === '' ? null : usernameField.parse(rawUsername);
 if (email === undefined || email === '' || password === undefined || password === '') {
 	process.stderr.write('ADMIN_EMAIL and ADMIN_PASSWORD are required\n');
 	process.exit(1);
@@ -23,6 +26,7 @@ if (existing === null) {
 	await repos.users.create({
 		id: randomUUID(),
 		email,
+		username,
 		passwordHash: await hashPassword(password),
 		name,
 		role: 'admin'

@@ -1,15 +1,20 @@
-# AGENTS.md — PERSONAL-PUBLISHING-PLATFORM
+# AGENTS.md — BenchCore
 
 ## Quick start
 ```bash
 pnpm install
 pnpm dev:frontend        # SvelteKit site on :5173
-pnpm dev:api             # API service on :3001 (GET /health)
+pnpm dev:api             # API service on :5181 (GET /health)
+pnpm demo:api            # loopback-only in-memory preview, optional environment-only admin
 pnpm test                # recursive: frontend + api vitest suites
-pnpm check               # frontend svelte-check
+pnpm check               # API TypeScript + frontend svelte-check
 pnpm lint                # frontend eslint
 pnpm build               # recursive builds
+pnpm start               # unified beta: frontend + /api on :5180
+pnpm beta:package        # versioned Node bundle, no .env or authoring content
+pnpm test:beta           # requires a dedicated local *_test PostgreSQL database
 pnpm seed                # admin bootstrap + content import (needs DATABASE_URL)
+pnpm user:create         # admin user from private JSON stdin, no ADMIN_* env needed
 pnpm content:import      # import content/posts into PostgreSQL
 pnpm docker:up           # full stack via compose (postgres + api + frontend)
 ```
@@ -17,6 +22,8 @@ pnpm docker:up           # full stack via compose (postgres + api + frontend)
 ## Architecture
 - pnpm monorepo: `frontend/` (SvelteKit UI, zero direct DB access) + `api/`
   (standalone `node:http` TypeScript service, owns Drizzle + content pipeline).
+- `runtime/server.mjs` combines both production handlers behind one public
+  listener. The SSR API listener binds only to loopback on a random port.
 - Markdown + TOML (`content/posts/*.md`) is the authoring format; PostgreSQL is
   the runtime source of truth. Frontend renders API data only.
 - Entrypoints: `frontend/src/routes/` (pages) and `api/src/index.ts` (server boot).
@@ -36,27 +43,37 @@ frontend/
     routes/login/           # login action (forwards API Set-Cookie)
     routes/logout/          # logout endpoint
     routes/admin/           # deck, posts/new, posts/[id], tags (guarded)
-    routes/api/             # none: API lives in api/, never in SvelteKit
+    routes/api/             # narrow media proxy for standalone dev; beta dispatches to API
+    routes/register/        # public reader-only registration
+    routes/account/         # authenticated password changes
     routes/*.xml|robots.txt # sitemap, RSS, robots server routes
   tests/                    # mirrors src/ (smoke.test.ts, theme.test.ts)
 api/
   src/
     server.ts               # router: /health, /api/auth/*, /api/posts*, /api/media*
+    http/                   # transport handlers, Origin guard, rate limits and headers
     index.ts                # boot only (repos + storage wiring, listen)
     db/schema.ts            # Drizzle tables: users, posts, tags, post_tags, sessions
     db/repositories.ts      # repository interfaces (DB-free contracts)
     db/drizzle.ts           # Drizzle implementations (only SQL lives here)
+    db/drizzle-posts.ts     # publishing, full-text search and atomic schedule promotion
+    db/drizzle-media.ts     # PostgreSQL blob persistence behind a repository contract
     db/memory.ts            # in-memory repos for tests
     db/client.ts            # lazy postgres client (DATABASE_URL)
     markdown/               # frontmatter.ts, schema.ts (Zod), render.ts (wikilinks + sanitize)
     posts/                  # publishing.ts (rules), post-service.ts, import-service.ts
+                            # scheduler.ts (non-overlapping minute ticks)
     auth/                   # password.ts (scrypt), session.ts (token + cookie)
-    media/storage.ts        # StorageProvider seam + local-filesystem backend
+    media/                  # StorageProvider seam + local-filesystem/database backends
   scripts/                  # import.ts (content:import), migrate.ts, seed.ts (admin bootstrap)
   drizzle/                  # generated migrations (drizzle-kit, no live DB needed)
   tests/                    # mirrors src/
-  Dockerfile                # node:22-alpine, migrate-on-boot, serve dist
+  Dockerfile                # node:24-alpine, legacy split-stack container
+runtime/                    # single-origin beta settings, bridge, dispatcher and boot
+scripts/                    # allowlisted packaging and guarded PostgreSQL smoke
 TODO.md                     # roadmap: Done (with #tags) + Pending per milestone
+docs/                       # architecture, authoring, API, testing and operations guides
+CHANGELOG.md                # local release history; publishing is a separate authorized action
 docker-compose.yml          # postgres 17 + api + frontend (volumes pgdata, mediadata)
 ```
 
@@ -82,7 +99,12 @@ docker-compose.yml          # postgres 17 + api + frontend (volumes pgdata, medi
   imports (no `kit.alias`); `Handle` comes from `@sveltejs/kit/hooks`;
   `process.env` in server-only modules (no `$env` dependency).
 - Media rule: services and routes depend on the `StorageProvider` interface only;
-  the local backend is swappable without touching callers.
+  `MEDIA_STORAGE=local|database` selects the backend at boot.
+- Mutating API requests require an exact trusted Origin. Configure production
+  `API_ALLOWED_ORIGINS` or `SITE_URL`; never trust request-derived hosts.
+- Scheduled posts remain drafts with a nullable `publishAt`; the repository job
+  atomically publishes due drafts. Revision tables are groundwork only.
+- Node.js 24 and pnpm 10.15.0 are the supported development/CI/container baseline.
 
 ## Theme system
 - `frontend/src/lib/theme.ts` — three themes: `'light' | 'dark' | 'oled'`.
@@ -97,10 +119,10 @@ docker-compose.yml          # postgres 17 + api + frontend (volumes pgdata, medi
 - `vitest` framework; `tests/` mirror `src/` in both packages.
 - Services test against in-memory repos — no live PostgreSQL required for unit tests.
 - Always run typecheck (`pnpm check` / api `tsc --noEmit`) + `pnpm test` before committing.
-- Run single file: `pnpm --filter blog-api exec vitest run tests/password.test.ts`.
+- Run single file: `pnpm --filter benchcore-api exec vitest run tests/password.test.ts`.
 
 ## Database
 - PostgreSQL only; Drizzle ORM; migrations generated with
-  `pnpm --filter blog-api exec drizzle-kit generate` (offline-safe).
+  `pnpm --filter benchcore-api exec drizzle-kit generate` (offline-safe).
 - IDs are application-generated UUIDs (`crypto.randomUUID()`), no DB extensions.
 - Import upserts by `slug`, never duplicates; per-file errors, non-zero exit.

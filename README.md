@@ -1,112 +1,234 @@
-# Personal Publishing Platform
+<!-- @file README.md -->
+<!-- @brief Project overview, features, quick start, and documentation map. -->
 
-Custom-built personal blog, designed to evolve into a full publishing platform.
-Markdown + TOML is the authoring format; PostgreSQL is the runtime source of truth.
-Obsidian-style `[[wikilinks]]` with backlinks, plus images via a swappable storage seam.
+# BenchCore
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+**Bench-testing, Embedded Networks, & Circuit Hacks: Centralized Open-source Research Engine**
 
-Monorepo: `frontend/` (SvelteKit site) + `api/` (standalone TypeScript service).
-Shared authoring folder: `content/posts/*.md`. Roadmap: `TODO.md`.
+**Markdown authoring. PostgreSQL publishing. An engineering-log interface.**
 
-## Quick start
+BenchCore is a self-hosted research publishing platform with a SvelteKit frontend and a
+standalone TypeScript API. Write Markdown with TOML frontmatter, connect notes
+with Obsidian-style `[[wikilinks]]`, and publish through a session-protected
+admin editor. PostgreSQL is the runtime source of truth; the frontend never
+reads the database or the authoring directory.
 
-Local dev (needs PostgreSQL + `DATABASE_URL`):
+License: **GPL-3.0-only** · Runtime: **Node.js 24** · Package manager:
+**pnpm 10.15.0** · Release target: **0.6.0-beta.1**
+
+## Beta, one origin
+
+The production beta combines frontend and backend into one Node service.
+Pages and `/api/*` share the same domain and port. Run `pnpm build`, configure
+the database and trusted origin, then run `pnpm start` on port **5180**.
+`/register` creates readers only; `/account` changes passwords; `/admin/users`
+manages accounts and protects the final active administrator.
+
+[Beta deployment](docs/BETA_DEPLOYMENT.md) covers the unified Node artifact,
+GitHub CI/CD, HTTPS hosting, explicit migrations, backups and release limits.
+No GHCR/container images are required. **GitHub Pages cannot run the backend.**
+
+## Features
+
+- **Markdown + TOML** — `+++` frontmatter, validated metadata, sanitized HTML,
+  tables, code blocks, images, excerpts, and reading-time estimates.
+- **Wikilinks & backlinks** — `[[slug]]` and `[[slug|label]]` link notes;
+  backlinks show only publicly visible source posts.
+- **Public publishing** — home, paginated posts, post detail, tags, and tag
+  archives. Draft, archived, and not-yet-public content stays out of public data.
+- **Search** — `GET /api/posts?search=...`; PostgreSQL generated `tsvector`
+  with the `simple` configuration and a GIN index in the 0.5.0 milestone.
+- **Admin workbench** — session-protected deck, create/edit/delete posts,
+  write/preview modes, comma-separated tags, and image uploads.
+- **Publishing lifecycle** — draft, published, archived; publication timestamps
+  and a separate scheduled `publishAt` value in the API/admin. The 0.5.0 due
+  publication job runs approximately once per minute.
+- **Media storage seam** — `StorageProvider` isolates callers from the backend;
+  `MEDIA_STORAGE=local|database` selects filesystem images or database blobs.
+- **Authentication** — scrypt password hashes, random session tokens, hashed
+  tokens at rest, HttpOnly cookies, SameSite=Lax, and Secure production cookies.
+- **Database accounts** — username/email login; provision an administrator through
+  private stdin with `pnpm user:create`, without storing account credentials in `.env`.
+- **Security hardening** — exact Origin allowlists, bounded in-memory rate
+  limits, response security headers, and frontend Content Security Policy in
+  the 0.5.0 milestone.
+- **SEO & feeds** — canonical URLs, metadata, sitemap, RSS, and robots routes.
+- **Three themes** — light, dark, and OLED; CSS tokens, persisted preference,
+  and a pre-paint script to reduce theme flashes.
+- **Self-hosting** — Docker Compose for PostgreSQL, API, and frontend;
+  migrations, admin bootstrap, and repeatable content import.
+- **Quality gates** — Vitest suites, frontend/API typechecks, frontend lint,
+  and production builds; CI runs the same checks.
+- **No application telemetry** — no built-in analytics, tracking SDKs, or
+  third-party trackers. Hosts and reverse proxies can still log requests.
+
+**Scope:** 0.6.0-beta.1 is prepared locally, not a published package or a
+promise of a hosted service. Revision storage is groundwork only: no automatic
+revision capture, history browser, diff, or restore workflow is claimed.
+Comments, reactions, newsletter delivery, multi-user collaboration, and other
+deferred roadmap features are not shipped merely because a schema exists.
+See [TODO.md](TODO.md) for milestone status.
+
+## Run it
+
+Prerequisites: Node.js 24, pnpm 10.15.0, and PostgreSQL 17; Docker with Compose
+is the alternative for the full stack.
 
 ```sh
-pnpm install
-pnpm db:migrate       # apply Drizzle migrations
-pnpm seed             # admin bootstrap (ADMIN_EMAIL/PASSWORD) + import content/posts
-pnpm dev:frontend     # site on :5173
-pnpm dev:api          # API on :3001
+git clone https://github.com/camiu01/legendary-octo-bassoon.git
+cd legendary-octo-bassoon
+pnpm install --frozen-lockfile
 ```
 
-Or the full stack via Docker (postgres + api + frontend on :3000):
+If pnpm is not installed, use `npx --yes pnpm@10.15.0` in place of `pnpm`
+throughout the commands below. Do not substitute an unpinned `pnpm@latest`.
+
+To see the public interface without PostgreSQL, run `pnpm demo:api` and
+`pnpm dev:frontend` in separate terminals. The preview uses synthetic public
+notes and keeps authored drafts private. Set `ADMIN_USERNAME` and
+`ADMIN_PASSWORD` in the preview process environment to create an optional
+in-memory administrator. See [Development](docs/DEVELOPMENT.md).
+
+### Local development
+
+Copy `.env.example` to `.env`, set development-only database/admin values, and
+load the required variables into the processes you launch. A root `.env` is a
+reference file, not a guarantee that every CLI loads it automatically.
+See [Development](docs/DEVELOPMENT.md) for PowerShell and POSIX setup.
 
 ```sh
-cp .env.example .env  # adjust passwords and URLs
-pnpm docker:up
+pnpm db:migrate
+pnpm seed
+pnpm dev:api
 ```
 
-Checks: `pnpm test`, `pnpm check`, `pnpm lint`, `pnpm build`.
+In another terminal, with the same relevant environment:
 
-## Architecture
+```sh
+pnpm dev:frontend
+```
+
+Open `http://localhost:5173`; the API listens on `http://localhost:5181`.
+If your database already has an operator account, skip `pnpm seed` and sign in.
+To create an account without importing posts, use `pnpm user:create` as described
+in [Operations](docs/OPERATIONS.md). Sign in at `/login`, then open `/admin`. Set `SITE_URL` and
+`PUBLIC_SITE_URL` to `http://localhost:5173` for local development.
+
+### Docker stack
+
+```sh
+docker compose up --build
+```
+
+The frontend is on `http://localhost:5180`, the API on
+`http://localhost:5181`. Docker uses the frontend's **internal**
+`PUBLIC_API_URL=http://api:5181`; configure its external site/origin URLs as
+`http://localhost:5180`. Compose does not replace the admin-bootstrap step.
+This split Docker stack remains a development/alternative deployment path.
+Use [Beta deployment](docs/BETA_DEPLOYMENT.md) for the single-origin Node delivery.
+
+### Checks
+
+```sh
+pnpm --filter benchcore-api exec tsc --noEmit
+pnpm check
+pnpm test
+pnpm lint
+pnpm build
+```
+
+## Publishing engine
+
+| Layer | Responsibility |
+|---|---|
+| `api/src/markdown/` | Split `+++` fences, parse TOML, validate with Zod, render and sanitize Markdown |
+| `api/src/posts/` | Publishing rules, timestamps, slug conflicts, imports, public DTOs |
+| `api/src/db/` | Repository contracts, memory test doubles, Drizzle implementations and schema |
+| `api/src/auth/` | Password verification, token generation, session hashing and cookies |
+| `api/src/media/` | Swappable image storage behind `StorageProvider` |
+| `api/src/server.ts` | HTTP boundary and routing; services own business rules |
+| `frontend/src/lib/` | Server-only API clients, SEO URL helpers, components, theme state |
+| `frontend/src/routes/` | Public pages, authentication, guarded admin, feeds and metadata routes |
 
 ```text
-content/posts/*.md (Markdown + TOML +++)
-  -> api/src/markdown/* (extract frontmatter, parse TOML, Zod validate, render, sanitize)
-  -> api/src/posts/* (post service, publishing rules, import service)
-  -> PostgreSQL via Drizzle (api/src/db/*)
-  -> api/src/server.ts (REST: auth, posts, tags, media, render)
-  -> frontend/src/routes (public pages + /admin, data from the API only)
+content/posts/*.md
+  -> TOML + Zod -> Markdown + sanitize -> post services
+  -> repository contracts -> PostgreSQL
+  -> standalone HTTP API -> SvelteKit server -> public/admin pages
 ```
 
-Layer rules:
+The database and uploaded media contain runtime state. Import is a deliberate
+upsert by slug, not a live filesystem watcher or two-way editor synchronization.
+Re-importing a file can overwrite later admin edits.
 
-- `api/src/markdown/*`: pure, UI-free content processing. Independently testable.
-- `api/src/db/*`: Drizzle schema + client only. No business rules.
-- `api/src/posts/*`: single home for publishing rules, slug handling, import upsert.
-- `api/src/auth/*`: scrypt hashing, token sessions.
-- `api/src/media/*`: `StorageProvider` seam; local-filesystem backend by default.
-- `frontend/src/lib/theme.ts`: presentation-only theme state (localStorage + data-theme).
-- Routes only call services/the API; no SQL, no Markdown parsing, no rule duplication.
-- No business logic inside Svelte components (theme toggle is presentation state).
+## Structure
+
+```text
+content/posts/                  # Markdown + TOML authoring source
+api/
+  src/auth/                     # scrypt passwords and token sessions
+  src/db/                       # contracts, schema, Drizzle, memory repos
+  src/markdown/                 # frontmatter validation and safe rendering
+  src/posts/                    # publishing, CRUD, import
+  src/media/                    # StorageProvider and backend implementations
+  src/server.ts                 # standalone node:http API
+  src/index.ts                  # dependency wiring and boot
+  scripts/                      # migration, seed, content import
+  drizzle/                      # committed SQL migrations
+  tests/                        # Vitest suites
+frontend/
+  src/lib/components/           # document shell, SEO, theme picker, editor
+  src/lib/server/               # authenticated server-only API client
+  src/routes/                   # public pages, login/logout, admin, feeds
+  src/app.css                   # theme tokens and spec-sheet design
+  src/app.html                  # page shell and pre-paint theme script
+  tests/                        # Vitest suites
+docs/                           # developer, author, API, operations guides
+.github/                        # CI and contribution templates
+docker-compose.yml              # PostgreSQL + API + frontend
+TODO.md                         # milestone roadmap
+```
 
 ## Design system
 
-Engineering-log spec-sheet aesthetic: monospace, blueprint grid background, bordered
-sheet with hard shadow, record cards with stamp badges, spec/inventory tables.
-Three themes (`light` / `dark` / `oled`) via CSS variables on `data-theme`,
-persisted in localStorage, pre-applied in `app.html` to avoid flashes.
-Lives in `frontend/src/app.css` + `frontend/src/lib/theme.ts`.
-Pages reuse `.record`, `.stamp`, `.spec-table`, `.inventory-table`, `.record-body`.
-
-## Database
-
-`users`, `posts` (slug unique, `post_status` enum, `author_id` fk, `published_at`),
-`tags`, `post_tags` (composite pk), `sessions` (token hash unique).
-Index on `(status, published_at)`. IDs are app-generated UUIDs, no DB extensions.
-Migrations: `pnpm db:generate` (offline-safe), `pnpm db:migrate`.
-
-## Authentication
-
-Database sessions: random 32-byte token, SHA-256 hash stored, HttpOnly SameSite=Lax
-cookie (Secure in production), 30-day expiry. Passwords with Node `scrypt` +
-`timingSafeEqual`. Secrets only via environment; never exposed to the client.
-
-## API
-
-`GET /health`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`,
-`GET /api/posts` (paginated, published-only), `GET /api/posts/:slug` (drafts mask as 404),
-`GET /api/tags`, `GET /api/admin/posts*` (guarded), `POST/PUT/DELETE /api/posts`,
-`POST /api/render` (editor preview), `POST/GET/DELETE /api/media/:key`.
-Zod validates every input at the boundary.
-
-## Dependencies (pinned, minimal)
-
-Frontend: `sveltekit`, `svelte`, `vite`, `vitest`, `tailwindcss`, `svelte-check`,
-`eslint`, `prettier`, `zod` (DTO validation). API: `typescript strict`, `vitest`,
-`tsx` (scripts only), `drizzle-orm`, `postgres`, `zod`, `smol-toml`, `marked`,
-`sanitize-html`, plain `node:http` (no web framework).
+An engineering-log spec sheet: monospace typography, blueprint grid, bordered
+sheet with a hard shadow, record cards, stamp badges, and inventory tables.
+Themes use `data-theme` and CSS variables rather than independent page palettes.
+Preference lives in localStorage under `site-theme`; it is not an analytics
+identifier. See [Admin & themes](docs/ADMIN_AND_THEMES.md).
 
 ## Key decisions
 
-1. Split `frontend/` + `api/` so the site and the service deploy and scale independently.
-2. Plain `node:http` for the API: no framework needed for a handful of JSON endpoints.
-3. `+++` TOML fences (not `---` YAML) to avoid ambiguity with Markdown horizontal rules.
-4. No `$lib` alias: SvelteKit 3 deprecated `kit.alias`, so imports use relative paths.
-5. TypeScript 5.9 (not 7): SvelteKit 3 tooling reads `ts.sys` APIs the native port breaks.
-6. SvelteKit 3 config lives in `vite.config.ts` via `sveltekit()`; `svelte.config.js`
-   is rejected, `tsconfig.json` extends `$app/tsconfig`, `Handle` comes from
-   `@sveltejs/kit/hooks`, server code reads `process.env` (no `$env` module).
-7. Import upserts by `slug`, never duplicates; invalid files reported per-file.
-8. Media goes through the `StorageProvider` interface so a database/S3 backend
-   can replace local files without touching callers.
-9. Publishing a post without a date stamps `publishedAt` automatically.
+1. Separate frontend and API so deployments and storage boundaries stay explicit.
+2. Plain `node:http` rather than a web framework for a compact API.
+3. TOML `+++` fences avoid confusion with Markdown horizontal rules.
+4. PostgreSQL owns published runtime data; Markdown remains a portable source.
+5. Services own publishing visibility; unpublished slugs always mask as 404.
+6. HTML is sanitized before it reaches a page or editor preview.
+7. Repository interfaces keep unit tests independent of a live database.
+8. Media callers use an interface, never filesystem paths or blob SQL.
+9. SvelteKit 3 configuration lives in `vite.config.ts`; relative imports and
+   server-only `process.env` keep tooling and secret boundaries predictable.
+10. Dependencies are pinned; pnpm's lockfile is part of the reproducible build.
 
-## Milestones
+## Documentation
 
-Shipped: scaffolding + DX, content pipeline (TOML/Zod/Markdown/sanitize/wikilinks),
-database + import CLI, session auth, public site + SEO, Obsidian-style admin editor,
-media uploads, Docker stack. See `TODO.md` for the checked-off list.
-Pending: hardening (CSRF, rate limits, CSP), search, revisions, CI, release 0.5.0.
+| Guide | Contents |
+|---|---|
+| [Documentation index](docs/README.md) | Suggested reading paths and scope |
+| [Architecture](docs/ARCHITECTURE.md) | Data flow, module boundaries, database, trust boundaries |
+| [Development](docs/DEVELOPMENT.md) | Prerequisites, shell setup, environment, commands |
+| [Authoring](docs/AUTHORING.md) | TOML fields, Markdown, links, import, scheduling |
+| [API](docs/API.md) | Routes, payloads, cookies, Origin, search, media, errors |
+| [Admin & themes](docs/ADMIN_AND_THEMES.md) | Editorial workflow, image handling, design tokens |
+| [Operations](docs/OPERATIONS.md) | Deployment, migrations, backup/restore, incident checks |
+| [Testing](docs/TESTING.md) | Automated checks, regression coverage, manual smoke tests |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common setup and runtime failures |
+| [Contributing](CONTRIBUTING.md) | Workflow, conventions, PR checklist |
+| [Security policy](SECURITY.md) | Private reporting, privacy, supported scope |
+| [Threat model](docs/THREAT_MODEL.md) | Assets, attackers, controls, operational limitations |
+
+## License
+
+Maintained by **Camiu** ([@camiu01](https://github.com/camiu01)).
+GPL-3.0-only — see [LICENSE](LICENSE).

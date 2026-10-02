@@ -2,7 +2,26 @@
  * @file schema.ts
  * @brief Drizzle table definitions: users, posts, tags, post_tags, sessions.
  */
-import { boolean, date, index, integer, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { boolean, customType, date, index, integer, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+
+/** @brief PostgreSQL full-text vector, maintained exclusively by PostgreSQL. */
+const tsvector = customType<{ data: string }>({
+	/**
+	 * @brief Identifies the native PostgreSQL column type.
+	 * @return The SQL type name.
+	 */
+	dataType() { return 'tsvector'; }
+});
+
+/** @brief Binary media payload represented as a Node Buffer. */
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+	/**
+	 * @brief Identifies the native PostgreSQL column type.
+	 * @return The SQL type name.
+	 */
+	dataType() { return 'bytea'; }
+});
 
 /**
  * @brief Post lifecycle states.
@@ -20,11 +39,14 @@ export type PostStatus = (typeof postStatusEnum.enumValues)[number];
 export const users = pgTable('users', {
 	id: uuid('id').primaryKey(),
 	email: text('email').notNull().unique(),
+	username: text('username').unique(),
 	passwordHash: text('password_hash').notNull(),
 	name: text('name').notNull(),
-	role: text('role').notNull().default('admin'),
+	role: text('role').notNull().default('reader'),
+	isActive: boolean('is_active').notNull().default(true),
+	sessionVersion: integer('session_version').notNull().default(0),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
-});
+}, (t) => [uniqueIndex('users_email_normalized_idx').on(sql`lower(${t.email})`)]);
 
 /**
  * @brief Blog posts. PostgreSQL is the runtime source of truth.
@@ -43,11 +65,30 @@ export const posts = pgTable(
 		status: postStatusEnum('status').notNull().default('draft'),
 		authorId: uuid('author_id').references(() => users.id),
 		publishedAt: timestamp('published_at', { withTimezone: true }),
+		publishAt: timestamp('publish_at', { withTimezone: true }),
+		searchVector: tsvector('search_vector').notNull().generatedAlwaysAs(
+			sql`to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(description, '') || ' ' || coalesce(content_markdown, ''))`
+		),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 	},
-	(t) => [index('posts_status_published_idx').on(t.status, t.publishedAt)]
+	(t) => [
+		index('posts_status_published_idx').on(t.status, t.publishedAt),
+		index('posts_search_vector_idx').using('gin', t.searchVector),
+		index('posts_publish_at_idx').on(t.publishAt).where(sql`${t.status} = 'draft'`)
+	]
 );
+
+/**
+ * @brief Database-backed media records and binary payloads.
+ */
+export const mediaBlobs = pgTable('media_blobs', {
+	key: text('key').primaryKey(),
+	filename: text('filename').notNull(),
+	mime: text('mime').notNull(),
+	sizeBytes: integer('size_bytes').notNull(),
+	data: bytea('data').notNull()
+});
 
 /**
  * @brief Tags with unique slugs.
@@ -80,6 +121,7 @@ export const postTags = pgTable(
 export const sessions = pgTable('sessions', {
 	id: uuid('id').primaryKey(),
 	tokenHash: text('token_hash').notNull().unique(),
+	userVersion: integer('user_version').notNull().default(0),
 	userId: uuid('user_id')
 		.notNull()
 		.references(() => users.id, { onDelete: 'cascade' }),

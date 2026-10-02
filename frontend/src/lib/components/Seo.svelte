@@ -1,4 +1,6 @@
+<!-- @file Seo.svelte @brief Engineering-log page and presentation component. -->
 <script lang="ts">
+	import { PROJECT_NAME } from '../branding.js';
 	/**
 	 * Reusable SEO head block: title, description, canonical,
 	 * Open Graph and Twitter/X card metadata.
@@ -18,6 +20,7 @@
 	<meta name="description" content={description} />
 	<link rel="canonical" href={canonical} />
 	<meta property="og:type" content="article" />
+	<meta property="og:site_name" content={PROJECT_NAME} />
 	<meta property="og:title" content={title} />
 	<meta property="og:description" content={description} />
 	<meta property="og:url" content={canonical} />
