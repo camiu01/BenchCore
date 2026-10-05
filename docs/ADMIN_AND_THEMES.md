@@ -12,7 +12,8 @@ provides a tag inventory; it is not a promised independent tag-management API.
 
 Admin routes resolve the browser session through the API. Redirects and page
 guards are convenience controls; the API also requires a session for protected
-operations. There is no public sign-up or password-reset email workflow.
+operations. Public reader registration and Resend-backed password recovery are
+available when their deployment settings are configured.
 
 ## Editing
 

@@ -1,6 +1,6 @@
 /**
  * @file schema.ts
- * @brief Drizzle table definitions: users, posts, tags, post_tags, sessions.
+ * @brief Drizzle table definitions for accounts, content, sessions and recovery tokens.
  */
 import { sql } from 'drizzle-orm';
 import { boolean, customType, date, index, integer, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
@@ -128,6 +128,19 @@ export const sessions = pgTable('sessions', {
 	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });
+
+/**
+ * @brief Single-use password recovery tokens. Only SHA-256 hashes are stored.
+ */
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+	id: uuid('id').primaryKey(),
+	tokenHash: text('token_hash').notNull().unique(),
+	userId: uuid('user_id')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+}, (t) => [index('password_reset_user_idx').on(t.userId)]);
 
 /**
  * @brief Comment moderation states.
@@ -260,6 +273,11 @@ export type TagRow = typeof tags.$inferSelect;
  * @brief A session row.
  */
 export type SessionRow = typeof sessions.$inferSelect;
+
+/**
+ * @brief A password recovery token row.
+ */
+export type PasswordResetTokenRow = typeof passwordResetTokens.$inferSelect;
 
 /**
  * @brief A comment row.

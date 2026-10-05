@@ -54,8 +54,10 @@ pnpm as root. Existing versioned artifacts are intentionally not overwritten.
   unexpectedly resurrected sessions.
 - A successful `/health` response does not prove session-table access works.
 
-There is no claimed public password-reset workflow. Investigate an intentional
-administrative recovery procedure rather than repeatedly re-seeding.
+For password recovery failures, verify `RESEND_API_KEY`,
+`PASSWORD_RESET_FROM`, and `SITE_URL`. The request intentionally returns the
+same result for existing and unknown accounts, so inspect the Resend delivery
+status without logging reset URLs or tokens. Do not repeatedly re-seed.
 
 ## Mutation returns 403
 

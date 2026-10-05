@@ -15,13 +15,20 @@ let server: Server;
 let base: string;
 let repos: ReturnType<typeof createTestRepos>;
 let adminId: string;
+let deliveredUrls: string[];
 
 beforeEach(async () => {
 	repos = createTestRepos();
 	adminId = randomUUID();
 	await repos.users.create({ id: adminId, username: 'operator', email: 'operator@example.test',
 		name: 'Operator', role: 'admin', passwordHash: await hashPassword(password) });
-	server = startServer(0, createHandler(createTestDeps(repos)), '127.0.0.1');
+	deliveredUrls = [];
+	const deps = createTestDeps(repos);
+	deps.passwordReset = {
+		siteUrl: 'http://localhost:5173',
+		delivery: { send: async (_user, resetUrl) => { deliveredUrls.push(resetUrl); } }
+	};
+	server = startServer(0, createHandler(deps), '127.0.0.1');
 	await new Promise<void>((resolve) => server.once('listening', resolve));
 	base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 });
@@ -112,6 +119,31 @@ describe('beta accounts', () => {
 		for (const cookie of [first, second]) { expect((await request('/api/auth/me', 'GET', undefined, cookie)).status).toBe(401); }
 		expect((await request('/api/auth/login', 'POST', { username: 'reader', password })).status).toBe(401);
 		expect(await login('reader', 'new-long-password')).toBeTruthy();
+	});
+	it('resets forgotten passwords with an opaque single-use token and generic request response', async () => {
+		await reader();
+		const cookie = await login('reader');
+		const known = await request('/api/auth/password/forgot', 'POST', { email: 'reader@example.test' });
+		const unknown = await request('/api/auth/password/forgot', 'POST', { email: 'missing@example.test' });
+		expect(known.status).toBe(202);
+		expect(unknown.status).toBe(202);
+		expect(await known.json()).toEqual(await unknown.json());
+		expect(deliveredUrls).toHaveLength(1);
+		const token = new URL(deliveredUrls[0]!).searchParams.get('token');
+		expect(token).toMatch(/^[A-Za-z0-9_-]{43}$/);
+		expect(JSON.stringify(await unknown.json().catch(() => null))).not.toContain('missing@example.test');
+		const reset = await request('/api/auth/password/reset', 'POST', {
+			token,
+			newPassword: 'recovered-long-password'
+		});
+		expect(reset.status).toBe(200);
+		expect((await request('/api/auth/me', 'GET', undefined, cookie)).status).toBe(401);
+		expect((await request('/api/auth/password/reset', 'POST', {
+			token,
+			newPassword: 'another-long-password'
+		})).status).toBe(400);
+		expect((await request('/api/auth/login', 'POST', { username: 'reader', password })).status).toBe(401);
+		expect(await login('reader', 'recovered-long-password')).toBeTruthy();
 	});
 	it('revokes privilege-bearing sessions when an admin is demoted', async () => {
 		const user = await reader();

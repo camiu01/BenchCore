@@ -29,6 +29,8 @@ not accept a slug for mutation even though the public route shares the prefix.
 | POST | `/api/auth/login` | Credentials + trusted Origin | User and session cookie |
 | POST | `/api/auth/register` | Trusted Origin, no session | Create a reader; no automatic login |
 | POST | `/api/auth/password` | Session + current password + trusted Origin | Rotate own password, revoke all sessions |
+| POST | `/api/auth/password/forgot` | Trusted Origin | Send a password recovery link |
+| POST | `/api/auth/password/reset` | Trusted Origin + reset token | Reset password and revoke all sessions |
 | POST | `/api/auth/logout` | Trusted Origin | Revoke session and clear cookie |
 | GET | `/api/auth/me` | Session | Current user |
 | GET | `/api/posts` | Public | Published-only page |
@@ -86,6 +88,11 @@ Registered email addresses are not verified.
 Password changes accept `currentPassword` and `newPassword` only, and require
 a different 12–200 character new password. The password hash and session version
 change atomically; every previous cookie stops authenticating.
+Password recovery requires `RESEND_API_KEY`, `PASSWORD_RESET_FROM`, and
+`SITE_URL`. The request endpoint always returns the same 202 response for a
+valid email shape, whether or not an active account exists. Recovery links
+expire after one hour and can be used once. Only SHA-256 token hashes are
+stored; a successful reset revokes all existing sessions.
 Role/activation PATCH accepts only `role: "reader" | "admin"` and/or
 `isActive: boolean`. Removing the final active administrator returns 409.
 User DTOs never expose hashes, plaintext passwords or session versions.

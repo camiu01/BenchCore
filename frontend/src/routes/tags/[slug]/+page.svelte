@@ -14,7 +14,7 @@
 </script>
 
 <Seo
-	title="Tag {data.tag} — BenchCore"
+	title="Tag {data.tag} | BenchCore"
 	description="Records filed under {data.tag}."
 	canonical="{data.siteBase}/tags/{encodeURIComponent(data.tag)}"
 />

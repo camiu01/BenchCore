@@ -48,6 +48,10 @@ export interface UserRepository {
 	listPage(limit: number, offset: number): Promise<{ items: UserRow[]; total: number }>;
 	/** @brief Atomically changes credentials and revokes sessions. @param id Owner. @param currentHash Expected hash. @param newHash New hash. @return Whether changed. */
 	changePassword(id: string, currentHash: string, newHash: string): Promise<boolean>;
+	/** @brief Replaces an owner's recovery token. @param userId Owner. @param tokenHash Token digest. @param expiresAt Expiry. @return Completion. */
+	createPasswordReset(userId: string, tokenHash: string, expiresAt: Date): Promise<void>;
+	/** @brief Consumes a valid recovery token and revokes sessions. @param tokenHash Token digest. @param newHash New password hash. @param now Reference time. @return Whether reset. */
+	resetPassword(tokenHash: string, newHash: string, now: Date): Promise<boolean>;
 	/** @brief Applies admin-only changes, protecting the last admin. @param actorId Admin. @param id Target. @param patch Validated fields. @return Result. */
 	manage(actorId: string, id: string, patch: UserPatch): Promise<UserRow | 'forbidden' | 'last_admin' | null>;
 }

@@ -4,6 +4,12 @@
  */
 import { z } from 'zod';
 import { changeOwnPassword, passwordChangeSchema, registerUser, registrationSchema, userPatchSchema } from '../auth/accounts.js';
+import {
+	consumePasswordReset,
+	issuePasswordReset,
+	passwordResetRequestSchema,
+	passwordResetSchema
+} from '../auth/password-reset.js';
 import { clearSessionCookieHeader } from '../auth/session.js';
 import type { ApiHandler } from './types.js';
 import { getSessionUser, requireUser, userDto } from './auth.js';
@@ -37,6 +43,41 @@ export const handleChangePassword: ApiHandler = async (req, res, deps) => {
 	if (!parsed.success) { sendJson(res, 400, { error: 'validation', message: 'Use a different 12+ character password' }); return; }
 	if (!await changeOwnPassword(deps.users, user, parsed.data)) { sendJson(res, 400, { error: 'validation', message: 'Current password is incorrect or account changed' }); return; }
 	sendJson(res, 200, { ok: true }, { 'set-cookie': clearSessionCookieHeader() });
+};
+
+/**
+ * @brief Sends a recovery link while returning the same response for every valid email.
+ * @param req Request. @param res Response. @param deps Dependencies.
+ * @return Completion.
+ */
+export const handlePasswordResetRequest: ApiHandler = async (req, res, deps) => {
+	const body = await readBody(req, res);
+	if (!body) { return; }
+	const parsed = passwordResetRequestSchema.safeParse(body.data);
+	if (!parsed.success) { sendJson(res, 400, { error: 'validation' }); return; }
+	if (!deps.passwordReset) { sendJson(res, 503, { error: 'internal' }); return; }
+	const issued = await issuePasswordReset(deps.users, parsed.data.email);
+	if (issued) {
+		const resetUrl = `${deps.passwordReset.siteUrl}/reset-password?token=${encodeURIComponent(issued.token)}`;
+		await deps.passwordReset.delivery.send(issued.user, resetUrl).catch(() => undefined);
+	}
+	sendJson(res, 202, { ok: true });
+};
+
+/**
+ * @brief Consumes a live recovery token and revokes every owner session.
+ * @param req Request. @param res Response. @param deps Dependencies.
+ * @return Completion.
+ */
+export const handlePasswordReset: ApiHandler = async (req, res, deps) => {
+	const body = await readBody(req, res);
+	if (!body) { return; }
+	const parsed = passwordResetSchema.safeParse(body.data);
+	if (!parsed.success) { sendJson(res, 400, { error: 'validation' }); return; }
+	const changed = await consumePasswordReset(deps.users, parsed.data.token, parsed.data.newPassword);
+	sendJson(res, changed ? 200 : 400, changed
+		? { ok: true }
+		: { error: 'validation', message: 'Reset link is invalid or expired' });
 };
 
 /**

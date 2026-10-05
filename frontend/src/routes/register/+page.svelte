@@ -11,7 +11,7 @@
 </script>
 
 <Seo
-	title="Register — BenchCore"
+	title="Register | BenchCore"
 	description="Create a reader account."
 	canonical="{data.siteBase}/register"
 />

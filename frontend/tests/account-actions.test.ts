@@ -8,6 +8,8 @@ import { actions as register } from '../src/routes/register/+page.server.js';
 import { actions as account } from '../src/routes/account/+page.server.js';
 import { actions as users } from '../src/routes/admin/users/+page.server.js';
 import { actions as login } from '../src/routes/login/+page.server.js';
+import { actions as forgotPassword } from '../src/routes/forgot-password/+page.server.js';
+import { actions as resetPassword } from '../src/routes/reset-password/+page.server.js';
 
 afterEach(() => {
 	vi.unstubAllGlobals();
@@ -95,6 +97,24 @@ describe('account browser boundaries', () => {
 			} as unknown as Parameters<NonNullable<typeof account.password>>[0])
 		).rejects.toMatchObject({ location: '/login?passwordChanged=1' });
 		expect(cookies.delete).toHaveBeenCalledWith('session', { path: '/' });
+	});
+	it('requests recovery and never reflects reset credentials', async () => {
+		const fetcher = vi.fn().mockResolvedValue(Response.json({ ok: true }, { status: 202 }));
+		vi.stubGlobal('fetch', fetcher);
+		const requested = await forgotPassword.default!({
+			request: formRequest({ email: 'reader@example.test' })
+		} as Parameters<NonNullable<typeof forgotPassword.default>>[0]);
+		expect(requested).toEqual({ success: true });
+		expect(JSON.parse(fetcher.mock.calls[0]![1].body)).toEqual({ email: 'reader@example.test' });
+		const invalid = await resetPassword.default!({
+			request: formRequest({
+				token: 'a'.repeat(43),
+				newPassword: 'private-new-password',
+				confirmation: 'different-private-password'
+			})
+		} as Parameters<NonNullable<typeof resetPassword.default>>[0]);
+		expect(JSON.stringify(invalid)).not.toContain('private-new-password');
+		expect(JSON.stringify(invalid)).not.toContain('different-private-password');
 	});
 	it('rejects reader user-management actions before calling the API', async () => {
 		const fetcher = vi.fn();

@@ -16,7 +16,7 @@
 </script>
 
 <Seo
-	title="Admin — BenchCore"
+	title="Admin | BenchCore"
 	description="Operator dashboard."
 	canonical="{data.siteBase}/admin"
 />

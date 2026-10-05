@@ -14,7 +14,7 @@
 </script>
 
 <Seo
-	title="Records — BenchCore"
+	title="Records | BenchCore"
 	description="Every published record, newest first."
 	canonical="{data.siteBase}/posts"
 />

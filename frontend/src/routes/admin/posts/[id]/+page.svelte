@@ -20,7 +20,7 @@
 </script>
 
 <Seo
-	title="Edit record — BenchCore Admin"
+	title="Edit record | BenchCore Admin"
 	description="Edit a filed record."
 	canonical="{data.siteBase}/admin"
 />

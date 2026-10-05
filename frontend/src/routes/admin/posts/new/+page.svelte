@@ -20,7 +20,7 @@
 </script>
 
 <Seo
-	title="New record — BenchCore Admin"
+	title="New record | BenchCore Admin"
 	description="File a new record."
 	canonical="{data.siteBase}/admin/posts/new"
 />

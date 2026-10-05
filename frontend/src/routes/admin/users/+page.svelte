@@ -11,7 +11,7 @@
 </script>
 
 <Seo
-	title="Users — BenchCore"
+	title="Users | BenchCore"
 	description="Administrator user management."
 	canonical="{data.siteBase}/admin/users"
 />

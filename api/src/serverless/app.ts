@@ -8,6 +8,7 @@ import { getDb, checkDb } from '../db/client.js';
 import { configuredStorage } from '../media/configured.js';
 import { configuredOrigins } from '../http/security.js';
 import { nodeHandlerFetch } from '../http/web.js';
+import { configuredPasswordReset } from '../auth/password-reset-delivery.js';
 
 /**
  * @brief Validates Vercel configuration and wires the same API services as Node delivery.
@@ -24,7 +25,9 @@ export function createServerlessApp(env: NodeJS.ProcessEnv) {
 		origins.push(`https://${env['VERCEL_URL']}`);
 	}
 	const db = getDb();
+	const passwordReset = configuredPasswordReset(env);
 	const handler = createHandler({ ...createDrizzleRepos(db), media: configuredStorage(db, env),
+		...(passwordReset ? { passwordReset } : {}),
 		cookieSecure: env['NODE_ENV'] === 'production', allowedOrigins: origins });
 	return {
 		handler,

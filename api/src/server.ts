@@ -10,7 +10,13 @@ import { handleLogin, handleLogout, handleMe } from './http/auth.js';
 import { handleAdminPosts, handleAdminTags, handleGetPost, handleListPosts, handleListTags,
 	handleRenderPreview, handleWritePost } from './http/posts.js';
 import { handleMedia, handleUploadMedia } from './http/media.js';
-import { handleChangePassword, handleRegister, handleUsers } from './http/accounts.js';
+import {
+	handleChangePassword,
+	handlePasswordReset,
+	handlePasswordResetRequest,
+	handleRegister,
+	handleUsers
+} from './http/accounts.js';
 import { handlePrepareUpload, handleCompleteUpload } from './http/direct-media.js';
 
 export type { ApiDeps, ErrorPayload } from './http/types.js';
@@ -27,6 +33,8 @@ const routes: { path: RegExp; handlers: Record<string, ApiHandler> }[] = [
 	{ path: /^\/api\/auth\/login$/, handlers: { POST: handleLogin } },
 	{ path: /^\/api\/auth\/register$/, handlers: { POST: handleRegister } },
 	{ path: /^\/api\/auth\/password$/, handlers: { POST: handleChangePassword } },
+	{ path: /^\/api\/auth\/password\/forgot$/, handlers: { POST: handlePasswordResetRequest } },
+	{ path: /^\/api\/auth\/password\/reset$/, handlers: { POST: handlePasswordReset } },
 	{ path: /^\/api\/auth\/logout$/, handlers: { POST: handleLogout } },
 	{ path: /^\/api\/auth\/me$/, handlers: { GET: handleMe } },
 	{ path: /^\/api\/posts$/, handlers: { GET: handleListPosts, POST: handleWritePost } },

@@ -14,7 +14,7 @@
 </script>
 
 <Seo
-	title="Tags — BenchCore"
+	title="Tags | BenchCore"
 	description="Every tag in the archive with record counts."
 	canonical="{data.siteBase}/tags"
 />

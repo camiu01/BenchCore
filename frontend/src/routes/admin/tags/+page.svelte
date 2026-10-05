@@ -14,7 +14,7 @@
 </script>
 
 <Seo
-	title="Tags — BenchCore Admin"
+	title="Tags | BenchCore Admin"
 	description="Tag catalog."
 	canonical="{data.siteBase}/admin/tags"
 />

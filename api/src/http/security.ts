@@ -82,7 +82,13 @@ export function createSecurityGuard(deps: ApiDeps): (req: IncomingMessage, res: 
 		const existing = clients.get(key);
 		const state = existing && existing.reset > now ? existing : { reset: now + limits.windowMs, requests: 0, logins: 0 };
 		state.requests += 1;
-		const credentials = ['/api/auth/login', '/api/auth/register', '/api/auth/password'].includes(url.pathname);
+		const credentials = [
+			'/api/auth/login',
+			'/api/auth/register',
+			'/api/auth/password',
+			'/api/auth/password/forgot',
+			'/api/auth/password/reset'
+		].includes(url.pathname);
 		if (credentials) { state.logins += 1; }
 		clients.set(key, state);
 		if (state.requests > limits.requests || state.logins > limits.loginRequests && credentials) {

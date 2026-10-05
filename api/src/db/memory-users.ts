@@ -8,6 +8,7 @@ import type { UserRow } from './schema.js';
 /** @brief Synchronous account mutations emulate atomic database operations. */
 class MemoryUsers implements UserRepository {
 	private readonly rows = new Map<string, UserRow>();
+	private readonly resetTokens = new Map<string, { userId: string; expiresAt: Date }>();
 	/** @brief Finds a username. @param username Login. @return Owner or null. */
 	async findByUsername(username: string) {
 		return [...this.rows.values()].find((row) => row.username === username.toLowerCase()) ?? null;
@@ -38,6 +39,26 @@ class MemoryUsers implements UserRepository {
 		const row = this.rows.get(id);
 		if (!row || !row.isActive || row.passwordHash !== currentHash) { return false; }
 		this.rows.set(id, { ...row, passwordHash: newHash, sessionVersion: row.sessionVersion + 1 });
+		return true;
+	}
+	/** @brief Replaces an owner's reset token. @param userId Owner. @param tokenHash Digest. @param expiresAt Expiry. @return Completion. */
+	async createPasswordReset(userId: string, tokenHash: string, expiresAt: Date) {
+		for (const [hash, token] of this.resetTokens) {
+			if (token.userId === userId) { this.resetTokens.delete(hash); }
+		}
+		this.resetTokens.set(tokenHash, { userId, expiresAt });
+	}
+	/** @brief Consumes one live token and rotates credentials. @param tokenHash Digest. @param newHash Password hash. @param now Reference time. @return Whether reset. */
+	async resetPassword(tokenHash: string, newHash: string, now: Date) {
+		const token = this.resetTokens.get(tokenHash);
+		this.resetTokens.delete(tokenHash);
+		if (!token || token.expiresAt <= now) { return false; }
+		const row = this.rows.get(token.userId);
+		if (!row?.isActive) { return false; }
+		for (const [hash, candidate] of this.resetTokens) {
+			if (candidate.userId === row.id) { this.resetTokens.delete(hash); }
+		}
+		this.rows.set(row.id, { ...row, passwordHash: newHash, sessionVersion: row.sessionVersion + 1 });
 		return true;
 	}
 	/** @brief Applies protected admin changes. @param actorId Admin. @param id Target. @param patch Fields. @return Result. */

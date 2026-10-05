@@ -13,7 +13,7 @@
 	];
 </script>
 
-<Seo title="Login — BenchCore" description="Operator sign-in." canonical="{data.siteBase}/login" />
+<Seo title="Login | BenchCore" description="Operator sign-in." canonical="{data.siteBase}/login" />
 
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: AUTH"
@@ -32,6 +32,7 @@
 			{#if form?.error !== undefined}
 				<span class="error-stamp">{form.error}</span>
 			{/if}
+			{#if data.notice}<p class="summary" role="status">{data.notice}</p>{/if}
 			<form method="POST" action="?/login">
 				<div class="form-grid">
 					<div>
@@ -62,6 +63,7 @@
 				<div class="btn-row">
 					<button class="btn btn-accent" type="submit">SIGN IN →</button>
 					<a class="btn" href="/register">CREATE READER ACCOUNT</a>
+					<a class="btn" href="/forgot-password">FORGOT PASSWORD</a>
 				</div>
 			</form>
 		</article>

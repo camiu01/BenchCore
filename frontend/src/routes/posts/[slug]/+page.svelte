@@ -16,7 +16,7 @@
 </script>
 
 <Seo
-	title="{data.post.title} — BenchCore"
+	title="{data.post.title} | BenchCore"
 	description={data.post.description || data.post.title}
 	{canonical}
 	image={data.coverAbsolute}

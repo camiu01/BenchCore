@@ -16,11 +16,18 @@ import { sessionSchema } from '../../lib/server/session.js';
  * @param event The current request event.
  * @return The result, or a redirect for completed mutations.
  */
-export const load: PageServerLoad = ({ locals }) => {
+export const load: PageServerLoad = ({ locals, url }) => {
 	if (locals.user !== null) {
 		throw redirect(303, locals.user.role === 'admin' ? '/admin' : '/account');
 	}
-	return {};
+	const notice = url.searchParams.has('passwordReset')
+		? 'Password reset. You can now sign in.'
+		: url.searchParams.has('passwordChanged')
+			? 'Password changed. Sign in again.'
+			: url.searchParams.has('registered')
+				? 'Account created. You can now sign in.'
+				: null;
+	return { notice };
 };
 
 export const actions: Actions = {

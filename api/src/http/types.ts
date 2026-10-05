@@ -4,6 +4,7 @@
  */
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { PostRepository, SessionRepository, TagRepository, UserRepository } from '../db/repositories.js';
+import type { PasswordResetDelivery } from '../auth/password-reset-delivery.js';
 import type { StorageProvider } from '../media/storage.js';
 
 export interface ApiDeps {
@@ -12,6 +13,7 @@ export interface ApiDeps {
 	posts: PostRepository;
 	tags: TagRepository;
 	media: StorageProvider;
+	passwordReset?: { delivery: PasswordResetDelivery; siteUrl: string };
 	cookieSecure: boolean;
 	allowedOrigins?: string[];
 	clientAddress?: (req: IncomingMessage) => string;

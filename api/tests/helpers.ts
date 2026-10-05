@@ -45,5 +45,6 @@ export function createTestRepos(): TestRepos {
  */
 export function createTestDeps(repos: TestRepos): ApiDeps {
 	return { ...repos, cookieSecure: false, allowedOrigins: ['http://localhost:5173'],
+		passwordReset: { siteUrl: 'http://localhost:5173', delivery: { send: async () => undefined } },
 		rateLimit: { windowMs: 60_000, requests: 1000, loginRequests: 1000 } };
 }

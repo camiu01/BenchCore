@@ -11,7 +11,7 @@
 </script>
 
 <Seo
-	title="Account — BenchCore"
+	title="Account | BenchCore"
 	description="Account security."
 	canonical="{data.siteBase}/account"
 />

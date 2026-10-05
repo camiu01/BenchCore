@@ -2,10 +2,11 @@
  * @file drizzle-users.ts
  * @brief User persistence with serialized admin changes and version-based session revocation.
  */
-import { and, count, eq, sql } from 'drizzle-orm';
+import { and, count, eq, gt, sql } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 import type { AppDb } from './client.js';
 import type { UserCreate, UserPatch, UserRepository } from './repositories.js';
-import { sessions, users } from './schema.js';
+import { passwordResetTokens, sessions, users } from './schema.js';
 
 /** @brief SQL-backed account operations. */
 class DrizzleUsers implements UserRepository {
@@ -42,6 +43,30 @@ class DrizzleUsers implements UserRepository {
 				.where(and(eq(users.id, id), eq(users.passwordHash, currentHash), eq(users.isActive, true))).returning({ id: users.id });
 			if (!rows[0]) { return false; }
 			await tx.delete(sessions).where(eq(sessions.userId, id));
+			return true;
+		});
+	}
+	/** @brief Replaces an owner's reset token. @param userId Owner. @param tokenHash Digest. @param expiresAt Expiry. @return Completion. */
+	async createPasswordReset(userId: string, tokenHash: string, expiresAt: Date) {
+		await this.db.transaction(async (tx) => {
+			await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+			await tx.insert(passwordResetTokens).values({ id: randomUUID(), userId, tokenHash, expiresAt });
+		});
+	}
+	/** @brief Consumes one live token and rotates credentials. @param tokenHash Digest. @param newHash Password hash. @param now Reference time. @return Whether reset. */
+	async resetPassword(tokenHash: string, newHash: string, now: Date) {
+		return this.db.transaction(async (tx) => {
+			const token = (await tx.delete(passwordResetTokens)
+				.where(and(eq(passwordResetTokens.tokenHash, tokenHash), gt(passwordResetTokens.expiresAt, now)))
+				.returning({ userId: passwordResetTokens.userId }))[0];
+			if (!token) { return false; }
+			const changed = (await tx.update(users)
+				.set({ passwordHash: newHash, sessionVersion: sql`${users.sessionVersion} + 1` })
+				.where(and(eq(users.id, token.userId), eq(users.isActive, true)))
+				.returning({ id: users.id }))[0];
+			if (!changed) { return false; }
+			await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, token.userId));
+			await tx.delete(sessions).where(eq(sessions.userId, token.userId));
 			return true;
 		});
 	}
