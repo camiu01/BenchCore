@@ -18,6 +18,15 @@ command. Remove old project-level build/output overrides.
 Do not override the output directory or deploy a Windows-generated output:
 Vercel must build the repository on Linux.
 
+The API's `build:vercel` command typechecks without emitting `dist`, then bundles
+the Fetch entrypoint and its dependencies into `output/index.mjs`. The explicit
+ESM extension and self-contained bundle avoid lost package metadata and broken
+dependency links. Vercel's backend builder otherwise prefers a detected
+`dist/index.js`, starting the standalone server instead of the Fetch handler.
+Keep `pnpm build` for Node artifacts and operator CLIs, not the API service's
+Vercel build command. After changing this command, redeploy without the existing
+build cache.
+
 The `frontend` service declares a one-way `API_SERVICE_URL` URL binding to `api`.
 Vercel injects it **at Function runtime**. Do not define it in project settings,
 env files or build scripts. Server-side reads, actions and session checks use
@@ -115,7 +124,10 @@ chosen port first. Do not use ports 3000/3001 for this repository.
 - Before production: rotate bootstrap passwords, verify backups/restores, set
   trusted HTTPS origins, and use deployment protection for private previews.
 - Run `pnpm check`, `pnpm test`, `pnpm lint`, `pnpm build`, and
-  `pnpm build:vercel`. CI also builds the Linux Vercel target.
+  `pnpm build:vercel`. Run `pnpm test:vercel-api` to build the API with the pinned
+  production backend builder and load its actual packaged entrypoint in a
+  credential-free fixture. CI runs both Vercel checks on Linux.
+  This loads the unmodified packaged ESM bundle on Windows and Linux.
 - On the configured deployment, check `/health/live`, `/health/ready`, public
   pages and `/api/posts`. Test registration/login/password revocation and an
   administrator upload at exactly 5 MiB. Confirm bucket preflight/PUT succeeds,

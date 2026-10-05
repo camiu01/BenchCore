@@ -6,7 +6,7 @@
 			"runtime": "node",
 			"entrypoint": "src/vercel.ts",
 			"installCommand": "pnpm install --frozen-lockfile",
-			"buildCommand": "pnpm run build",
+			"buildCommand": "pnpm run build:vercel",
 			"devCommand": "pnpm run dev:vercel"
 		},
 		"frontend": {

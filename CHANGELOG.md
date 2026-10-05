@@ -5,6 +5,10 @@ Version 0.6.0-beta.1 is prepared locally. No tag, hosted release or deployment i
 
 ## Unreleased
 
+- Prevent Vercel's API builder from selecting standalone `dist/index.js` instead
+  of the Fetch entrypoint. Bundle a self-contained ESM API and verify production
+  packaging without cloud credentials.
+
 - Configure root Vercel Services for independently built `api` and `frontend`,
   same-origin API/health routing and runtime-only frontend-to-API binding.
 

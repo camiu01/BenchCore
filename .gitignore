@@ -9,6 +9,7 @@ node_modules/
 !.env.production.example
 data/
 dist/
+api/output/
 .preview/
 artifacts/
 .vercel/

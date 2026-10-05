@@ -10,6 +10,6 @@ const executable = process.env['npm_execpath'];
 if (!executable?.includes('pnpm')) { throw new Error('Use pnpm build:vercel'); }
 const env = { ...process.env, DEPLOYMENT_TARGET: 'vercel', SCHEDULER_ENABLED: 'false' };
 if (!process.argv.includes('--frontend-only')) {
-	execFileSync(process.execPath, [executable, '--filter', 'benchcore-api', 'build'], { cwd: root, env, stdio: 'inherit' });
+	execFileSync(process.execPath, [executable, '--filter', 'benchcore-api', 'build:vercel'], { cwd: root, env, stdio: 'inherit' });
 }
 execFileSync(process.execPath, [executable, '--filter', 'benchcore-frontend', 'build'], { cwd: root, env, stdio: 'inherit' });

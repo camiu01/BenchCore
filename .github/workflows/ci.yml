@@ -42,6 +42,8 @@ jobs:
         run: pnpm build
       - name: Verify Vercel serverless output
         run: pnpm build:vercel
+      - name: Verify production Vercel API packaging
+        run: pnpm test:vercel-api
   postgres:
     runs-on: ubuntu-latest
     timeout-minutes: 15

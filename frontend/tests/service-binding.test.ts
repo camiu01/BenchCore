@@ -22,6 +22,14 @@ describe('Vercel service bindings', () => {
 			{ type: 'service', service: 'api', format: 'url', env: 'API_SERVICE_URL' }
 		]);
 		expect(config.services.api.bindings).toBeUndefined();
+		expect(config.services.api.entrypoint).toBe('src/vercel.ts');
+		expect(config.services.api.buildCommand).toBe('pnpm run build:vercel');
+		const api = JSON.parse(
+			readFileSync(new URL('../../api/package.json', import.meta.url), 'utf8')
+		);
+		expect(api.scripts['build:vercel']).toBe(
+			'tsc -p tsconfig.build.json --noEmit && node scripts/build-vercel.mjs'
+		);
 		expect(config.rewrites.at(-1)).toEqual({
 			source: '/(.*)',
 			destination: { service: 'frontend' }

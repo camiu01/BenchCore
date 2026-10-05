@@ -11,6 +11,7 @@ pnpm check               # API TypeScript + frontend svelte-check
 pnpm lint                # frontend eslint
 pnpm build               # recursive builds
 pnpm build:vercel        # independent frontend/API Vercel services, scheduler disabled
+pnpm test:vercel-api     # credential-free production API packaging regression
 pnpm start               # unified beta: frontend + /api on :5180
 pnpm beta:package        # versioned Node bundle, no .env or authoring content
 pnpm test:beta           # requires a dedicated local *_test PostgreSQL database
@@ -27,6 +28,8 @@ pnpm content:import      # import content/posts into PostgreSQL
 - Root `vercel.json` deploys Vercel `frontend` and `api` services. Frontend
   Functions use the runtime-only `API_SERVICE_URL` binding; the API entrypoint
   is `api/src/vercel.ts`. Neither starts migrations or scheduler jobs.
+  Its build typechecks without emitting `dist`, then creates a self-contained
+  `output/index.mjs`; standalone `dist/index.js` would override the Fetch handler.
 - Markdown + TOML (`content/posts/*.md`) is the authoring format; PostgreSQL is
   the runtime source of truth. Frontend renders API data only.
 - Entrypoints: `frontend/src/routes/` (pages) and `api/src/index.ts` (server boot).

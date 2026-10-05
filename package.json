@@ -21,6 +21,7 @@
 		"test": "pnpm -r test",
 		"test:beta": "node scripts/test-beta.mjs",
 		"test:bundle": "node scripts/test-beta.mjs --bundle",
+		"test:vercel-api": "node scripts/test-vercel-api.mjs",
 		"check": "pnpm -r check && pnpm check:runtime",
 		"lint": "pnpm --filter benchcore-frontend lint",
 		"format": "pnpm --filter benchcore-frontend format",
@@ -30,5 +31,7 @@
 		"seed": "pnpm --filter benchcore-api seed",
 		"user:create": "pnpm --filter benchcore-api user:create"
 	},
-	"devDependencies": {}
+	"devDependencies": {
+		"@vercel/backends": "13.0.0"
+	}
 }
