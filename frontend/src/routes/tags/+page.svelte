@@ -3,15 +3,17 @@
 	import type { PageData } from './$types';
 	import DocShell from '../../lib/components/DocShell.svelte';
 	import Seo from '../../lib/components/Seo.svelte';
+	import TagChip from '../../lib/components/TagChip.svelte';
+	import { authenticationLink } from '../../lib/navigation.js';
 
 	let { data }: { data: PageData } = $props();
 
-	const nav = [
+	const nav = $derived([
 		{ href: '/', label: '[01] index' },
 		{ href: '/posts', label: '[02] records' },
 		{ href: '/graph', label: '[03] graph' },
-		{ href: '/admin', label: '[04] admin' }
-	];
+		authenticationLink(data.sessionRole, '04')
+	]);
 </script>
 
 <Seo
@@ -52,7 +54,7 @@
 						<tr>
 							<td class="item">
 								<a href="/tags/{encodeURIComponent(tag.name)}">
-									<span class="tag-chip" style:--tag-color={tag.color}>{tag.name}</span>
+									<TagChip label={tag.name} color={tag.color} />
 								</a>
 							</td>
 							<td class="code">{tag.slug}</td>

@@ -118,8 +118,8 @@ export interface PostSuggestion {
 /**
  * @brief Writable creation fields with nullable groundwork fields defaulted.
  */
-export type PostCreate = Omit<PostRow, 'createdAt' | 'updatedAt' | 'publishAt' | 'category' | 'searchVector'>
-	& Partial<Pick<PostRow, 'publishAt' | 'category' | 'searchVector'>>;
+export type PostCreate = Omit<PostRow, 'createdAt' | 'updatedAt' | 'publishAt' | 'category' | 'searchVector' | 'audience'>
+	& Partial<Pick<PostRow, 'publishAt' | 'category' | 'searchVector' | 'audience'>>;
 
 /**
  * @brief Post persistence contract.
@@ -172,6 +172,7 @@ export interface PostRepository {
 		offset: number;
 		tag?: string | undefined;
 		search?: string | undefined;
+		includeReaderContent?: boolean | undefined;
 		now: Date;
 	}): Promise<{ items: PostWithTags[]; total: number }>;
 	/**
@@ -180,6 +181,18 @@ export interface PostRepository {
 	 * @return Public rows with tag names.
 	 */
 	listGraph(now: Date): Promise<PostWithTags[]>;
+	/**
+	 * @brief Lists all tags with currently visible post counts, including zero counts.
+	 * @param now Visibility reference time.
+	 * @return Name-ordered tags and public post counts.
+	 */
+	listTagCounts(now: Date): Promise<(TagRow & { count: number })[]>;
+	/**
+	 * @brief Loads only candidate posts mentioning a media key, without attaching tags.
+	 * @param key Managed key.
+	 * @return Candidate rows for structured reference validation.
+	 */
+	listMediaCandidates(key: string): Promise<PostRow[]>;
 	/**
 	 * @brief Lists every post, newest first (admin view).
 	 * @return All rows with tag names.

@@ -46,6 +46,35 @@ function database(replies: unknown[][][] = []) {
 }
 
 describe('PostgreSQL groundwork statements', () => {
+	it('restricts guest full-text search on reader posts to their public title', async () => {
+		const guest = database([[], [[0]]]);
+		await createDrizzlePosts(guest.db, createDrizzleTags(guest.db)).listPublished({
+			limit: 10, offset: 0, now: new Date(), search: 'privateword'
+		});
+		expect(guest.queries[0]?.sql).toContain('case when "posts"."audience"');
+		expect(guest.queries[0]?.sql).toContain('to_tsvector(\'simple\', "posts"."title")');
+		const reader = database([[], [[0]]]);
+		await createDrizzlePosts(reader.db, createDrizzleTags(reader.db)).listPublished({
+			limit: 10, offset: 0, now: new Date(), search: 'privateword', includeReaderContent: true
+		});
+		expect(reader.queries[0]?.sql).not.toContain('case when');
+		expect(reader.queries[0]?.sql).toContain('"posts"."search_vector"');
+	});
+	it('counts all tags in one SQL query without fetching post bodies or leaking future posts', async () => {
+		const { db, queries } = database([[['tag-id', 'Systems', 'systems', '#2563EB', '2']]]);
+		const posts = createDrizzlePosts(db, createDrizzleTags(db));
+		const counts = await posts.listTagCounts(new Date('2026-10-05T12:00:00Z'));
+		expect(counts).toEqual([{ id: 'tag-id', name: 'Systems', slug: 'systems', color: '#2563EB', count: 2 }]);
+		expect(queries).toHaveLength(1);
+		const query = queries[0]!;
+		expect(query.sql).toContain('count("posts"."id")');
+		expect(query.sql).toContain('left join "posts" on');
+		expect(query.sql).toContain('"posts"."published_at" <=');
+		expect(query.sql).toContain('"posts"."publish_at" is null');
+		expect(query.sql).toContain('group by');
+		expect(query.sql).not.toContain('content_markdown');
+		expect(query.params).toContain('published');
+	});
 	it('rotates credentials with hash compare-and-swap and session revocation in one transaction', async () => {
 		const { db, queries } = database([[['owner']], []]);
 		expect(await createDrizzleUsers(db).changePassword('owner', 'old-hash', 'new-hash')).toBe(true);

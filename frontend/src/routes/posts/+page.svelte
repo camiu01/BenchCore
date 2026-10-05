@@ -3,15 +3,17 @@
 	import type { PageData } from './$types';
 	import DocShell from '../../lib/components/DocShell.svelte';
 	import Seo from '../../lib/components/Seo.svelte';
+	import { authenticationLink } from '../../lib/navigation.js';
+	import ReaderGate from '../../lib/components/ReaderGate.svelte';
 
 	let { data }: { data: PageData } = $props();
 
-	const nav = [
+	const nav = $derived([
 		{ href: '/', label: '[01] index' },
 		{ href: '/tags', label: '[02] tags' },
 		{ href: '/graph', label: '[03] graph' },
-		{ href: '/admin', label: '[04] admin' }
-	];
+		authenticationLink(data.sessionRole, '04')
+	]);
 </script>
 
 <Seo
@@ -68,9 +70,11 @@
 						<span class="record-title">
 							<a href="/posts/{encodeURIComponent(post.slug)}">{post.title}</a>
 						</span>
-						<span class="stamp">PUBLISHED</span>
+						<span class="stamp">{post.audience === 'readers' ? 'READERS ONLY' : 'PUBLISHED'}</span>
 					</div>
-					<p class="summary">{post.description}</p>
+					{#if post.locked}<ReaderGate slug={post.slug} />{:else}<p class="summary">
+							{post.description}
+						</p>{/if}
 					<table class="spec-table">
 						<tbody>
 							<tr>

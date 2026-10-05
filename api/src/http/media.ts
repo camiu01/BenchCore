@@ -3,11 +3,14 @@
  * @brief Authenticated media mutation and immutable public reads.
  */
 import { z } from 'zod';
+import type { ServerResponse } from 'node:http';
 import { flattenIssues } from '../markdown/schema.js';
 import { sanitizeKey } from '../media/storage.js';
 import { imageUsage } from '../media/deletion-service.js';
-import type { ApiHandler } from './types.js';
-import { requireUser } from './auth.js';
+import type { ApiDeps, ApiHandler } from './types.js';
+import { getSessionUser, requireUser } from './auth.js';
+import { canReadPost, READER_CACHE_HEADERS } from '../posts/audience.js';
+import { isReaderMedia } from '../media/read-access.js';
 import { MEDIA_BODY_LIMIT, MEDIA_PREFIX, readBody, sendJson } from './response.js';
 
 const uploadSchema = z.object({
@@ -59,6 +62,22 @@ export const handleMedia: ApiHandler = async (req, res, deps, _url, key) => {
 		if (!await deps.media.remove(key)) { sendJson(res, 404, { error: 'not_found' }); return; }
 		res.writeHead(204); res.end(); return;
 	}
+	const restricted = await isReaderMedia(deps.posts, key);
+	if (restricted && !canReadPost('readers', (await getSessionUser(req, deps))?.role ?? null)) {
+		sendJson(res, 404, { error: 'not_found' }, READER_CACHE_HEADERS); return;
+	}
+	res.setHeader('vary', 'Cookie');
+	await sendMedia(res, deps, key);
+};
+
+/**
+ * @brief Streams authorized bytes or returns a short-lived storage read redirect.
+ * @param res Response stream.
+ * @param deps Configured storage.
+ * @param key Authorized managed key.
+ * @return Completion.
+ */
+async function sendMedia(res: ServerResponse, deps: ApiDeps, key: string): Promise<void> {
 	if (deps.media.readUrl) {
 		const location = await deps.media.readUrl(key);
 		if (!location) { sendJson(res, 404, { error: 'not_found' }); return; }
@@ -68,7 +87,7 @@ export const handleMedia: ApiHandler = async (req, res, deps, _url, key) => {
 	if (!file) { sendJson(res, 404, { error: 'not_found' }); return; }
 	res.writeHead(200, {
 		'content-type': file.mime, 'content-length': file.data.length,
-		'cache-control': 'public, max-age=31536000, immutable'
+		'cache-control': 'private, no-store'
 	});
 	res.end(file.data);
-};
+}

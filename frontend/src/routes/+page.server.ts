@@ -11,6 +11,6 @@ import type { PageServerLoad } from './$types';
  * @brief Loads homepage data with the newest published posts.
  * @returns Sheet data plus the recent-posts page (or null when offline).
  */
-export const load: PageServerLoad = async () => {
-	return { ...getHomepageData(), posts: await getRecentPosts(5) };
+export const load: PageServerLoad = async ({ request }) => {
+	return { ...getHomepageData(), posts: await getRecentPosts(5, request.headers.get('cookie')) };
 };

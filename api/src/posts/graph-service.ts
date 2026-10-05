@@ -4,6 +4,7 @@
  */
 import type { PostRepository, TagRepository } from '../db/repositories.js';
 import { extractWikiLinks } from '../markdown/render.js';
+import { canReadPost } from './audience.js';
 
 /** @brief A graph tag with its persisted display color. */
 export interface GraphTag {
@@ -43,6 +44,7 @@ export async function buildPublicGraph(posts: PostRepository, tags: TagRepositor
 	const visibleSlugs = new Set(rows.map((row) => row.slug));
 	const edges = new Map<string, GraphEdge>();
 	for (const row of rows) {
+		if (!canReadPost(row.audience)) continue;
 		for (const target of extractWikiLinks(row.contentMarkdown)) {
 			if (target === row.slug || !visibleSlugs.has(target)) { continue; }
 			edges.set(`${row.slug}\0${target}`, { source: row.slug, target });
@@ -53,7 +55,7 @@ export async function buildPublicGraph(posts: PostRepository, tags: TagRepositor
 			id: row.id,
 			slug: row.slug,
 			title: row.title,
-			description: row.description,
+			description: canReadPost(row.audience) ? row.description : '',
 			publishedAt: row.publishedAt!.toISOString(),
 			tags: row.tags.flatMap((name) => {
 				const tag = byTag.get(name);

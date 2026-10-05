@@ -6,7 +6,8 @@ import { z } from 'zod';
 import { createSessionToken, hashToken, parseCookies, tokenCookieHeader } from '../auth/session.js';
 import { commentSchema, createComment, findPublicPost, moderationSchema, publicComment } from '../posts/engagement-service.js';
 import type { ApiHandler } from './types.js';
-import { requireUser } from './auth.js';
+import { getSessionUser, requireUser } from './auth.js';
+import { canReadPost, READER_CACHE_HEADERS } from '../posts/audience.js';
 import { readBody, sendJson } from './response.js';
 
 const LIKE_COOKIE = 'like_voter';
@@ -21,6 +22,11 @@ const offsetSchema = z.string().regex(/^\d+$/).transform(Number).pipe(z.number()
 export const handleComments: ApiHandler = async (req, res, deps, url, slug) => {
 	const post = await findPublicPost(deps.posts, slug);
 	if (!post) { sendJson(res, 404, { error: 'not_found' }); return; }
+	res.setHeader('cache-control', READER_CACHE_HEADERS['cache-control']);
+	res.setHeader('vary', 'Cookie');
+	if (!canReadPost(post.audience, (await getSessionUser(req, deps))?.role ?? null)) {
+		sendJson(res, 401, { error: 'unauthorized' }); return;
+	}
 	if (req.method === 'GET') {
 		const offset = offsetSchema.safeParse(url.searchParams.get('offset') ?? '0');
 		if (!offset.success) { sendJson(res, 400, { error: 'validation' }); return; }
@@ -44,6 +50,11 @@ export const handleComments: ApiHandler = async (req, res, deps, url, slug) => {
 export const handleLikes: ApiHandler = async (req, res, deps, _url, slug) => {
 	const post = await findPublicPost(deps.posts, slug);
 	if (!post) { sendJson(res, 404, { error: 'not_found' }); return; }
+	res.setHeader('cache-control', READER_CACHE_HEADERS['cache-control']);
+	res.setHeader('vary', 'Cookie');
+	if (!canReadPost(post.audience, (await getSessionUser(req, deps))?.role ?? null)) {
+		sendJson(res, 401, { error: 'unauthorized' }); return;
+	}
 	const existing = parseCookies(req.headers.cookie)[LIKE_COOKIE];
 	const valid = existing && VOTER_PATTERN.test(existing) ? existing : null;
 	if (req.method === 'GET') {

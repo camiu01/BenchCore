@@ -33,11 +33,13 @@
 				type="button"
 				class:active={color.toUpperCase() === preset}
 				class="tag-swatch"
-				style:background-color={preset}
 				aria-label="Use {preset} for {name}"
 				title={preset}
 				onclick={() => (color = preset)}
-			></button>
+				><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+					<rect width="18" height="18" fill={preset} />
+				</svg></button
+			>
 		{/each}
 	</div>
 	<div class="tag-custom-color">

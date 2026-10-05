@@ -62,6 +62,7 @@ export const posts = pgTable(
 		contentHtml: text('content_html').notNull(),
 		coverImage: text('cover_image'),
 		category: text('category'),
+		audience: text('audience', { enum: ['public', 'readers'] }).notNull().default('public'),
 		status: postStatusEnum('status').notNull().default('draft'),
 		authorId: uuid('author_id').references(() => users.id),
 		publishedAt: timestamp('published_at', { withTimezone: true }),

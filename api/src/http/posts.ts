@@ -8,7 +8,8 @@ import { normalizeSlug } from '../posts/publishing.js';
 import { flattenIssues } from '../markdown/schema.js';
 import { renderMarkdown } from '../markdown/render.js';
 import type { ApiHandler } from './types.js';
-import { requireUser } from './auth.js';
+import { getSessionUser, requireUser } from './auth.js';
+import { READER_CACHE_HEADERS } from '../posts/audience.js';
 import { MEDIA_PREFIX, readBody, sendJson } from './response.js';
 
 const pageSchema = z.object({
@@ -30,12 +31,13 @@ const tagColorSchema = z.object({
  * @param url Parsed query.
  * @return Nothing.
  */
-export const handleListPosts: ApiHandler = async (_req, res, deps, url) => {
+export const handleListPosts: ApiHandler = async (req, res, deps, url) => {
 	const parsed = pageSchema.safeParse(Object.fromEntries(url.searchParams));
 	if (!parsed.success) {
 		sendJson(res, 400, { error: 'validation', issues: flattenIssues(parsed.error) }); return;
 	}
-	sendJson(res, 200, await listPublishedPosts(deps, parsed.data));
+	const user = await getSessionUser(req, deps);
+	sendJson(res, 200, await listPublishedPosts({ ...deps, viewerRole: user?.role ?? null }, parsed.data), READER_CACHE_HEADERS);
 };
 
 /**
@@ -47,10 +49,11 @@ export const handleListPosts: ApiHandler = async (_req, res, deps, url) => {
  * @param slug Requested slug.
  * @return Nothing.
  */
-export const handleGetPost: ApiHandler = async (_req, res, deps, _url, slug) => {
+export const handleGetPost: ApiHandler = async (req, res, deps, _url, slug) => {
+	const user = await getSessionUser(req, deps);
 	const post = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(slug)
-		? await getPublishedPost(deps, normalizeSlug(slug)) : null;
-	sendJson(res, post ? 200 : 404, post ?? { error: 'not_found' });
+		? await getPublishedPost({ ...deps, viewerRole: user?.role ?? null }, normalizeSlug(slug)) : null;
+	sendJson(res, post ? 200 : 404, post ?? { error: 'not_found' }, READER_CACHE_HEADERS);
 };
 
 /**
@@ -73,7 +76,8 @@ export const handleWritePost: ApiHandler = async (req, res, deps, _url, id) => {
 	const body = await readBody(req, res);
 	if (!body) { return; }
 	try {
-		const item = req.method === 'POST' ? await createPost(deps, body.data, user.id) : await updatePost(deps, id, body.data);
+		const writeDeps = { ...deps, viewerRole: user.role };
+		const item = req.method === 'POST' ? await createPost(writeDeps, body.data, user.id) : await updatePost(writeDeps, id, body.data);
 		sendJson(res, req.method === 'POST' ? 201 : 200, item);
 	} catch (error) {
 		if (!(error instanceof PostError)) { throw error; }
@@ -90,14 +94,9 @@ export const handleWritePost: ApiHandler = async (req, res, deps, _url, id) => {
  * @return Nothing.
  */
 export const handleListTags: ApiHandler = async (_req, res, deps) => {
-	const items = [];
-	const now = new Date();
-	for (const tag of await deps.tags.list()) {
-		const page = await deps.posts.listPublished({ limit: 1, offset: 0, tag: tag.name, now });
-		if (page.total > 0) {
-			items.push({ name: tag.name, slug: tag.slug, color: tag.color, count: page.total });
-		}
-	}
+	const items = (await deps.posts.listTagCounts(new Date()))
+		.filter((tag) => tag.count > 0)
+		.map(({ name, slug, color, count }) => ({ name, slug, color, count }));
 	sendJson(res, 200, { items });
 };
 
@@ -125,12 +124,7 @@ export const handleAdminTags: ApiHandler = async (req, res, deps, _url, id) => {
 		sendJson(res, updated ? 200 : 404, updated ?? { error: 'not_found' });
 		return;
 	}
-	const items = [];
-	const now = new Date();
-	for (const tag of await deps.tags.list()) {
-		const page = await deps.posts.listPublished({ limit: 1, offset: 0, tag: tag.name, now });
-		items.push({ id: tag.id, name: tag.name, slug: tag.slug, color: tag.color, count: page.total });
-	}
+	const items = await deps.posts.listTagCounts(new Date());
 	sendJson(res, 200, { items });
 };
 
@@ -153,6 +147,7 @@ export const handleAdminPosts: ApiHandler = async (req, res, deps, _url, id) => 
 		const author = row.authorId ? await deps.users.findById(row.authorId) : null;
 		items.push({
 			id: row.id, slug: row.slug, title: row.title, description: row.description, status: row.status,
+			audience: row.audience,
 			tags: await deps.tags.getPostTagNames(row.id), authorName: author?.name ?? null,
 			publishedAt: row.publishedAt?.toISOString() ?? null, publishAt: row.publishAt?.toISOString() ?? null,
 			updatedAt: row.updatedAt.toISOString(),

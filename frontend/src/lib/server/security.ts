@@ -19,6 +19,11 @@ export function secureResponse(
 	response.headers.set('referrer-policy', 'strict-origin-when-cross-origin');
 	response.headers.set('permissions-policy', 'camera=(), microphone=(), geolocation=()');
 	const path = event.url.pathname;
+	if (path === '/' || /^\/(?:posts|tags|graph)(?:\/|$)/.test(path)) {
+		response.headers.set('cache-control', 'private, no-store');
+		const vary = response.headers.get('vary');
+		response.headers.set('vary', vary ? `${vary}, Cookie` : 'Cookie');
+	}
 	if (
 		path === '/admin' ||
 		path.startsWith('/admin/') ||

@@ -4,6 +4,7 @@
 	import DocShell from '../../../lib/components/DocShell.svelte';
 	import Seo from '../../../lib/components/Seo.svelte';
 	import PostEngagement from '../../../lib/components/PostEngagement.svelte';
+	import ReaderGate from '../../../lib/components/ReaderGate.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -27,9 +28,11 @@
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: {data.post.slug.toUpperCase()}"
 	title={data.post.title}
-	sub={data.post.description || 'No summary filed.'}
+	sub={data.post.locked
+		? 'Sign in to read this record.'
+		: data.post.description || 'No summary filed.'}
 	{nav}
-	footerLeft="READ: {data.post.readingMinutes} MIN"
+	footerLeft={data.post.locked ? 'ACCESS: READERS ONLY' : `READ: ${data.post.readingMinutes} MIN`}
 	footerRight="FILED: {data.post.publishedAt ?? 'UNDATED'}"
 	activeHref="/posts"
 >
@@ -37,7 +40,7 @@
 		<article class="record">
 			<div class="record-header">
 				<span class="record-title">{data.post.title}</span>
-				<span class="stamp">PUBLISHED</span>
+				<span class="stamp">{data.post.audience === 'readers' ? 'READERS ONLY' : 'PUBLISHED'}</span>
 			</div>
 			<table class="spec-table">
 				<tbody>
@@ -64,14 +67,18 @@
 					{/if}
 				</tbody>
 			</table>
-			{#if cover !== null}
-				<figure class="cover-figure">
-					<img src={cover} alt={data.post.title} class="cover-image" />
-				</figure>
+			{#if data.post.locked}
+				<ReaderGate slug={data.post.slug} />
+			{:else}
+				{#if cover !== null}
+					<figure class="cover-figure">
+						<img src={cover} alt={data.post.title} class="cover-image" />
+					</figure>
+				{/if}
+				<!-- contentHtml is sanitized by the API render pipeline before storage. -->
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+				<div class="record-body">{@html data.post.contentHtml}</div>
 			{/if}
-			<!-- contentHtml is sanitized by the API render pipeline before storage. -->
-			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-			<div class="record-body">{@html data.post.contentHtml}</div>
 		</article>
 
 		{#if data.post.backlinks.length > 0}
@@ -97,8 +104,8 @@
 				</table>
 			</section>
 		{/if}
-		{#key data.post.slug}
-			<PostEngagement slug={data.post.slug} />
-		{/key}
+		{#if !data.post.locked}{#key data.post.slug}
+				<PostEngagement slug={data.post.slug} />
+			{/key}{/if}
 	</main>
 </DocShell>

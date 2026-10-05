@@ -3,17 +3,19 @@
 	import type { PageData } from './$types';
 	import DocShell from '../lib/components/DocShell.svelte';
 	import Seo from '../lib/components/Seo.svelte';
+	import { authenticationLink } from '../lib/navigation.js';
+	import ReaderGate from '../lib/components/ReaderGate.svelte';
 
 	let { data }: { data: PageData } = $props();
 
-	const nav = [
+	const nav = $derived([
 		{ href: '/posts', label: '[01] records' },
 		{ href: '/tags', label: '[02] tags' },
 		{ href: '/graph', label: '[03] graph' },
 		{ href: '/account', label: '[04] account' },
-		{ href: '/admin', label: '[05] admin' },
+		...(data.sessionRole === 'reader' ? [] : [authenticationLink(data.sessionRole, '05')]),
 		{ href: '/register', label: '[06] register' }
-	];
+	]);
 </script>
 
 <Seo title={data.title} description={data.description} canonical={data.siteBase} />
@@ -56,9 +58,11 @@
 						<span class="record-title">
 							<a href="/posts/{encodeURIComponent(post.slug)}">{post.title}</a>
 						</span>
-						<span class="stamp">PUBLISHED</span>
+						<span class="stamp">{post.audience === 'readers' ? 'READERS ONLY' : 'PUBLISHED'}</span>
 					</div>
-					<p class="summary">{post.description}</p>
+					{#if post.locked}<ReaderGate slug={post.slug} />{:else}<p class="summary">
+							{post.description}
+						</p>{/if}
 					<table class="spec-table">
 						<tbody>
 							<tr>

@@ -197,6 +197,15 @@
 						<option value={status} selected={values.status === status}>{status}</option>
 					{/each}
 				</select>
+				<label class="field-label" for="audience">Audience</label>
+				<select class="field-input" id="audience" name="audience">
+					<option value="public" selected={(values.audience ?? 'public') === 'public'}
+						>Public</option
+					>
+					<option value="readers" selected={values.audience === 'readers'}
+						>Readers and admins only</option
+					>
+				</select>
 			</div>
 			<div>
 				<label class="field-label" for="tags">Tags (comma separated)</label>

@@ -13,8 +13,8 @@ import type { PageServerLoad } from './$types';
  * @returns The post detail with same-origin cover URLs.
  * @param event The current request event.
  */
-export const load: PageServerLoad = async ({ params }) => {
-	const post = await getPostBySlug(params.slug);
+export const load: PageServerLoad = async ({ params, request }) => {
+	const post = await getPostBySlug(params.slug, request.headers.get('cookie'));
 	if (post === null) {
 		throw error(404, 'record not found');
 	}

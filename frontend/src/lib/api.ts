@@ -16,6 +16,8 @@ export const postListItemSchema = z.object({
 	slug: z.string(),
 	title: z.string(),
 	description: z.string(),
+	audience: z.enum(['public', 'readers']).default('public'),
+	locked: z.boolean().default(false),
 	tags: z.array(z.string()),
 	authorName: z.string().nullable(),
 	publishedAt: z.iso.datetime({ offset: true }).nullable()
@@ -53,7 +55,7 @@ export const backlinkSchema = z.object({
 export const postDetailSchema = postListItemSchema.extend({
 	contentHtml: z.string(),
 	coverImage: z.string().nullable(),
-	readingMinutes: z.number().int().positive(),
+	readingMinutes: z.number().int().nonnegative(),
 	backlinks: z.array(backlinkSchema)
 });
 
@@ -152,11 +154,19 @@ export function resolveMediaUrl(value: string | null): string | null {
  * @brief GETs and validates a JSON DTO from the API.
  * @param schema The Zod schema for the response.
  * @param path The API path starting with /api/.
+ * @param cookie Optional reader session forwarded only to the trusted API.
  * @returns The validated DTO or null when unreachable/invalid.
  */
-async function getDto<T>(schema: z.ZodType<T>, path: string): Promise<T | null> {
+async function getDto<T>(
+	schema: z.ZodType<T>,
+	path: string,
+	cookie: string | null = null
+): Promise<T | null> {
 	try {
-		const response = await apiFetch(`${apiBase()}${path}`, { signal: AbortSignal.timeout(5000) });
+		const response = await apiFetch(`${apiBase()}${path}`, {
+			headers: cookie ? { cookie } : {},
+			signal: AbortSignal.timeout(5000)
+		});
 		if (!response.ok) {
 			return null;
 		}
@@ -170,10 +180,11 @@ async function getDto<T>(schema: z.ZodType<T>, path: string): Promise<T | null> 
 /**
  * @brief Loads the newest published posts.
  * @param limit The maximum number of items.
+ * @param cookie Optional viewer session.
  * @returns The page DTO or null when the API is unreachable.
  */
-export function getRecentPosts(limit = 5): Promise<PostsPage | null> {
-	return getDto(postsPageSchema, `/api/posts?limit=${limit}&offset=0`);
+export function getRecentPosts(limit = 5, cookie: string | null = null): Promise<PostsPage | null> {
+	return getDto(postsPageSchema, `/api/posts?limit=${limit}&offset=0`, cookie);
 }
 
 /**
@@ -181,27 +192,33 @@ export function getRecentPosts(limit = 5): Promise<PostsPage | null> {
  * @param limit The page size.
  * @param offset The page offset.
  * @param search The optional search text.
+ * @param cookie Optional viewer session.
  * @returns The page DTO or null when the API is unreachable.
  */
 export function getPostsPage(
 	limit: number,
 	offset: number,
-	search = ''
+	search = '',
+	cookie: string | null = null
 ): Promise<PostsPage | null> {
 	const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
 	if (search !== '') {
 		query.set('search', search);
 	}
-	return getDto(postsPageSchema, `/api/posts?${query}`);
+	return getDto(postsPageSchema, `/api/posts?${query}`, cookie);
 }
 
 /**
  * @brief Loads one published post by slug.
  * @param slug The post slug.
+ * @param cookie Optional viewer session.
  * @returns The detail DTO or null when missing/unreachable.
  */
-export function getPostBySlug(slug: string): Promise<PostDetail | null> {
-	return getDto(postDetailSchema, `/api/posts/${encodeURIComponent(slug)}`);
+export function getPostBySlug(
+	slug: string,
+	cookie: string | null = null
+): Promise<PostDetail | null> {
+	return getDto(postDetailSchema, `/api/posts/${encodeURIComponent(slug)}`, cookie);
 }
 
 /**
@@ -209,16 +226,19 @@ export function getPostBySlug(slug: string): Promise<PostDetail | null> {
  * @param tag The tag name.
  * @param limit The page size.
  * @param offset The page offset.
+ * @param cookie Optional viewer session.
  * @returns The page DTO or null when the API is unreachable.
  */
 export function getPostsByTag(
 	tag: string,
 	limit: number,
-	offset: number
+	offset: number,
+	cookie: string | null = null
 ): Promise<PostsPage | null> {
 	return getDto(
 		postsPageSchema,
-		`/api/posts?limit=${limit}&offset=${offset}&tag=${encodeURIComponent(tag)}`
+		`/api/posts?limit=${limit}&offset=${offset}&tag=${encodeURIComponent(tag)}`,
+		cookie
 	);
 }
 

@@ -9,6 +9,7 @@ export interface EditorValues {
 	slug: string;
 	description: string;
 	status: string;
+	audience?: string;
 	tags: string;
 	publishedAt: string;
 	publishAt: string;
@@ -21,6 +22,7 @@ const payloadSchema = z.object({
 	slug: z.string().min(1),
 	description: z.string(),
 	status: z.enum(['draft', 'published', 'archived']),
+	audience: z.enum(['public', 'readers']),
 	tags: z.array(z.string()),
 	contentMarkdown: z.string(),
 	publishedAt: z.iso.datetime().nullable(),
@@ -38,6 +40,7 @@ export function blankValues(): EditorValues {
 		slug: '',
 		description: '',
 		status: 'draft',
+		audience: 'public',
 		tags: '',
 		publishedAt: '',
 		publishAt: '',
@@ -95,6 +98,7 @@ export function payloadFromValues(values: EditorValues): z.infer<typeof payloadS
 		slug: values.slug,
 		description: values.description,
 		status: values.status,
+		audience: values.audience ?? 'public',
 		tags: values.tags
 			.split(',')
 			.map((tag) => tag.trim())

@@ -35,6 +35,7 @@
 			{/if}
 			{#if data.notice}<p class="summary" role="status">{data.notice}</p>{/if}
 			<form method="POST" action="?/login">
+				<input type="hidden" name="next" value={data.next ?? ''} />
 				<div class="form-grid">
 					<div>
 						<label class="field-label" for="email">Username or email</label>

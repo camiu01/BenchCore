@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import type { GraphData } from '../api.js';
 	import { createGraphRenderer } from '../graph-renderer.js';
+	import TagChip from './TagChip.svelte';
 
 	interface Props {
 		graph: GraphData;
@@ -72,7 +73,7 @@
 			<p>{selected.description || 'No summary filed.'}</p>
 			<div class="tag-list">
 				{#each selected.tags as tag (tag.slug)}
-					<span class="tag-chip" style:--tag-color={tag.color}>{tag.name}</span>
+					<TagChip label={tag.name} color={tag.color} />
 				{/each}
 			</div>
 			<a class="btn btn-accent" href="/posts/{encodeURIComponent(selected.slug)}">OPEN POST →</a>
@@ -87,7 +88,7 @@
 	{#each Array.from(new Map(graph.nodes
 				.flatMap((node) => node.tags)
 				.map((tag) => [tag.slug, tag])).values()).slice(0, 12) as tag (tag.slug)}
-		<span class="tag-chip" style:--tag-color={tag.color}>{tag.name}</span>
+		<TagChip label={tag.name} color={tag.color} />
 	{/each}
 </div>
 

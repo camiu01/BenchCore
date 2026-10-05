@@ -56,7 +56,7 @@ class MemoryPosts implements PostRepository {
 	async create(input: PostCreate): Promise<PostRow> {
 		const now = new Date();
 		const row: PostRow = {
-			...input, category: input.category ?? null, publishAt: input.publishAt ?? null,
+			...input, audience: input.audience ?? 'public', category: input.category ?? null, publishAt: input.publishAt ?? null,
 			searchVector: `${input.title} ${input.description} ${input.contentMarkdown}`,
 			createdAt: now, updatedAt: now
 		};
@@ -126,7 +126,10 @@ class MemoryPosts implements PostRepository {
 	 */
 	async listPublished(options: Parameters<PostRepository['listPublished']>[0]) {
 		const visible = newestFirst([...this.rows.values()].filter((row) =>
-			isPublic(row, options.now) && matchesSearch(row, options.search)));
+			isPublic(row, options.now) && matchesSearch(
+				row.audience === 'readers' && !options.includeReaderContent
+					? { ...row, description: '', contentMarkdown: '', searchVector: row.title } : row,
+				options.search)));
 		const filtered: PostRow[] = [];
 		for (const row of visible) {
 			const names = options.tag === undefined ? [] : await this.tags.getPostTagNames(row.id);
@@ -144,6 +147,32 @@ class MemoryPosts implements PostRepository {
 	async listGraph(now: Date): Promise<PostWithTags[]> {
 		const rows = newestFirst([...this.rows.values()].filter((row) => isPublic(row, now)));
 		return Promise.all(rows.map((row) => this.withTags(row)));
+	}
+
+	/**
+	 * @brief Finds candidate rows mentioning a managed key.
+	 * @param key Managed image key.
+	 * @return Candidate post rows without tag attachment.
+	 */
+	async listMediaCandidates(key: string) {
+		return [...this.rows.values()].filter((row) =>
+			row.contentMarkdown.includes(key) || row.coverImage?.includes(key));
+	}
+
+	/**
+	 * @brief Counts public posts once across all tag links.
+	 * @param now Visibility reference time.
+	 * @return Name-ordered tags with public post counts.
+	 */
+	async listTagCounts(now: Date) {
+		const counts = new Map<string, number>();
+		for (const row of this.rows.values()) {
+			if (!isPublic(row, now)) continue;
+			for (const tagId of this.links.get(row.id) ?? []) {
+				counts.set(tagId, (counts.get(tagId) ?? 0) + 1);
+			}
+		}
+		return (await this.tags.list()).map((tag) => ({ ...tag, count: counts.get(tag.id) ?? 0 }));
 	}
 
 	/**

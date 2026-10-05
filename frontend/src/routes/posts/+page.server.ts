@@ -14,7 +14,7 @@ const PER_PAGE = 10;
  * @returns The page items, totals and pager state.
  * @param event The current request event.
  */
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, request }) => {
 	const parsed = z.coerce
 		.number()
 		.int()
@@ -23,7 +23,12 @@ export const load: PageServerLoad = async ({ url }) => {
 		.safeParse(url.searchParams.get('page'));
 	const page = parsed.success ? parsed.data : 1;
 	const search = (url.searchParams.get('search') ?? '').trim().slice(0, 200);
-	const result = await getPostsPage(PER_PAGE, (page - 1) * PER_PAGE, search);
+	const result = await getPostsPage(
+		PER_PAGE,
+		(page - 1) * PER_PAGE,
+		search,
+		request.headers.get('cookie')
+	);
 	const total = result?.total ?? 0;
 	return {
 		items: result?.items ?? [],

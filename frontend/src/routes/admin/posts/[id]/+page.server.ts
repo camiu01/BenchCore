@@ -35,6 +35,7 @@ export const load: PageServerLoad = async ({ params, request }) => {
 		slug: post.slug,
 		description: post.description,
 		status: post.status,
+		audience: post.audience,
 		tags: post.tags.join(', '),
 		publishedAt: post.publishedAt ?? '',
 		publishAt: post.publishAt ?? '',

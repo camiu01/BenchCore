@@ -34,7 +34,8 @@ export interface PublicComment {
 export async function findPublicPost(posts: PostRepository, slug: string, now: Date = new Date()):
 	Promise<PostRow | null> {
 	const post = await posts.findBySlug(normalizeSlug(slug));
-	return post && isPublic(post.status, post.publishedAt, now) ? post : null;
+	return post && isPublic(post.status, post.publishedAt, now)
+		&& (!post.publishAt || post.publishAt <= now) ? post : null;
 }
 
 /** @brief Maps a stored comment to its public DTO. @param row Stored row. @return Public comment. */

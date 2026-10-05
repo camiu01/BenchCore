@@ -134,8 +134,10 @@ class DrizzlePosts implements PostRepository {
 		const tagFilter = options.tag === undefined ? undefined : inArray(posts.id,
 			this.db.select({ postId: postTags.postId }).from(postTags)
 				.innerJoin(tags, eq(postTags.tagId, tags.id)).where(eq(tags.name, options.tag)));
+		const vector = options.includeReaderContent ? posts.searchVector
+			: sql`case when ${posts.audience} = 'readers' then to_tsvector('simple', ${posts.title}) else ${posts.searchVector} end`;
 		const visible = and(publicPostFilter(options.now), tagFilter,
-			search ? sql`${posts.searchVector} @@ websearch_to_tsquery('simple', ${search})` : undefined);
+			search ? sql`${vector} @@ websearch_to_tsquery('simple', ${search})` : undefined);
 		const rows = await this.db.select().from(posts).where(visible)
 			.orderBy(desc(posts.publishedAt), desc(posts.id)).limit(options.limit).offset(options.offset);
 		const totals = await this.db.select({ value: count() }).from(posts).where(visible);
@@ -152,6 +154,33 @@ class DrizzlePosts implements PostRepository {
 		return this.withTags(
 			await this.db.select().from(posts).where(visible).orderBy(desc(posts.publishedAt), desc(posts.id))
 		);
+	}
+
+	/**
+	 * @brief Finds media candidates without loading unrelated bodies or tag links.
+	 * @param key Managed image key.
+	 * @return Matching post rows.
+	 */
+	async listMediaCandidates(key: string) {
+		return this.db.select().from(posts).where(or(
+			sql`position(${key} in ${posts.contentMarkdown}) > 0`,
+			sql`position(${key} in ${posts.coverImage}) > 0`
+		));
+	}
+
+	/**
+	 * @brief Counts visible posts for every tag in one aggregate query.
+	 * @param now Visibility reference time.
+	 * @return Name-ordered tags with public post counts.
+	 */
+	async listTagCounts(now: Date) {
+		return this.db.select({
+			id: tags.id, name: tags.name, slug: tags.slug, color: tags.color,
+			count: count(posts.id)
+		}).from(tags)
+			.leftJoin(postTags, eq(postTags.tagId, tags.id))
+			.leftJoin(posts, and(eq(posts.id, postTags.postId), publicPostFilter(now)))
+			.groupBy(tags.id, tags.name, tags.slug, tags.color).orderBy(tags.name);
 	}
 
 	/**

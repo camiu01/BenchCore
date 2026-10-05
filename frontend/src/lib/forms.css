@@ -181,6 +181,11 @@ textarea.field-input {
 }
 
 .tag-swatch {
+	padding: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--sheet-bg);
 	width: 22px;
 	height: 22px;
 	border: 2px solid var(--sheet-bg);

@@ -56,6 +56,7 @@ async function importEntry(entry: ImportEntry, deps: PostServiceDeps,
 	const existing = await deps.posts.findBySlug(value.slug);
 	const payload = {
 		title: value.title, slug: value.slug, description: value.description, status: value.status,
+		audience: value.audience,
 		tags: value.tags, publishedAt: value.published_at, publishAt: value.publish_at ?? null,
 		contentMarkdown: body, coverImage: value.cover_image ?? null
 	};

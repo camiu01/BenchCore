@@ -4,6 +4,7 @@
 	import DocShell from '../../../lib/components/DocShell.svelte';
 	import Seo from '../../../lib/components/Seo.svelte';
 	import TagColorEditor from '../../../lib/components/TagColorEditor.svelte';
+	import TagChip from '../../../lib/components/TagChip.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -49,7 +50,7 @@
 						<td class="item">{tag.name}</td>
 						<td class="code">{tag.slug}</td>
 						<td class="dim">{tag.count}</td>
-						<td><span class="tag-chip" style:--tag-color={tag.color}>{tag.color}</span></td>
+						<td><TagChip label={tag.color} color={tag.color} /></td>
 						<td>
 							<TagColorEditor id={tag.id} name={tag.name} color={tag.color} />
 							<form

@@ -43,6 +43,13 @@
       "when": 1791202637318,
       "tag": "0005_vengeful_texas_twister",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791214516628,
+      "tag": "0006_faithful_pestilence",
+      "breakpoints": true
     }
   ]
 }

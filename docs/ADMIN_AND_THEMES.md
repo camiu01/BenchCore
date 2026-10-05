@@ -27,6 +27,30 @@ available when their deployment settings are configured.
 6. Choose draft/published/archived and verify public visibility.
 7. Use the local-time date picker for delayed publication.
 
+Choose **Audience: Public** for ordinary records or **Readers and admins only**
+for reader-only records. Audience is separate from publication status: drafts
+remain private, even to signed-in readers. Only administrators can create or
+edit either kind of record.
+
+Guests see the title and an obscured placeholder with a sign-in invitation.
+The placeholder contains no protected text. The API withholds the description,
+body, cover and backlinks until a valid reader or administrator session is
+present. Public RSS and graph responses also omit protected descriptions and
+outgoing reader-only wikilinks. Guest search matches only a reader-only post's
+title, never its private body. Personalized pages and responses are not cached.
+Signing in from a locked record returns to that record.
+
+Managed images used exclusively by reader-only records require the same
+session. Images reused in public records remain public, as do external URLs
+and uploads not yet attached to any saved record. Do not reuse public images
+for confidential reader-only assets. Previously downloaded files and issued
+short-lived R2 read links cannot be revoked retroactively by changing audience.
+
+The audience column requires migration `0006`; deploying the feature does not
+apply database migrations automatically. TOML authoring supports
+`audience = "readers"`; omitting it keeps new records public and preserves the
+audience of an existing record during import.
+
 `publishedAt` identifies publication time; `publishAt` is the separate schedule.
 The editor displays both in the browser's local timezone and submits canonical
 UTC timestamps.

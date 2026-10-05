@@ -14,7 +14,7 @@ const PER_PAGE = 10;
  * @returns The tag name plus page items and pager state.
  * @param event The current request event.
  */
-export const load: PageServerLoad = async ({ params, url }) => {
+export const load: PageServerLoad = async ({ params, url, request }) => {
 	const parsed = z.coerce
 		.number()
 		.int()
@@ -22,7 +22,12 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		.max(1000000)
 		.safeParse(url.searchParams.get('page'));
 	const page = parsed.success ? parsed.data : 1;
-	const result = await getPostsByTag(params.slug, PER_PAGE, (page - 1) * PER_PAGE);
+	const result = await getPostsByTag(
+		params.slug,
+		PER_PAGE,
+		(page - 1) * PER_PAGE,
+		request.headers.get('cookie')
+	);
 	const total = result?.total ?? 0;
 	return {
 		tag: params.slug,

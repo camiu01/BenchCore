@@ -10,6 +10,7 @@ import { mutationOrigin } from '../../lib/site.js';
 import { apiBase } from '../../lib/api.js';
 import { apiFetch } from '../../lib/server/transport.js';
 import { sessionSchema } from '../../lib/server/session.js';
+import { postReturnPath } from '../../lib/server/return-path.js';
 
 /**
  * @brief Redirects authenticated visitors to the dashboard.
@@ -17,8 +18,9 @@ import { sessionSchema } from '../../lib/server/session.js';
  * @return The result, or a redirect for completed mutations.
  */
 export const load: PageServerLoad = ({ locals, url }) => {
+	const next = postReturnPath(url.searchParams.get('next'));
 	if (locals.user !== null) {
-		throw redirect(303, locals.user.role === 'admin' ? '/admin' : '/account');
+		throw redirect(303, next ?? (locals.user.role === 'admin' ? '/admin' : '/account'));
 	}
 	const notice = url.searchParams.has('passwordReset')
 		? 'Password reset. You can now sign in.'
@@ -27,7 +29,7 @@ export const load: PageServerLoad = ({ locals, url }) => {
 			: url.searchParams.has('registered')
 				? 'Account created. You can now sign in.'
 				: null;
-	return { notice };
+	return { notice, next };
 };
 
 export const actions: Actions = {
@@ -78,6 +80,10 @@ export const actions: Actions = {
 		) {
 			return fail(502, { error: 'Invalid API session response.', email });
 		}
-		throw redirect(303, result.data.user.role === 'admin' ? '/admin' : '/account');
+		throw redirect(
+			303,
+			postReturnPath(form.get('next')) ??
+				(result.data.user.role === 'admin' ? '/admin' : '/account')
+		);
 	}
 };

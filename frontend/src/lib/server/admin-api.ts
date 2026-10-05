@@ -29,6 +29,7 @@ const detailSchema = z.object({
 	slug: z.string(),
 	description: z.string(),
 	status: statusSchema,
+	audience: z.enum(['public', 'readers']).default('public'),
 	tags: z.array(z.string()),
 	publishedAt: z.iso.datetime({ offset: true }).nullable(),
 	publishAt: z.iso.datetime({ offset: true }).nullable(),

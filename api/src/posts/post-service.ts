@@ -9,6 +9,7 @@ import type { PostRow, PostStatus } from '../db/schema.js';
 import { renderMarkdown } from '../markdown/render.js';
 import { flattenIssues, slugField } from '../markdown/schema.js';
 import { canTransition, isPublic, normalizeSlug } from './publishing.js';
+import { canReadPost, type PostAudience, type ViewerRole } from './audience.js';
 
 /**
  * @brief Domain error with a machine-readable code.
@@ -34,6 +35,7 @@ export interface PostServiceDeps {
 	posts: PostRepository;
 	tags: TagRepository;
 	users: UserRepository;
+	viewerRole?: ViewerRole;
 }
 
 /**
@@ -44,6 +46,7 @@ export const createPostSchema = z.object({
 	slug: slugField,
 	description: z.string().max(500).default(''),
 	status: z.enum(['draft', 'published', 'archived']).default('draft'),
+	audience: z.enum(['public', 'readers']).default('public'),
 	tags: z.array(z.string().trim().min(1).max(60)).max(20).default([]),
 	publishedAt: z.iso.datetime({ offset: true }).nullable().optional(),
 	publishAt: z.iso.datetime({ offset: true }).nullable().optional(),
@@ -54,7 +57,12 @@ export const createPostSchema = z.object({
 /**
  * @brief Validated input for patching a post.
  */
-export const updatePostSchema = createPostSchema.partial();
+export const updatePostSchema = createPostSchema.partial().extend({
+	description: createPostSchema.shape.description.unwrap().optional(),
+	status: createPostSchema.shape.status.unwrap().optional(),
+	tags: createPostSchema.shape.tags.unwrap().optional(),
+	audience: createPostSchema.shape.audience.unwrap().optional()
+});
 
 /**
  * @brief A public list item DTO.
@@ -67,6 +75,8 @@ export interface PostListItem {
 	tags: string[];
 	authorName: string | null;
 	publishedAt: string | null;
+	audience: PostAudience;
+	locked: boolean;
 }
 
 /**
@@ -122,7 +132,9 @@ async function findBacklinks(
 	const all = await deps.posts.listAll();
 	const pattern = new RegExp(`\\[\\[\\s*${slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(?:\\|[^\\]]+)?\\]\\]`, 'i');
 	return all
-		.filter((row) => row.slug !== slug && isPublic(row.status, row.publishedAt, now) && pattern.test(row.contentMarkdown))
+		.filter((row) => row.slug !== slug && isPublic(row.status, row.publishedAt, now)
+			&& (!row.publishAt || row.publishAt <= now)
+			&& canReadPost(row.audience, deps.viewerRole) && pattern.test(row.contentMarkdown))
 		.map((row) => ({ slug: row.slug, title: row.title }));
 }
 
@@ -137,7 +149,9 @@ async function toListItem(deps: PostServiceDeps, row: PostWithTags): Promise<Pos
 		id: row.id,
 		slug: row.slug,
 		title: row.title,
-		description: row.description,
+		description: canReadPost(row.audience, deps.viewerRole) ? row.description : '',
+		audience: row.audience,
+		locked: !canReadPost(row.audience, deps.viewerRole),
 		tags: row.tags,
 		authorName: await resolveAuthorName(deps.users, row.authorId),
 		publishedAt: row.publishedAt?.toISOString() ?? null
@@ -158,7 +172,10 @@ export async function listPublishedPosts(
 	const limit = Math.min(Math.max(options.limit ?? 10, 1), 200);
 	const offset = Math.max(options.offset ?? 0, 0);
 	const now = options.now ?? new Date();
-	const page = await deps.posts.listPublished({ limit, offset, tag: options.tag, search: options.search, now });
+	const page = await deps.posts.listPublished({
+		limit, offset, tag: options.tag, search: options.search, now,
+		includeReaderContent: deps.viewerRole === 'reader' || deps.viewerRole === 'admin'
+	});
 	const items: PostListItem[] = [];
 	for (const row of page.items) {
 		items.push(await toListItem(deps, row));
@@ -179,10 +196,13 @@ export async function getPublishedPost(
 	now: Date = new Date()
 ): Promise<PostDetail | null> {
 	const row = await deps.posts.findBySlug(normalizeSlug(slug));
-	if (row === null || !isPublic(row.status, row.publishedAt, now)) {
+	if (row === null || !isPublic(row.status, row.publishedAt, now) || (row.publishAt && row.publishAt > now)) {
 		return null;
 	}
 	const item = await toListItem(deps, { ...row, tags: await deps.tags.getPostTagNames(row.id) });
+	if (item.locked) {
+		return { ...item, contentHtml: '', coverImage: null, readingMinutes: 0, backlinks: [] };
+	}
 	const rendered = await renderMarkdown(row.contentMarkdown, { mediaPrefix: '/api/media' });
 	return {
 		...item,
@@ -220,6 +240,7 @@ export async function createPost(
 		slug,
 		title: parsed.title,
 		description: parsed.description,
+		audience: parsed.audience,
 		contentMarkdown: parsed.contentMarkdown,
 		contentHtml: rendered.html,
 		coverImage: parsed.coverImage ?? null,
@@ -306,6 +327,7 @@ async function buildUpdatePatch(deps: PostServiceDeps, row: PostRow,
 		: await renderMarkdown(parsed.contentMarkdown, { mediaPrefix: '/api/media' });
 	return {
 		title: parsed.title ?? row.title, slug, description: parsed.description ?? row.description,
+		audience: parsed.audience ?? row.audience,
 		contentMarkdown: parsed.contentMarkdown ?? row.contentMarkdown,
 		contentHtml: rendered?.html ?? row.contentHtml,
 		coverImage: parsed.coverImage === undefined ? row.coverImage : parsed.coverImage,

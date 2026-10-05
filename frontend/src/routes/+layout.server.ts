@@ -7,9 +7,11 @@ import type { LayoutServerLoad } from './$types';
 
 /**
  * @brief Loads the public canonical base for all pages.
- * @return The canonical site base.
+ * @param event Resolved session context.
+ * @return The canonical site base and presentation settings.
  */
-export const load: LayoutServerLoad = () => ({
+export const load: LayoutServerLoad = ({ locals }) => ({
+	sessionRole: locals.user?.role ?? null,
 	siteBase: siteBase(),
 	directUploads:
 		process.env['MEDIA_STORAGE'] === 'r2' ||

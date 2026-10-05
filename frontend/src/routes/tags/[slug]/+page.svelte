@@ -1,5 +1,6 @@
 <!-- @file +page.svelte @brief Engineering-log page and presentation component. -->
 <script lang="ts">
+	import ReaderGate from '../../../lib/components/ReaderGate.svelte';
 	import type { PageData } from './$types';
 	import DocShell from '../../../lib/components/DocShell.svelte';
 	import Seo from '../../../lib/components/Seo.svelte';
@@ -44,9 +45,11 @@
 						<span class="record-title">
 							<a href="/posts/{encodeURIComponent(post.slug)}">{post.title}</a>
 						</span>
-						<span class="stamp">PUBLISHED</span>
+						<span class="stamp">{post.audience === 'readers' ? 'READERS ONLY' : 'PUBLISHED'}</span>
 					</div>
-					<p class="summary">{post.description}</p>
+					{#if post.locked}<ReaderGate slug={post.slug} />{:else}<p class="summary">
+							{post.description}
+						</p>{/if}
 				</article>
 			{/each}
 		{/if}

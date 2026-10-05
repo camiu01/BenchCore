@@ -244,6 +244,7 @@ describe('search, image proxy and discovery', () => {
 	it('preserves search and page state while offline', async () => {
 		vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
 		const result = await postsLoad({
+			request: new Request('http://localhost/posts'),
 			url: new URL('http://localhost/posts?page=2&search=hello')
 		} as Parameters<typeof postsLoad>[0]);
 		expect(result).toMatchObject({ page: 2, search: 'hello', online: false, items: [] });
@@ -259,7 +260,7 @@ describe('search, image proxy and discovery', () => {
 		expect(resolveMediaUrl('javascript:alert(1)')).toBeNull();
 	});
 
-	it('proxies only validated image keys without forwarding browser cookies', async () => {
+	it('proxies only validated image keys without fabricating anonymous credentials', async () => {
 		const fetcher = vi
 			.fn()
 			.mockResolvedValue(new Response('png', { headers: { 'content-type': 'image/png' } }));
@@ -269,11 +270,14 @@ describe('search, image proxy and discovery', () => {
 		>[0]);
 		expect(invalid.status).toBe(404);
 		expect(fetcher).not.toHaveBeenCalled();
-		const response = await mediaGet({ params: { key } } as Parameters<typeof mediaGet>[0]);
+		const response = await mediaGet({
+			params: { key },
+			request: new Request('http://localhost')
+		} as Parameters<typeof mediaGet>[0]);
 		expect(response.headers.get('content-type')).toBe('image/png');
 		expect(await response.text()).toBe('png');
-		expect(fetcher.mock.calls[0]![1]).not.toHaveProperty('headers');
-		expect(fetcher.mock.calls[0]![1].redirect).toBe('error');
+		expect(fetcher.mock.calls[0]![1].headers).toEqual({});
+		expect(fetcher.mock.calls[0]![1].redirect).toBe('manual');
 	});
 
 	it('rejects non-image API responses and reports media outages', async () => {
@@ -286,7 +290,9 @@ describe('search, image proxy and discovery', () => {
 				)
 				.mockRejectedValueOnce(new Error('offline'))
 		);
-		const event = { params: { key } } as Parameters<typeof mediaGet>[0];
+		const event = { params: { key }, request: new Request('http://localhost') } as Parameters<
+			typeof mediaGet
+		>[0];
 		expect((await mediaGet(event)).status).toBe(502);
 		expect((await mediaGet(event)).status).toBe(502);
 	});
