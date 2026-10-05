@@ -165,7 +165,7 @@ roles and valid pre-migration sessions; it rejects duplicate case-folded emails
 instead of merging identities. Resolve collisions before retrying migrations.
 
 This beta has **no email verification, CAPTCHA, MFA or account deletion
-workflow**. Password-reset delivery is available when Resend is configured.
+workflow**. Password-reset delivery is available when Zoho Mail is configured.
 Email remains a login identifier, not proof of
 mailbox ownership. Add perimeter abuse protection if public registration attracts
 spam. Never rely on in-memory quotas as distributed multi-instance enforcement.

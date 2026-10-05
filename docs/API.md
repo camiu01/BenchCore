@@ -88,8 +88,10 @@ Registered email addresses are not verified.
 Password changes accept `currentPassword` and `newPassword` only, and require
 a different 12–200 character new password. The password hash and session version
 change atomically; every previous cookie stops authenticating.
-Password recovery requires `RESEND_API_KEY`, `PASSWORD_RESET_FROM`, and
-`SITE_URL`. The request endpoint always returns the same 202 response for a
+Password recovery requires `ZOHO_SMTP_USER`, `ZOHO_SMTP_PASSWORD`, and
+`SITE_URL`; `PASSWORD_RESET_FROM` optionally controls the sender label. The
+Zoho EU transport uses authenticated TLS on `smtp.zoho.eu:465`. The request
+endpoint always returns the same 202 response for a
 valid email shape, whether or not an active account exists. Recovery links
 expire after one hour and can be used once. Only SHA-256 token hashes are
 stored; a successful reset revokes all existing sessions.

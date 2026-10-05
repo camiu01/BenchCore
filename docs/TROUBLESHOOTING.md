@@ -54,9 +54,10 @@ pnpm as root. Existing versioned artifacts are intentionally not overwritten.
   unexpectedly resurrected sessions.
 - A successful `/health` response does not prove session-table access works.
 
-For password recovery failures, verify `RESEND_API_KEY`,
-`PASSWORD_RESET_FROM`, and `SITE_URL`. The request intentionally returns the
-same result for existing and unknown accounts, so inspect the Resend delivery
+For password recovery failures, verify `ZOHO_SMTP_USER`,
+`ZOHO_SMTP_PASSWORD`, `PASSWORD_RESET_FROM`, and `SITE_URL`. Accounts with
+two-factor authentication need a Zoho app password. The request intentionally
+returns the same result for existing and unknown accounts, so inspect delivery
 status without logging reset URLs or tokens. Do not repeatedly re-seed.
 
 ## Mutation returns 403

@@ -1,12 +1,19 @@
 /**
  * @file password-reset-delivery.test.ts
- * @brief Resend password recovery configuration and request payload coverage.
+ * @brief Zoho SMTP password recovery configuration and message coverage.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { configuredPasswordReset } from '../src/auth/password-reset-delivery.js';
 import type { UserRow } from '../src/db/schema.js';
 
-afterEach(() => { vi.unstubAllGlobals(); });
+const sendMail = vi.hoisted(() => vi.fn());
+const createTransport = vi.hoisted(() => vi.fn(() => ({ sendMail })));
+vi.mock('nodemailer', () => ({ default: { createTransport } }));
+
+afterEach(() => {
+	sendMail.mockReset();
+	createTransport.mockClear();
+});
 
 const user: UserRow = {
 	id: '00000000-0000-4000-8000-000000000001',
@@ -20,32 +27,34 @@ const user: UserRow = {
 	createdAt: new Date()
 };
 
-describe('Resend password recovery delivery', () => {
+describe('Zoho password recovery delivery', () => {
 	it('sends authenticated text and escaped HTML to the account email', async () => {
-		const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
-		vi.stubGlobal('fetch', fetcher);
+		sendMail.mockResolvedValue({ messageId: 'fixture' });
 		const configured = configuredPasswordReset({
-			RESEND_API_KEY: 're_test_key',
-			PASSWORD_RESET_FROM: 'onboarding@resend.dev',
+			ZOHO_SMTP_USER: 'owner@zohomail.eu',
+			ZOHO_SMTP_PASSWORD: 'private-app-password',
+			PASSWORD_RESET_FROM: 'BenchCore <owner@zohomail.eu>',
 			SITE_URL: 'https://benchcore.example'
 		});
 		await configured!.delivery.send(user, 'https://benchcore.example/reset-password?token=fixture');
-		expect(fetcher).toHaveBeenCalledOnce();
-		expect(fetcher.mock.calls[0]![0]).toBe('https://api.resend.com/emails');
-		const options = fetcher.mock.calls[0]![1] as RequestInit;
-		expect(options.headers).toMatchObject({ authorization: 'Bearer re_test_key' });
-		const payload = JSON.parse(String(options.body)) as Record<string, unknown>;
-		expect(payload).toMatchObject({
-			from: 'onboarding@resend.dev',
-			to: ['reader@example.test'],
+		expect(createTransport).toHaveBeenCalledWith(expect.objectContaining({
+			host: 'smtp.zoho.eu',
+			port: 465,
+			secure: true,
+			auth: { user: 'owner@zohomail.eu', pass: 'private-app-password' }
+		}));
+		expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({
+			from: 'BenchCore <owner@zohomail.eu>',
+			to: 'reader@example.test',
 			subject: 'Reset your BenchCore password'
-		});
-		expect(payload['html']).toContain('Reader &lt;Account&gt;');
-		expect(payload['text']).toContain('reset-password?token=fixture');
+		}));
+		const message = sendMail.mock.calls[0]![0] as Record<string, string>;
+		expect(message['html']).toContain('Reader &lt;Account&gt;');
+		expect(message['text']).toContain('reset-password?token=fixture');
 	});
 
-	it('requires the API key, sender and site URL together', () => {
+	it('requires SMTP credentials and a site URL together', () => {
 		expect(configuredPasswordReset({})).toBeUndefined();
-		expect(() => configuredPasswordReset({ RESEND_API_KEY: 're_test_key' })).toThrow();
+		expect(() => configuredPasswordReset({ ZOHO_SMTP_USER: 'owner@zohomail.eu' })).toThrow();
 	});
 });
