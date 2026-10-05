@@ -12,6 +12,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const pnpm = process.env['npm_execpath'] ?? '';
 assert(pnpm.includes('pnpm'), 'Run this check with pnpm test:vercel-api');
+const store = execFileSync(process.execPath, [pnpm, 'store', 'path', '--silent'],
+	{ cwd: root, encoding: 'utf8' }).trim();
+assert(isAbsolute(store), 'The original pnpm store must have an absolute path');
 
 /**
  * @brief Removes inherited application credentials before loading build tooling.
@@ -42,7 +45,12 @@ async function createFixture(fixture) {
 	for (const name of ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml']) {
 		await cp(join(root, name), join(fixture, name));
 	}
-	execFileSync(process.execPath, [pnpm, 'install', '--offline', '--frozen-lockfile', '--ignore-scripts', '--prod=false'],
+	const fixtureStore = execFileSync(process.execPath,
+		[pnpm, 'store', 'path', '--silent', '--store-dir', store],
+		{ cwd: fixture, encoding: 'utf8' }).trim();
+	assert.equal(fixtureStore, store, 'Environment isolation must not change the offline package store');
+	execFileSync(process.execPath, [pnpm, 'install', '--offline', '--frozen-lockfile', '--ignore-scripts',
+		'--prod=false', '--store-dir', store],
 		{ cwd: fixture, env: { ...process.env, CI: '1' }, stdio: 'inherit' });
 	return api;
 }

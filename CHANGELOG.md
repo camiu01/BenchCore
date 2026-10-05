@@ -5,6 +5,9 @@ Version 0.6.0-beta.1 is prepared locally. No tag, hosted release or deployment i
 
 ## Unreleased
 
+- Preserve the installed pnpm store explicitly in the credential-free Vercel
+  packaging test so CI environment isolation does not break offline installs.
+
 - Prevent Vercel's API builder from selecting standalone `dist/index.js` instead
   of the Fetch entrypoint. Bundle a self-contained ESM API and verify production
   packaging without cloud credentials.
