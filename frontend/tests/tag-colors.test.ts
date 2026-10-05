@@ -32,6 +32,21 @@ describe('CSP-safe tag colors', () => {
 		expect(body).not.toMatch(/\sstyle=/);
 		expect(body).toContain('Use #2563EB for Systems');
 	});
+
+	it('preserves the HEX quantifier in the rendered input validation pattern', () => {
+		const { body } = render(TagColorEditor, {
+			props: { id: 'tag', name: 'Systems', color: '#64748b' }
+		});
+		const pattern = body.match(/\spattern="([^"]+)"/)?.[1];
+		expect(pattern).toBe('#[0-9A-Fa-f]{6}');
+		const validation = new RegExp(`^(?:${pattern})$`, 'v');
+		for (const color of ['#64748b', '#64748B', '#2563EB']) {
+			expect(validation.test(color)).toBe(true);
+		}
+		for (const color of ['64748b', '#64748', '#64748bb', '#64748g']) {
+			expect(validation.test(color)).toBe(false);
+		}
+	});
 });
 
 describe('public authentication navigation', () => {

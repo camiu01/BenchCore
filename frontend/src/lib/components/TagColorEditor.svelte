@@ -48,7 +48,7 @@
 			class="field-input color-code"
 			name="color"
 			bind:value={color}
-			pattern="#[0-9A-Fa-f]{6}"
+			pattern={'#[0-9A-Fa-f]{6}'}
 			maxlength="7"
 			required
 			aria-label="HEX color for {name}"
