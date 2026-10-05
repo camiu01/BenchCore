@@ -81,6 +81,23 @@ export type TagWithCount = z.infer<typeof tagWithCountSchema>;
  * @returns The configured API base URL.
  */
 export function apiBase(): string {
+	const binding = process.env['API_SERVICE_URL'];
+	if (binding !== undefined) {
+		const url = new URL(binding);
+		if (
+			!['http:', 'https:'].includes(url.protocol) ||
+			url.username ||
+			url.password ||
+			url.search ||
+			url.hash
+		) {
+			throw new Error('Invalid API service binding');
+		}
+		return url.href.replace(/\/+$/, '');
+	}
+	if (process.env['VERCEL'] === '1' || process.env['DEPLOYMENT_TARGET'] === 'vercel') {
+		throw new Error('API_SERVICE_URL binding is required on Vercel');
+	}
 	return process.env['PUBLIC_API_URL'] || 'http://localhost:5181';
 }
 

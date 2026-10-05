@@ -27,6 +27,7 @@ export function createServerlessApp(env: NodeJS.ProcessEnv) {
 	const handler = createHandler({ ...createDrizzleRepos(db), media: configuredStorage(db, env),
 		cookieSecure: env['NODE_ENV'] === 'production', allowedOrigins: origins });
 	return {
+		handler,
 		/** @brief Executes secured API requests with the hosting platform's peer identity. */
 		fetch: (request: Request, address: string) => nodeHandlerFetch(handler, request, address),
 		/** @brief Probes schema and connectivity without reading user content. */

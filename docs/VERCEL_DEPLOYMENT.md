@@ -3,19 +3,31 @@
 
 # Vercel and private R2
 
-Deploy the **whole app**, including `/api/*`, with Node.js 24. The API runs
-in-process inside SvelteKit Functions, without listeners, migrations or scheduler
+Deploy the **whole app** as two independently built services on Node.js 24.
+`frontend` serves pages; `api` serves `/api`, `/api/*`, `/health` and `/health/*`.
+The API runs native Node Functions, without listeners, migrations or scheduler
 timers. The existing [Node artifact](BETA_DEPLOYMENT.md) remains supported.
 No cloud resources are created by the build or application.
 
 ## Project settings
 
-Import the BenchCore repository, select **SvelteKit**, and set Root Directory to
-`frontend`. Enable **Include source files outside of the Root Directory in the
-Build Step**: the API and workspace scripts are siblings. Use Node.js **24.x**.
-`frontend/vercel.json` selects frozen pnpm installation and `pnpm run build:vercel`.
+Import the BenchCore repository and set the project Root Directory to the
+**repository root**, not `frontend`. Use Node.js **24.x**. Root `vercel.json`
+defines each service's framework/runtime, entrypoint, frozen install and build
+command. Remove old project-level build/output overrides.
 Do not override the output directory or deploy a Windows-generated output:
 Vercel must build the repository on Linux.
+
+The `frontend` service declares a one-way `API_SERVICE_URL` URL binding to `api`.
+Vercel injects it **at Function runtime**. Do not define it in project settings,
+env files or build scripts. Server-side reads, actions and session checks use
+that private base URL, preserving the API's `/api/*` paths and any internal URL
+prefix. Browser requests and media URLs still use the public same-origin paths.
+The frontend no longer imports API/database code or initializes API dependencies.
+There is no reverse binding and no additional internal-only service.
+
+The ordered root rewrites expose only the API/health prefixes to `api`; every
+remaining path goes to `frontend`. Bindings alone do not expose services publicly.
 
 Set these environment variables for the intended deployment environments:
 
@@ -26,7 +38,7 @@ Set these environment variables for the intended deployment environments:
 | `DATABASE_URL` | Private PostgreSQL connection URL, TLS enabled, preferably the provider's pooled endpoint |
 | `SITE_URL` | Exact canonical HTTPS origin, no path |
 | `PUBLIC_SITE_URL` | Same canonical HTTPS origin |
-| `PUBLIC_API_URL` | Canonical HTTPS origin, no `/api` suffix |
+| `PUBLIC_API_URL` | Optional standalone Node/development setting; Vercel server calls use the injected binding instead |
 | `API_ALLOWED_ORIGINS` | Comma-separated exact HTTPS origins, including any branch aliases used for mutations |
 | `MEDIA_STORAGE` | `r2` |
 | `R2_ACCOUNT_ID` | Cloudflare's 32-character lowercase hexadecimal account ID |
@@ -81,12 +93,24 @@ returns a no-store redirect to a 60-second signed GET, avoiding Vercel's
 
 ## Limits and verification
 
+Run all services locally from the repository root using:
+
+```sh
+pnpm dlx vercel@62.2.0 dev -L --listen 127.0.0.1:5180
+```
+
+`-L` runs without cloud linking; omit it when deliberately testing a linked
+project. Vercel injects the binding automatically in both modes. Use local-only
+database/media fixtures, and stop any existing owner-controlled listener on the
+chosen port first. Do not use ports 3000/3001 for this repository.
+
 - Scheduling is temporarily disabled on Vercel. Scheduled drafts remain private;
   the editor preserves their dates but does not offer new schedules. Publish
   manually. No cron or request-triggered publication is installed.
 - PostgreSQL pools use three connections per Function instance. Provider pooling
   is still needed as instances scale; the in-memory rate limiter is per instance,
-  not a shared production perimeter. Add platform-level abuse controls before
+  not a shared production perimeter. Internal calls can share a transport-peer
+  quota; arbitrary forwarded-IP headers are not trusted. Add platform-level abuse controls before
   opening public registration.
 - Before production: rotate bootstrap passwords, verify backups/restores, set
   trusted HTTPS origins, and use deployment protection for private previews.

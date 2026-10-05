@@ -54,7 +54,7 @@ export default defineConfig({
 			}
 		})
 	],
-	ssr: { noExternal: serverless ? true : [] },
+	ssr: { noExternal: serverless ? true : ['cookie'] },
 	test: {
 		include: ['tests/**/*.test.ts', 'src/**/*.test.ts']
 	}

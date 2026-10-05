@@ -13,18 +13,6 @@ import { secureResponse } from './lib/server/security.js';
  * @return A secured page, redirect, or rejected mutation response.
  */
 export const handle: Handle = async ({ event, resolve }) => {
-	if (process.env['VERCEL'] === '1' || process.env['DEPLOYMENT_TARGET'] === 'vercel') {
-		const api = await import('./lib/server/vercel-api.js');
-		const address = event.getClientAddress();
-		if (
-			event.url.pathname === '/api' ||
-			event.url.pathname.startsWith('/api/') ||
-			['/health', '/health/live', '/health/ready'].includes(event.url.pathname)
-		) {
-			return api.serverlessResponse(event.request, address);
-		}
-		return api.withServerlessApi(address, async () => handlePage({ event, resolve }));
-	}
 	return handlePage({ event, resolve });
 };
 

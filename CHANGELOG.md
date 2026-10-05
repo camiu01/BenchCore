@@ -5,6 +5,9 @@ Version 0.6.0-beta.1 is prepared locally. No tag, hosted release or deployment i
 
 ## Unreleased
 
+- Configure root Vercel Services for independently built `api` and `frontend`,
+  same-origin API/health routing and runtime-only frontend-to-API binding.
+
 - Support the complete app and secured API on Vercel Node.js 24 Functions,
   retaining persistent Node delivery and temporarily disabling the scheduler.
 - Add private Cloudflare R2 with owner-bound direct upload tickets, exact-size

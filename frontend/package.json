@@ -9,7 +9,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
-		"build:vercel": "node ../scripts/build-vercel.mjs",
+		"build:vercel": "node ../scripts/build-vercel.mjs --frontend-only",
 		"start": "node server.mjs",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

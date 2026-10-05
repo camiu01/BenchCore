@@ -28,8 +28,9 @@ manages accounts and protects the final active administrator.
 GitHub CI/CD, HTTPS hosting, explicit migrations, backups and release limits.
 No GHCR/container images are required. **GitHub Pages cannot run the backend.**
 
-[Vercel deployment](docs/VERCEL_DEPLOYMENT.md) runs the entire app and API in
-Node.js 24 Functions with private R2 browser-direct uploads. Scheduled publication
+[Vercel deployment](docs/VERCEL_DEPLOYMENT.md) runs independently built frontend
+and API services in one project/domain, with a private runtime binding and R2
+browser-direct uploads. Scheduled publication
 is temporarily disabled on that target; the persistent Node runtime remains available.
 
 ## Features

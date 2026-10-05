@@ -12,6 +12,9 @@ type Transport = (input: string, init?: RequestInit) => Promise<Response>;
  * @return Upstream response.
  */
 export function apiFetch(input: string, init?: RequestInit): Promise<Response> {
+	if (process.env['API_SERVICE_URL'] !== undefined) {
+		return fetch(input, { ...init, redirect: 'manual' });
+	}
 	const bridge = (globalThis as unknown as Record<symbol, Transport | undefined>)[bridgeKey];
 	return bridge ? bridge(input, init) : fetch(input, init);
 }
