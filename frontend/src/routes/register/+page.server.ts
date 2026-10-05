@@ -25,12 +25,12 @@ export const actions: Actions = {
 					.regex(/^[a-z][a-z0-9_-]{2,31}$/i),
 				email: z.email().max(254),
 				name: z.string().trim().min(1).max(200),
-				password: z.string().min(12).max(200)
+				password: z.string().min(8).max(200)
 			})
 			.safeParse({ ...fields, password });
 		if (!parsed.success || password !== form.get('confirmation')) {
 			return fail(400, {
-				error: 'Check your details and matching 12+ character passwords.',
+				error: 'Check your details and matching 8+ character passwords.',
 				...fields
 			});
 		}

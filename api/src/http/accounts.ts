@@ -24,7 +24,7 @@ export const handleRegister: ApiHandler = async (req, res, deps) => {
 	const body = await readBody(req, res);
 	if (!body) { return; }
 	const parsed = registrationSchema.safeParse(body.data);
-	if (!parsed.success) { sendJson(res, 400, { error: 'validation', message: 'Valid identity and a 12+ character password are required' }); return; }
+	if (!parsed.success) { sendJson(res, 400, { error: 'validation', message: 'Valid identity and an 8+ character password are required' }); return; }
 	const user = await registerUser(deps.users, parsed.data);
 	sendJson(res, user ? 201 : 409, user ? { user: userDto(user) } : { error: 'conflict', message: 'Account details unavailable' });
 };
@@ -40,7 +40,7 @@ export const handleChangePassword: ApiHandler = async (req, res, deps) => {
 	const body = await readBody(req, res);
 	if (!body) { return; }
 	const parsed = passwordChangeSchema.safeParse(body.data);
-	if (!parsed.success) { sendJson(res, 400, { error: 'validation', message: 'Use a different 12+ character password' }); return; }
+	if (!parsed.success) { sendJson(res, 400, { error: 'validation', message: 'Use a different 8+ character password' }); return; }
 	if (!await changeOwnPassword(deps.users, user, parsed.data)) { sendJson(res, 400, { error: 'validation', message: 'Current password is incorrect or account changed' }); return; }
 	sendJson(res, 200, { ok: true }, { 'set-cookie': clearSessionCookieHeader() });
 };

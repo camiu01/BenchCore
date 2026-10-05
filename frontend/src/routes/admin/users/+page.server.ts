@@ -45,7 +45,7 @@ export const actions: Actions = {
 					.regex(/^[a-z][a-z0-9_-]{2,31}$/i),
 				email: z.email().max(254),
 				name: z.string().trim().min(1).max(200),
-				password: z.string().min(12).max(200),
+				password: z.string().min(8).max(200),
 				role: z.enum(['admin', 'reader'])
 			})
 			.safeParse(
@@ -54,7 +54,7 @@ export const actions: Actions = {
 				)
 			);
 		if (!parsed.success) {
-			return fail(400, { error: 'Valid identity and a 12+ character password are required.' });
+			return fail(400, { error: 'Valid identity and an 8+ character password are required.' });
 		}
 		const result = await accountRequest(
 			request.headers.get('cookie'),

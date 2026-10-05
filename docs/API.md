@@ -80,13 +80,13 @@ Accounts may have an optional unique username. Login accepts either
 Usernames are case-insensitive, 3–32 characters, start with a letter, and contain
 letters, digits, underscores or dashes. Legacy email-only accounts keep working.
 
-Registration accepts `username`, `email`, `name`, and a 12–200 character
+Registration accepts `username`, `email`, `name`, and an 8–200 character
 `password`; unknown fields (including a supplied role) are rejected. Emails
 and usernames are case-folded. Public registration always creates a reader.
 Registered email addresses are not verified.
 
 Password changes accept `currentPassword` and `newPassword` only, and require
-a different 12–200 character new password. The password hash and session version
+a different 8–200 character new password. The password hash and session version
 change atomically; every previous cookie stops authenticating.
 Password recovery requires `ZOHO_SMTP_USER`, `ZOHO_SMTP_PASSWORD`, and
 `SITE_URL`; `PASSWORD_RESET_FROM` optionally controls the sender label. The

@@ -12,7 +12,7 @@ import { rotatePassword } from '../db/account-maintenance.js';
 
 const inputSchema = z.object({
 	username: usernameField,
-	password: z.string().min(12).max(200),
+	password: z.string().min(8).max(200),
 	email: z.email().max(254).optional(),
 	name: z.string().trim().min(1).max(200).optional()
 });
@@ -49,6 +49,6 @@ async function main(): Promise<void> {
 }
 
 main().catch(() => {
-	process.stderr.write('Account operation failed; verify input (12+ character password) and database access\n');
+	process.stderr.write('Account operation failed; verify input (8+ character password) and database access\n');
 	process.exitCode = 1;
 }).finally(closeDb);

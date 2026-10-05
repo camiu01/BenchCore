@@ -80,7 +80,7 @@ export function accountError(status: number): string {
 		return 'Account details unavailable, or this change would remove the last active administrator.';
 	}
 	if (status === 400) {
-		return 'Check the fields and use a different password with at least 12 characters.';
+		return 'Check the fields and use a different password with at least 8 characters.';
 	}
 	if (status === 401 || status === 403) {
 		return 'Sign in again with the required account permissions.';

@@ -21,7 +21,7 @@
 	sub="Reader accounts cannot publish or manage users."
 	{nav}
 	footerLeft="ACCESS: READER"
-	footerRight="12+ CHARACTER PASSWORD"
+	footerRight="8+ CHARACTER PASSWORD"
 >
 	<main>
 		<article class="record">
@@ -66,7 +66,7 @@
 					name="password"
 					type="password"
 					required
-					minlength="12"
+					minlength="8"
 					maxlength="200"
 					autocomplete="new-password"
 				/>
@@ -77,7 +77,7 @@
 					name="confirmation"
 					type="password"
 					required
-					minlength="12"
+					minlength="8"
 					maxlength="200"
 					autocomplete="new-password"
 				/>

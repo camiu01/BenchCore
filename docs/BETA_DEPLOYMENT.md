@@ -146,7 +146,7 @@ with a 15-second deadline.
 - `/register`: public registration creates **readers only**. Readers cannot
   publish, upload, access drafts or administer accounts.
 - `/account`: change your own password with the current password. New passwords
-  require 12+ characters; a successful change revokes **all** existing sessions.
+  require 8+ characters; a successful change revokes **all** existing sessions.
 - `/admin/users`: administrators list/create accounts, change reader/admin roles
   and disable/reactivate users. Changes revoke sessions. The final active
   administrator cannot be disabled or demoted, including concurrent requests.
@@ -155,7 +155,7 @@ with a 15-second deadline.
   (source: `pnpm beta:user:create`). Fields: `username`, `password`, optionally
   `email` and `name`. Existing identities are preserved.
 - Operator recovery: explicitly pipe private JSON containing `username` and a
-  12+ character `password` to `npm run user:password` (source: `pnpm user:password`).
+  8+ character `password` to `npm run user:password` (source: `pnpm user:password`).
   This rotates only that existing account and revokes its sessions. Never put
   passwords in shell arguments, committed files, workflow inputs or logs.
 

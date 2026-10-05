@@ -25,12 +25,12 @@ export const actions: Actions = {
 		const parsed = z
 			.object({
 				token: tokenSchema,
-				newPassword: z.string().min(12).max(200),
-				confirmation: z.string().min(12).max(200)
+				newPassword: z.string().min(8).max(200),
+				confirmation: z.string().min(8).max(200)
 			})
 			.safeParse(Object.fromEntries(form));
 		if (!parsed.success || parsed.data.newPassword !== parsed.data.confirmation) {
-			return fail(400, { error: 'Use matching passwords with at least 12 characters.' });
+			return fail(400, { error: 'Use matching passwords with at least 8 characters.' });
 		}
 		const result = await accountRequest(null, '/api/auth/password/reset', 'POST', {
 			token: parsed.data.token,

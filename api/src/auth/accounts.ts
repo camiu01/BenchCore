@@ -13,11 +13,11 @@ export const registrationSchema = z.object({
 	username: usernameField,
 	email: z.email().max(254).transform((value) => value.toLowerCase()),
 	name: z.string().trim().min(1).max(200),
-	password: z.string().min(12).max(200)
+	password: z.string().min(8).max(200)
 }).strict();
 export const passwordChangeSchema = z.object({
 	currentPassword: z.string().min(1).max(200),
-	newPassword: z.string().min(12).max(200)
+	newPassword: z.string().min(8).max(200)
 }).strict().refine((input) => input.currentPassword !== input.newPassword, 'choose a different password');
 export const userPatchSchema = z.object({
 	role: z.enum(['admin', 'reader']).optional(),

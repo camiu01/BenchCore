@@ -5,6 +5,7 @@
 	import Seo from '../../lib/components/Seo.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let passwordVisible = $state(false);
 
 	const nav = [
 		{ href: '/', label: '[01] index' },
@@ -50,14 +51,37 @@
 					</div>
 					<div>
 						<label class="field-label" for="password">Password</label>
-						<input
-							class="field-input"
-							id="password"
-							name="password"
-							type="password"
-							required
-							autocomplete="current-password"
-						/>
+						<div class="password-input">
+							<input
+								class="field-input"
+								id="password"
+								name="password"
+								type={passwordVisible ? 'text' : 'password'}
+								required
+								autocomplete="current-password"
+							/>
+							<button
+								class="password-toggle"
+								type="button"
+								aria-label={passwordVisible ? 'Hide password' : 'Show password'}
+								aria-pressed={passwordVisible}
+								title={passwordVisible ? 'Hide password' : 'Show password'}
+								onclick={() => (passwordVisible = !passwordVisible)}
+							>
+								{#if passwordVisible}
+									<svg viewBox="0 0 24 24" aria-hidden="true">
+										<path
+											d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.5 10.5 0 0112 4c5.5 0 9 6 9 6a16 16 0 01-2.2 2.8M6.6 6.6C4.3 8.1 3 10 3 10s3.5 6 9 6a9.8 9.8 0 004-.8"
+										/>
+									</svg>
+								{:else}
+									<svg viewBox="0 0 24 24" aria-hidden="true">
+										<path d="M3 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" />
+										<circle cx="12" cy="10" r="2.5" />
+									</svg>
+								{/if}
+							</button>
+						</div>
 					</div>
 				</div>
 				<div class="btn-row">

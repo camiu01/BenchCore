@@ -99,14 +99,14 @@
 					maxlength="254"
 					autocomplete="off"
 				/>
-				<label class="field-label" for="newPassword">Temporary password, 12+ characters</label>
+				<label class="field-label" for="newPassword">Temporary password, 8+ characters</label>
 				<input
 					class="field-input"
 					id="newPassword"
 					name="password"
 					type="password"
 					required
-					minlength="12"
+					minlength="8"
 					maxlength="200"
 					autocomplete="new-password"
 				/>

@@ -30,14 +30,14 @@
 			{#if data.token}
 				<form method="POST" class="form-grid">
 					<input type="hidden" name="token" value={data.token} />
-					<label class="field-label" for="newPassword">New password, 12+ characters</label>
+					<label class="field-label" for="newPassword">New password, 8+ characters</label>
 					<input
 						class="field-input"
 						id="newPassword"
 						name="newPassword"
 						type="password"
 						required
-						minlength="12"
+						minlength="8"
 						maxlength="200"
 						autocomplete="new-password"
 					/>
@@ -48,7 +48,7 @@
 						name="confirmation"
 						type="password"
 						required
-						minlength="12"
+						minlength="8"
 						maxlength="200"
 						autocomplete="new-password"
 					/>

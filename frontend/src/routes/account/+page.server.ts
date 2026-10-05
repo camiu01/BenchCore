@@ -25,14 +25,14 @@ export const actions: Actions = {
 		const parsed = z
 			.object({
 				currentPassword: z.string().min(1).max(200),
-				newPassword: z.string().min(12).max(200)
+				newPassword: z.string().min(8).max(200)
 			})
 			.safeParse({
 				currentPassword: form.get('currentPassword'),
 				newPassword: form.get('newPassword')
 			});
 		if (!parsed.success || parsed.data.newPassword !== form.get('confirmation')) {
-			return fail(400, { error: 'Use matching passwords with at least 12 characters.' });
+			return fail(400, { error: 'Use matching passwords with at least 8 characters.' });
 		}
 		const result = await accountRequest(
 			request.headers.get('cookie'),

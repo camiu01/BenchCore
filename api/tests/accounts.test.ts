@@ -77,6 +77,13 @@ describe('beta accounts', () => {
 			const response = await request('/api/auth/register', 'POST', { ...fields, name: 'Test' });
 			expect(response.status).toBe(fields.password === 'short' ? 400 : 409);
 		}
+		const accepted = await request('/api/auth/register', 'POST', {
+			username: 'eightchars',
+			email: 'eight@example.test',
+			name: 'Eight',
+			password: 'passw0rd'
+		});
+		expect(accepted.status).toBe(201);
 	});
 	it('blocks anonymous/readers from every administrative account mutation and list', async () => {
 		await reader();
@@ -115,10 +122,10 @@ describe('beta accounts', () => {
 		const path = '/api/auth/password';
 		expect((await request(path, 'POST', { currentPassword: 'wrong', newPassword: 'new-long-password' }, first)).status).toBe(400);
 		expect((await request(path, 'POST', { currentPassword: password, newPassword: 'short' }, first)).status).toBe(400);
-		expect((await request(path, 'POST', { currentPassword: password, newPassword: 'new-long-password' }, first)).status).toBe(200);
+		expect((await request(path, 'POST', { currentPassword: password, newPassword: 'newpass8' }, first)).status).toBe(200);
 		for (const cookie of [first, second]) { expect((await request('/api/auth/me', 'GET', undefined, cookie)).status).toBe(401); }
 		expect((await request('/api/auth/login', 'POST', { username: 'reader', password })).status).toBe(401);
-		expect(await login('reader', 'new-long-password')).toBeTruthy();
+		expect(await login('reader', 'newpass8')).toBeTruthy();
 	});
 	it('resets forgotten passwords with an opaque single-use token and generic request response', async () => {
 		await reader();
