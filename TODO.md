@@ -38,7 +38,7 @@ Development task management for BenchCore (research frontend + standalone API).
 - [x] Media endpoints over the StorageProvider seam (`api/src/media/storage.ts` local-filesystem backend): `POST /api/media` (JSON base64, auth, 5 MiB cap, type allowlist), `GET /api/media/:key`, `DELETE /api/media/:key` #api #media
 - [x] Router hardening: JSON body caps, cookie parsing, JSON 404/405/500 shapes; 42-test router + service suite #api #security #tests
 
-### v0.4.0 milestone — Public site, admin & Docker (shipped)
+### v0.4.0 milestone — Public site and admin (shipped)
 
 - [x] Typed API client (`frontend/src/lib/api.ts`): Zod-validated DTOs, graceful `null` on API downtime (pages never 500) #frontend #api
 - [x] Public routes: `/` recent records, `/posts` + pagination, `/posts/[slug]` with cover/backlinks/reading time, `/tags`, `/tags/[slug]`; offline stamps everywhere #frontend #ux
@@ -47,7 +47,6 @@ Development task management for BenchCore (research frontend + standalone API).
 - [x] Login/logout pages + `hooks.server.ts` session resolve + `/admin` guard #frontend #auth
 - [x] Obsidian-style admin editor (`PostEditor.svelte`): write mode, API-rendered read mode, status stamps, tag CSV, image upload with cursor insertion #admin #ux
 - [x] `/admin` ledger, `/admin/posts/new`, `/admin/posts/[id]` (save/preview/delete/upload), `/admin/tags` registry #admin
-- [x] Docker: `api/Dockerfile`, `frontend/Dockerfile` (adapter-node), `docker-compose.yml` (postgres 17 + api + frontend), `.dockerignore`; `pnpm docker:up` #ops
 
 ### v0.5.0 milestone — Hardening & release (prepared locally)
 
@@ -67,7 +66,7 @@ Validation: 85 API + 41 frontend tests passed; both typechecks, frontend lint/fo
 and both builds passed. Three migrations verified in embedded PostgreSQL and
 applied to the authorized configured PostgreSQL. Production browser checks cover
 login, preview, search, themes, private headers and full-size uploads.
-Docker/Compose execution and a backup/restore drill were not run locally.
+A backup/restore drill was not run locally.
 
 ### v0.6.0-beta.1 — Online beta preparation
 
@@ -95,6 +94,27 @@ checks are configured in GitHub but have not run remotely; public hosting,
 branch/environment protection and backup/restore remain operator release gates.
 The BenchCore homepage also passes selected WCAG 2 A/AA checks with zero
 violations/incomplete checks, displays the expanded name and has no mobile overflow.
+
+### Node artifact maintenance — 2026-10-05
+
+- [x] Isolated dependency workspace under writable artifact staging avoids legacy pnpm `/home/tmp` bin-link resolution #cd #tests
+- [x] Reserve Windows final bundle paths before creating junctions; keep existing artifacts intact and remove owned staging #ops #tests
+- [x] Remove Docker deployment files, commands, example variables and guides; retain PostgreSQL integration fixtures in GitHub CI #ops #docs
+
+Validation: 95 API + 60 frontend tests, workspace/runtime typechecks, lint,
+formatting and isolated source/bundle SQL smoke pass. Native Linux execution
+must be rechecked in GitHub CD.
+
+### Vercel and private R2
+
+- [x] Full application and API on Node 24 Vercel Functions, without listeners or startup migrations #ops #api
+- [x] Private R2 browser-direct uploads with signed length/type, owner-bound tickets and immutable conditional publication #media #security
+- [x] Disable serverless scheduling temporarily; preserve dates and allow explicit clearing for manual publication #posts
+- [x] Add transport cancellation, session isolation, upload and scheduled-editor regressions plus deployment guide #tests #docs
+
+Cloud account configuration, real R2 browser uploads and public deployment remain
+operator gates. Offline signature tests and generated-function SQL smoke do not
+claim configured cloud resources or a published site.
 
 ## Pending
 

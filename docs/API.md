@@ -223,7 +223,7 @@ pipeline, not a general-purpose HTML passthrough. Preview does not save a post.
 
 ## Media
 
-Upload is JSON/base64 at the API, even though the admin browser form uses
+The Node-compatible upload is JSON/base64 at the API, even though the admin browser form uses
 multipart data toward SvelteKit:
 
 ```json
@@ -248,8 +248,26 @@ Removing a key does not revoke copies already held by browsers or caches.
 Deleting a post does not imply automatic cleanup of its referenced images.
 
 Adapter-node must use `BODY_SIZE_LIMIT=8M` to allow these multipart uploads
-through the frontend. The supplied Docker image and Compose configuration
-set this explicitly; its upstream default of 512 KiB is too small.
+through the frontend. The unified Node runtime sets this explicitly;
+the adapter's upstream default of 512 KiB is too small.
+
+### Browser-direct R2 uploads
+
+With `MEDIA_STORAGE=r2`, authenticated administrators use these exact-Origin
+endpoints instead of sending image bodies through Vercel:
+
+- `POST /api/media/upload`: `{ filename, mime, sizeBytes }` returns
+  `{ uploadUrl, ticket }`. PUT raw file bytes to the signed R2 URL with the
+  declared `Content-Type`, no session cookies, and no redirects.
+- `POST /api/media/complete`: `{ ticket }` verifies the administrator, expiry,
+  staged object's length/type/ETag and immutable publication; returns 201 with
+  the normal media record and same-origin `url`.
+- `GET /api/media/:key`: only completed objects receive a no-store 307 redirect
+  to a short-lived signed GET. Function responses do not contain image bytes.
+
+Both upload metadata and completion bodies have a 16 KiB cap. The same 5 MiB
+file cap and allowed formats apply. See [Vercel deployment](VERCEL_DEPLOYMENT.md)
+for private bucket credentials, CORS and lifecycle configuration.
 
 ## Errors and limits
 

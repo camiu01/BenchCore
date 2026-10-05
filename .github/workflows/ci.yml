@@ -40,6 +40,8 @@ jobs:
         run: pnpm format
       - name: Build both packages
         run: pnpm build
+      - name: Verify Vercel serverless output
+        run: pnpm build:vercel
   postgres:
     runs-on: ubuntu-latest
     timeout-minutes: 15

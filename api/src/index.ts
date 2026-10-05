@@ -4,29 +4,24 @@
  */
 import { getDb } from './db/client.js';
 import { createDrizzleRepos } from './db/drizzle.js';
-import { createDatabaseStorage, createLocalStorage } from './media/storage.js';
-import { createDrizzleMedia } from './db/drizzle-media.js';
+import { configuredStorage } from './media/configured.js';
 import { configuredOrigins } from './http/security.js';
 import { startPublishingJob } from './posts/scheduler.js';
 import { DEFAULT_PORT, MEDIA_PREFIX, createHandler, parsePort, startServer } from './server.js';
 
-const mediaDir = process.env['MEDIA_DIR'] ?? './data/media';
 const db = getDb();
 const repos = createDrizzleRepos(db);
 const backend = process.env['MEDIA_STORAGE'] ?? 'local';
-if (backend !== 'local' && backend !== 'database') {
-	throw new Error('MEDIA_STORAGE must be local or database');
-}
 const handler = createHandler({
 	...repos,
-	media: backend === 'database' ? createDatabaseStorage(createDrizzleMedia(db)) : createLocalStorage(mediaDir),
+	media: configuredStorage(db, process.env),
 	cookieSecure: process.env['NODE_ENV'] === 'production',
 	allowedOrigins: configuredOrigins(process.env)
 });
 
 const port = parsePort(process.env['PORT'], DEFAULT_PORT);
 const server = startServer(port, handler, process.env['HOST']);
-const stopPublishing = startPublishingJob(repos.posts);
+const stopPublishing = process.env['SCHEDULER_ENABLED'] === 'false' ? () => {} : startPublishingJob(repos.posts);
 server.once('close', stopPublishing);
 
 server.on('listening', () => {

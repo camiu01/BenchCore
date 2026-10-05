@@ -39,7 +39,15 @@
 				<span class="record-title">EDIT // UNSAVED</span>
 				<span class="stamp">DRAFT</span>
 			</div>
-			<PostEditor {values} {previewHtml} {uploadedUrl} {errorMsg} isNew={true} />
+			<PostEditor
+				{values}
+				{previewHtml}
+				{uploadedUrl}
+				{errorMsg}
+				isNew={true}
+				directUploads={data.directUploads}
+				schedulerEnabled={data.schedulerEnabled}
+			/>
 		</article>
 	</main>
 </DocShell>

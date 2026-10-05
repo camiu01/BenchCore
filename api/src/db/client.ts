@@ -24,7 +24,9 @@ export function getDb(): AppDb {
 		throw new Error('DATABASE_URL is not set');
 	}
 	if (cached === null) {
-		client = postgres(url, { connect_timeout: 5, connection: { statement_timeout: 10_000 } });
+		const serverless = process.env['VERCEL'] === '1' || process.env['DEPLOYMENT_TARGET'] === 'vercel';
+		client = postgres(url, { connect_timeout: 5, connection: { statement_timeout: 10_000 },
+			...(serverless ? { max: 3, idle_timeout: 10, max_lifetime: 300, prepare: false } : {}) });
 		cached = drizzle(client, { schema });
 	}
 	return cached;

@@ -30,7 +30,7 @@ What happens? Attach screenshots or sanitized errors if helpful.
 - OS:
 - Node.js / pnpm:
 - Browser/version:
-- Local or Docker/other hosting:
+- Local or hosted Node deployment:
 - Media storage mode (local/database):
 - Theme (light/dark/oled), if relevant:
 

@@ -63,7 +63,12 @@ preview accounts, screenshots, `.git`, tests and development dependencies.
 Existing version directories are not overwritten. Local bundles match the
 build machine's platform; only the GitHub Ubuntu bundle is delivered as Linux x64.
 Windows local bundles use junctions and must stay in their generated location.
+They are assembled in an exclusively reserved final directory rather than moved.
 The Linux CD artifact uses relocatable relative dependency links.
+Dependency deployment stages inside `artifacts/` in an isolated metadata-only
+workspace, containing legacy pnpm bin-link resolution within writable staging.
+Unique staging directories are removed after packaging; existing release
+directories are never overwritten.
 
 ## Install
 
@@ -174,7 +179,7 @@ spam. Never rely on in-memory quotas as distributed multi-instance enforcement.
 - Back up before migrations. Keep the previous release directory and its
   checksum. Code rollback uses the old directory; schema downgrade is **not**
   automatic. Restore a verified backup if a migration is incompatible.
-- Never run `docker compose down -v` or delete state as a rollback mechanism.
+- Never delete database or media state as a rollback mechanism.
 
 ## Release checklist
 

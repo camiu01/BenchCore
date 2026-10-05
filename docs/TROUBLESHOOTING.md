@@ -12,7 +12,6 @@ contain unrelated credentials.
 ```sh
 node --version
 pnpm --version
-docker compose ps
 ```
 
 Check API `/health`, then a database-backed request. Review API/frontend logs
@@ -28,14 +27,19 @@ without publishing request bodies, passwords, cookies, or connection strings.
 - SvelteKit 3 config belongs in `vite.config.ts`, not `svelte.config.js`.
 - Do not add legacy aliases or `$env` imports to solve a server-only setup issue.
 
+## Beta packaging fails with `/home/tmp` EACCES
+
+The legacy pnpm deployment must stage under the writable checkout's
+`artifacts/` directory and run inside its isolated dependency workspace. Use the
+updated packaging script rather than granting access to `/home` or running
+pnpm as root. Existing versioned artifacts are intentionally not overwritten.
+
 ## Database connection or migration failure
 
 - Verify `DATABASE_URL` is in the **current process environment**.
-- Check hostname/port from the process making the connection. `db` is a
-  Compose-network name; `localhost` inside a container is that container.
+- Check hostname/port from the process making the connection. `localhost`
+  refers to the machine running the Node service, not a remote database host.
 - Ensure PostgreSQL is ready and the user/database exist.
-- A Compose database without a published port cannot be reached at host
-  `localhost:5432` automatically.
 - Verify committed migrations were applied before testing new search/schedule/
   database-media behavior.
 - Stop on a migration error; do not manually mark it applied or delete data.
@@ -58,9 +62,9 @@ administrative recovery procedure rather than repeatedly re-seeding.
 Check `Origin`, `SITE_URL`, and `API_ALLOWED_ORIGINS`. Origins match exactly:
 scheme, hostname, and port. `localhost` and `127.0.0.1` are not interchangeable.
 
-For local frontend use `http://localhost:5173`; for the default Compose frontend
-use `http://localhost:5180`. Server actions must forward the trusted external
-origin even when the API URL is `http://api:5181`.
+For local frontend use `http://localhost:5173`; for a local unified preview
+use `http://localhost:5180`. Production uses the configured HTTPS site origin.
+Server actions must forward that trusted external origin.
 
 Direct clients must send a trusted Origin. Do not fix the error with a wildcard
 or an allowlist populated from arbitrary request headers.
@@ -114,7 +118,7 @@ does not imply an available history/restore feature.
 - Route that path to the API at the browser-facing origin.
 - Check provider selection; changing modes does not migrate old files.
 - Local mode requires both image bytes and JSON sidecar in `MEDIA_DIR`.
-- Verify volume mounts, permissions, and available disk space.
+- Verify persistent paths, permissions, and available disk space.
 - Database mode requires its tables/migrations and accessible blobs.
 - Check CSP and browser network errors without disabling all security headers.
 

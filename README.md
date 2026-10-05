@@ -28,6 +28,10 @@ manages accounts and protects the final active administrator.
 GitHub CI/CD, HTTPS hosting, explicit migrations, backups and release limits.
 No GHCR/container images are required. **GitHub Pages cannot run the backend.**
 
+[Vercel deployment](docs/VERCEL_DEPLOYMENT.md) runs the entire app and API in
+Node.js 24 Functions with private R2 browser-direct uploads. Scheduled publication
+is temporarily disabled on that target; the persistent Node runtime remains available.
+
 ## Features
 
 - **Markdown + TOML** — `+++` frontmatter, validated metadata, sanitized HTML,
@@ -44,7 +48,7 @@ No GHCR/container images are required. **GitHub Pages cannot run the backend.**
   and a separate scheduled `publishAt` value in the API/admin. The 0.5.0 due
   publication job runs approximately once per minute.
 - **Media storage seam** — `StorageProvider` isolates callers from the backend;
-  `MEDIA_STORAGE=local|database` selects filesystem images or database blobs.
+  `MEDIA_STORAGE=local|database|r2` selects filesystem images, database blobs or private R2.
 - **Authentication** — scrypt password hashes, random session tokens, hashed
   tokens at rest, HttpOnly cookies, SameSite=Lax, and Secure production cookies.
 - **Database accounts** — username/email login; provision an administrator through
@@ -55,8 +59,8 @@ No GHCR/container images are required. **GitHub Pages cannot run the backend.**
 - **SEO & feeds** — canonical URLs, metadata, sitemap, RSS, and robots routes.
 - **Three themes** — light, dark, and OLED; CSS tokens, persisted preference,
   and a pre-paint script to reduce theme flashes.
-- **Self-hosting** — Docker Compose for PostgreSQL, API, and frontend;
-  migrations, admin bootstrap, and repeatable content import.
+- **Self-hosting** — one Node service for frontend and API, with PostgreSQL;
+  explicit migrations, admin bootstrap, and repeatable content import.
 - **Quality gates** — Vitest suites, frontend/API typechecks, frontend lint,
   and production builds; CI runs the same checks.
 - **No application telemetry** — no built-in analytics, tracking SDKs, or
@@ -71,12 +75,11 @@ See [TODO.md](TODO.md) for milestone status.
 
 ## Run it
 
-Prerequisites: Node.js 24, pnpm 10.15.0, and PostgreSQL 17; Docker with Compose
-is the alternative for the full stack.
+Prerequisites: Node.js 24, pnpm 10.15.0, and PostgreSQL 17.
 
 ```sh
-git clone https://github.com/camiu01/legendary-octo-bassoon.git
-cd legendary-octo-bassoon
+git clone https://github.com/camiu01/BenchCore.git
+cd BenchCore
 pnpm install --frozen-lockfile
 ```
 
@@ -114,18 +117,19 @@ To create an account without importing posts, use `pnpm user:create` as describe
 in [Operations](docs/OPERATIONS.md). Sign in at `/login`, then open `/admin`. Set `SITE_URL` and
 `PUBLIC_SITE_URL` to `http://localhost:5173` for local development.
 
-### Docker stack
+### Production Node service
 
 ```sh
-docker compose up --build
+pnpm build
+pnpm beta:migrate
+pnpm start
 ```
 
-The frontend is on `http://localhost:5180`, the API on
-`http://localhost:5181`. Docker uses the frontend's **internal**
-`PUBLIC_API_URL=http://api:5181`; configure its external site/origin URLs as
-`http://localhost:5180`. Compose does not replace the admin-bootstrap step.
-This split Docker stack remains a development/alternative deployment path.
-Use [Beta deployment](docs/BETA_DEPLOYMENT.md) for the single-origin Node delivery.
+Configure `.env` with the intended PostgreSQL connection and trusted `SITE_URL`
+before applying migrations. Pages and `/api/*` share port **5180**.
+Admin creation is an explicit operation, not part of startup.
+Use [Beta deployment](docs/BETA_DEPLOYMENT.md) for artifact installation,
+production settings and account provisioning.
 
 ### Checks
 
@@ -185,7 +189,8 @@ frontend/
   tests/                        # Vitest suites
 docs/                           # developer, author, API, operations guides
 .github/                        # CI and contribution templates
-docker-compose.yml              # PostgreSQL + API + frontend
+runtime/                        # unified production Node listener
+scripts/                        # allowlisted packaging and isolated SQL smoke
 TODO.md                         # milestone roadmap
 ```
 

@@ -9,4 +9,13 @@ import type { LayoutServerLoad } from './$types';
  * @brief Loads the public canonical base for all pages.
  * @return The canonical site base.
  */
-export const load: LayoutServerLoad = () => ({ siteBase: siteBase() });
+export const load: LayoutServerLoad = () => ({
+	siteBase: siteBase(),
+	directUploads:
+		process.env['MEDIA_STORAGE'] === 'r2' ||
+		(process.env['VERCEL'] === '1' && process.env['MEDIA_STORAGE'] === undefined),
+	schedulerEnabled:
+		process.env['SCHEDULER_ENABLED'] !== 'false' &&
+		process.env['VERCEL'] !== '1' &&
+		process.env['DEPLOYMENT_TARGET'] !== 'vercel'
+});

@@ -4,39 +4,43 @@
 # Operations
 
 For **0.6.0-beta.1 single-origin Node deployment**, use
-[Beta deployment](BETA_DEPLOYMENT.md). The split API/frontend Docker instructions
-below remain an alternative, not the GitHub delivery artifact.
+[Beta deployment](BETA_DEPLOYMENT.md). The supported deployment is the
+production-only Node artifact, with a separately managed PostgreSQL database.
+For full-app serverless hosting, use [Vercel and private R2](VERCEL_DEPLOYMENT.md);
+its scheduler is temporarily disabled.
 
 ## Deployment model
 
-The frontend and API are Node services; this is not a frontend-only static
+The frontend and API share one Node service; this is not a frontend-only static
 deployment. PostgreSQL holds runtime content/users/sessions; local media
-requires durable filesystem storage unless `MEDIA_STORAGE=database`.
+requires durable filesystem storage unless `MEDIA_STORAGE=database` or `r2`.
 
-Use the committed Dockerfiles and Compose file as the reference stack:
+From a reviewed source checkout:
 
 ```sh
-docker compose up --build
-docker compose ps
+pnpm install --frozen-lockfile
+pnpm build
+pnpm beta:migrate
+pnpm start
 ```
 
-The default topology is PostgreSQL 17, API `:5181`, frontend `:5180`, and
-named volumes `pgdata`/`mediadata`. Review actual published ports before
-exposing a host. Development defaults are not production credentials.
+Configure `.env` before applying migrations. The default topology is a single
+Node listener on `:5180` and PostgreSQL 17 on a restricted database endpoint.
+Persist `MEDIA_DIR` when using local media. Development defaults are not
+production credentials. The packaged artifact needs no source build or pnpm.
 
 ## Production checklist
 
 - [ ] Set strong, unique database and admin credentials outside Git.
 - [ ] Configure HTTPS at a reverse proxy; redirect public HTTP to HTTPS.
-- [ ] Set `PUBLIC_SITE_URL` and `SITE_URL` to the external canonical origin.
+- [ ] Set `SITE_URL` to the external canonical origin.
 - [ ] Add only necessary exact origins to `API_ALLOWED_ORIGINS`.
-- [ ] Keep `PUBLIC_API_URL` reachable from the frontend server; an internal
-  URL such as `http://api:5181` is not the public canonical site URL.
-- [ ] Route `/api/media/*` to the API for relative image URLs.
+- [ ] Proxy pages, `/api/*` and health probes to the same Node listener.
+- [ ] Configure only the immediate proxy addresses in `TRUSTED_PROXY_IPS`.
 - [ ] Run production processes with `NODE_ENV=production`.
-- [ ] Do not expose PostgreSQL publicly; restrict direct API access as needed.
+- [ ] Do not expose PostgreSQL publicly.
 - [ ] Apply reviewed migrations before serving code that needs them.
-- [ ] Bootstrap the admin intentionally; Compose startup is not admin creation.
+- [ ] Bootstrap the admin intentionally; startup is not admin creation.
 - [ ] Select and persist media storage; test image retrieval after restart.
 - [ ] Verify Origin rejection, rate limits, security headers, and frontend CSP.
 - [ ] Back up, test restore, and monitor failures/storage growth.
@@ -73,15 +77,15 @@ does not reset passwords.
 Run bootstrap from a trusted checkout with network access to the deployed
 database and the intended authoring files. Avoid placing passwords in CLI
 arguments or copying local example credentials into production.
-Built runtime images need not include every development/bootstrap tool:
-do not assume `docker compose exec api pnpm seed` is supported.
+The packaged artifact provides `npm run user:create` for account provisioning.
+Authoring imports and seed remain source-checkout operations, not startup tasks.
 
 `SITE_URL`/allowed origins describe the browser-facing site. They should not
 be derived from untrusted Host or forwarded headers. A proxy changing the
 upstream transport URL does not justify widening the Origin allowlist.
 
-Start production frontend builds with `pnpm --filter benchcore-frontend start`,
-or `node frontend/server.mjs` from the root, not the generated `build/index.js`.
+Start the unified production service with `pnpm start` from a source checkout,
+or `npm start` from the artifact, not the generated frontend `build/index.js`.
 The bootstrap overwrites its private adapter host/protocol headers with the
 configured canonical origin and defaults `BODY_SIZE_LIMIT` to `8M`.
 This supports HTTP localhost previews and HTTPS deployments without trusting
@@ -96,12 +100,13 @@ pnpm db:migrate
 
 Generate during development, inspect the SQL and migration metadata, and
 commit them together. Applying migrations needs `DATABASE_URL`.
-The API container performs migrate-on-boot; explicit staging verification
-is still required. Avoid concurrent deployment processes racing migrations.
+The unified service does not migrate on startup. Use `pnpm beta:migrate` from
+the built checkout or `npm run db:migrate` from the artifact before startup.
+Avoid concurrent deployment processes racing migrations.
 
 Upgrade procedure:
 
-1. Record the current commit/image and storage configuration.
+1. Record the current commit/artifact and storage configuration.
 2. Verify a recent backup and prepare a maintenance window if needed.
 3. Build/test the candidate against a disposable or staging database.
 4. Review migration compatibility and expected lock duration.
@@ -142,15 +147,14 @@ remain private even when public posts are readable. Encrypt, restrict access,
 set retention, and keep an off-host copy. Define acceptable recovery point
 and recovery time for your own deployment.
 
-### PostgreSQL dump through Compose
+### PostgreSQL dump
 
-Run from the repository root. The database credentials are used inside the
-container without printing them:
+Use PostgreSQL 17 client tools with a protected libpq service definition named
+`benchcore`, plus a protected password file. Configure its host, port, database
+and TLS verification outside Git. Never put credentials in command arguments:
 
 ```powershell
-docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc -f /tmp/blog-backup.dump'
-$dbContainer = docker compose ps -q db
-docker cp "${dbContainer}:/tmp/blog-backup.dump" ".\blog-backup.dump"
+pg_dump --dbname=service=benchcore --format=custom --file=benchcore-backup.dump
 ```
 
 A custom-format dump is binary. PowerShell 5.1 text redirection can corrupt
@@ -158,20 +162,17 @@ binary output, so do not replace this with `pg_dump ... > backup.dump`.
 Check each command's exit status and move the dump to protected backup storage.
 Never commit it or attach it to an issue.
 
-### Local-media archive through Compose
+### Local-media archive
 
 Quiesce editorial writes, uploads, and scheduled publication for a coherent
 database/media backup point. Then archive the **complete** media directory:
 
 ```powershell
-docker compose exec -T api tar -czf /tmp/media-backup.tar.gz -C /data/media .
-$apiContainer = docker compose ps -q api
-docker cp "${apiContainer}:/tmp/media-backup.tar.gz" ".\media-backup.tar.gz"
+tar -czf media-backup.tar.gz -C /absolute/path/to/media .
 ```
 
-This example assumes the Compose `MEDIA_DIR=/data/media`. Substitute your
-actual mount path if changed. Quiescing must leave the container available
-for `exec`, or use an approved offline volume-backup procedure instead.
+Substitute the actual persistent `MEDIA_DIR`. Stop the Node service or use
+an approved write-quiescing procedure during the coordinated backup.
 PostgreSQL dumps are transactionally consistent; coordinating external media
 with that snapshot is an operator responsibility.
 
@@ -181,17 +182,15 @@ Restore into a **new isolated database and media location**, never directly
 over the only live copy. The following database name is dedicated test state:
 
 ```powershell
-$dbContainer = docker compose ps -q db
-docker cp ".\blog-backup.dump" "${dbContainer}:/tmp/blog-backup.dump"
-docker compose exec -T db sh -c 'createdb -U "$POSTGRES_USER" blog_restore_test'
-docker compose exec -T db sh -c 'pg_restore -U "$POSTGRES_USER" -d blog_restore_test --no-owner --no-acl /tmp/blog-backup.dump'
+createdb --maintenance-db=service=benchcore benchcore_restore_test
+pg_restore --dbname="service=benchcore dbname=benchcore_restore_test" --no-owner --no-acl benchcore-backup.dump
 ```
 
-Ensure `blog_restore_test` is a fresh disposable target. If it already exists,
+Ensure `benchcore_restore_test` is a fresh disposable target. If it already exists,
 stop and inspect rather than dropping it blindly. Test with application code
 matching the dump's schema, then evaluate any needed migrations.
 
-For local media, extract the archive into a new empty staging mount; preserve
+For local media, extract the archive into a new empty staging directory; preserve
 keys and sidecars. For database media, verify blobs were included in the dump.
 Do not switch production traffic until all of these pass:
 
@@ -207,8 +206,9 @@ database/administrative procedure before reopening access.
 
 ## Health, logs, and jobs
 
-`GET /health` reports the API service. Test a real database-backed read and
-media retrieval as separate readiness checks. Monitor HTTP errors,
+`GET /health/live` reports process liveness. `GET /health/ready` checks database
+connectivity and migrated runtime columns. Also test a real database-backed read
+and media retrieval. Monitor HTTP errors,
 authentication failures, storage growth, database connectivity, and overdue
 scheduled posts.
 
@@ -228,9 +228,8 @@ access, and redaction; do not log request bodies, passwords, or Cookie headers.
 
 ## Dangerous operations
 
-`docker compose down` preserves named volumes. **`docker compose down -v`
-removes them and can destroy database/media state.** Never use it as a
-routine troubleshooting step on valuable data.
+Deleting the PostgreSQL data directory or persistent `MEDIA_DIR` destroys
+runtime state. Never use data deletion as routine troubleshooting or rollback.
 
 Content import and seed can overwrite runtime posts. Storage-mode changes can
 make old images appear missing. Treat both as data operations requiring a

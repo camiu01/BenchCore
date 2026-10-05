@@ -10,13 +10,13 @@ pnpm test                # recursive: frontend + api vitest suites
 pnpm check               # API TypeScript + frontend svelte-check
 pnpm lint                # frontend eslint
 pnpm build               # recursive builds
+pnpm build:vercel        # full app + API in Node 24 Functions, scheduler disabled
 pnpm start               # unified beta: frontend + /api on :5180
 pnpm beta:package        # versioned Node bundle, no .env or authoring content
 pnpm test:beta           # requires a dedicated local *_test PostgreSQL database
 pnpm seed                # admin bootstrap + content import (needs DATABASE_URL)
 pnpm user:create         # admin user from private JSON stdin, no ADMIN_* env needed
 pnpm content:import      # import content/posts into PostgreSQL
-pnpm docker:up           # full stack via compose (postgres + api + frontend)
 ```
 
 ## Architecture
@@ -24,6 +24,8 @@ pnpm docker:up           # full stack via compose (postgres + api + frontend)
   (standalone `node:http` TypeScript service, owns Drizzle + content pipeline).
 - `runtime/server.mjs` combines both production handlers behind one public
   listener. The SSR API listener binds only to loopback on a random port.
+- Vercel uses API-owned `api/src/serverless/app.ts` wiring and request-local
+  in-process transport. It never starts listeners, migrations or scheduler jobs.
 - Markdown + TOML (`content/posts/*.md`) is the authoring format; PostgreSQL is
   the runtime source of truth. Frontend renders API data only.
 - Entrypoints: `frontend/src/routes/` (pages) and `api/src/index.ts` (server boot).
@@ -68,13 +70,11 @@ api/
   scripts/                  # import.ts (content:import), migrate.ts, seed.ts (admin bootstrap)
   drizzle/                  # generated migrations (drizzle-kit, no live DB needed)
   tests/                    # mirrors src/
-  Dockerfile                # node:24-alpine, legacy split-stack container
 runtime/                    # single-origin beta settings, bridge, dispatcher and boot
 scripts/                    # allowlisted packaging and guarded PostgreSQL smoke
 TODO.md                     # roadmap: Done (with #tags) + Pending per milestone
 docs/                       # architecture, authoring, API, testing and operations guides
 CHANGELOG.md                # local release history; publishing is a separate authorized action
-docker-compose.yml          # postgres 17 + api + frontend (volumes pgdata, mediadata)
 ```
 
 ## Key conventions (must follow)
@@ -99,12 +99,13 @@ docker-compose.yml          # postgres 17 + api + frontend (volumes pgdata, medi
   imports (no `kit.alias`); `Handle` comes from `@sveltejs/kit/hooks`;
   `process.env` in server-only modules (no `$env` dependency).
 - Media rule: services and routes depend on the `StorageProvider` interface only;
-  `MEDIA_STORAGE=local|database` selects the backend at boot.
+  `MEDIA_STORAGE=local|database|r2` selects the backend at boot. R2 uploads go
+  directly from the browser to signed staging URLs, never through Function bodies.
 - Mutating API requests require an exact trusted Origin. Configure production
   `API_ALLOWED_ORIGINS` or `SITE_URL`; never trust request-derived hosts.
 - Scheduled posts remain drafts with a nullable `publishAt`; the repository job
   atomically publishes due drafts. Revision tables are groundwork only.
-- Node.js 24 and pnpm 10.15.0 are the supported development/CI/container baseline.
+- Node.js 24 and pnpm 10.15.0 are the supported development/CI/runtime baseline.
 
 ## Theme system
 - `frontend/src/lib/theme.ts` — three themes: `'light' | 'dark' | 'oled'`.

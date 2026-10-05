@@ -11,6 +11,7 @@
 		"dev:api": "pnpm --filter benchcore-api dev",
 		"demo:api": "pnpm --filter benchcore-api demo",
 		"build": "pnpm -r build",
+		"build:vercel": "node scripts/build-vercel.mjs",
 		"start": "node --env-file-if-exists=.env runtime/server.mjs",
 		"beta:migrate": "node --env-file-if-exists=.env api/dist/cli/migrate.js",
 		"beta:user:create": "node --env-file-if-exists=.env api/dist/cli/account.js create",
@@ -27,10 +28,7 @@
 		"db:migrate": "pnpm --filter benchcore-api db:migrate",
 		"content:import": "pnpm --filter benchcore-api content:import",
 		"seed": "pnpm --filter benchcore-api seed",
-		"user:create": "pnpm --filter benchcore-api user:create",
-		"docker:up": "docker compose up --build",
-		"docker:down": "docker compose down",
-		"docker:logs": "docker compose logs -f"
+		"user:create": "pnpm --filter benchcore-api user:create"
 	},
 	"devDependencies": {}
 }

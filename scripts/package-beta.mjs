@@ -2,24 +2,25 @@
  * @file package-beta.mjs
  * @brief Assembles an allowlisted production bundle with isolated, production-only dependencies.
  */
-import { cp, mkdir, mkdtemp, readFile, readdir, realpath, rename, rm, symlink, unlink, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, realpath, rename, rm, symlink, unlink, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createPackageStaging, createBundleDirectory, createDependencyWorkspace, deploymentArguments } from './package-layout.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 
 /**
  * @brief Runs the exact pnpm executable that launched this script.
  * @param {string[]} args Package manager arguments.
+ * @param {string} workspace Isolated dependency workspace.
  * @return {void} Completion.
  */
-function pnpm(args) {
+function pnpm(args, workspace) {
 	const executable = process.env['npm_execpath'];
 	if (!executable || !executable.includes('pnpm')) { throw new Error('Run with pnpm beta:package'); }
-	execFileSync(process.execPath, [executable, ...args], { cwd: root, stdio: 'inherit' });
+	execFileSync(process.execPath, [executable, ...args], { cwd: workspace, stdio: 'inherit' });
 }
 
 /**
@@ -30,9 +31,10 @@ function pnpm(args) {
  * @return {Promise<void>} Completion.
  */
 async function assemble(bundle, temporary, destination) {
+	const workspace = await createDependencyWorkspace(root, temporary);
 	for (const name of ['api', 'frontend']) {
 		const deployed = join(temporary, `${name}-dependencies`);
-		pnpm(['--filter', name === 'api' ? 'benchcore-api' : 'benchcore-frontend', 'deploy', '--legacy', '--prod', deployed]);
+		pnpm(deploymentArguments(name, deployed), workspace);
 		await mkdir(join(bundle, name), { recursive: true });
 		await cp(join(deployed, 'node_modules'), join(bundle, name, 'node_modules'), {
 			recursive: true, verbatimSymlinks: true,
@@ -97,10 +99,11 @@ async function main() {
 	await mkdir(artifacts, { recursive: true });
 	const destination = join(artifacts, `benchcore-${manifest.version}`);
 	if (existsSync(destination)) { throw new Error('Versioned artifact already exists'); }
-	const temporary = await mkdtemp(join(tmpdir(), 'benchcore-beta-'));
+	const temporary = await createPackageStaging(artifacts);
+	/** @type {string | undefined} */
+	let bundle;
 	try {
-		const bundle = join(temporary, 'bundle');
-		await mkdir(bundle);
+		bundle = await createBundleDirectory(temporary, destination);
 		await assemble(bundle, temporary, destination);
 		const scripts = {
 			start: 'node --env-file-if-exists=.env runtime/server.mjs',
@@ -112,8 +115,11 @@ async function main() {
 			name: manifest.name, version: manifest.version, private: true,
 			license: manifest.license, type: 'module', engines: { node: '>=24 <25' }, scripts
 		}, null, '\t') + '\n');
-		await rename(bundle, destination);
+		if (bundle !== destination) { await rename(bundle, destination); }
 		process.stdout.write(`BenchCore beta bundle: artifacts/benchcore-${manifest.version}\n`);
+	} catch (error) {
+		if (bundle === destination) { await rm(bundle, { recursive: true, force: true }); }
+		throw error;
 	} finally {
 		await rm(temporary, { recursive: true, force: true });
 	}

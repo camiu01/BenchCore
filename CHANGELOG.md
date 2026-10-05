@@ -3,6 +3,19 @@
 Changes follow [Conventional Commits](https://www.conventionalcommits.org/).
 Version 0.6.0-beta.1 is prepared locally. No tag, hosted release or deployment is created.
 
+## Unreleased
+
+- Support the complete app and secured API on Vercel Node.js 24 Functions,
+  retaining persistent Node delivery and temporarily disabling the scheduler.
+- Add private Cloudflare R2 with owner-bound direct upload tickets, exact-size
+  signed PUTs, immutable publication and short-lived signed read redirects.
+- Add offline R2, transport and browser-upload regressions and a deployment guide.
+
+- Keep legacy pnpm deployment within an isolated metadata-only workspace
+  under writable artifact staging to avoid Linux `/home/tmp` EACCES.
+- Remove Dockerfiles, Compose, Docker commands and container deployment guides;
+  keep the unified Node artifact and isolated PostgreSQL CI services.
+
 ## 0.6.0-beta.1 — 2026-10-02
 
 - Name the project BenchCore: Bench-testing, Embedded Networks, & Circuit Hacks:

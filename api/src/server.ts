@@ -11,6 +11,7 @@ import { handleAdminPosts, handleAdminTags, handleGetPost, handleListPosts, hand
 	handleRenderPreview, handleWritePost } from './http/posts.js';
 import { handleMedia, handleUploadMedia } from './http/media.js';
 import { handleChangePassword, handleRegister, handleUsers } from './http/accounts.js';
+import { handlePrepareUpload, handleCompleteUpload } from './http/direct-media.js';
 
 export type { ApiDeps, ErrorPayload } from './http/types.js';
 export { MEDIA_PREFIX } from './http/response.js';
@@ -37,6 +38,8 @@ const routes: { path: RegExp; handlers: Record<string, ApiHandler> }[] = [
 	{ path: /^\/api\/admin\/users\/([^/]+)$/, handlers: { PATCH: handleUsers } },
 	{ path: /^\/api\/render$/, handlers: { POST: handleRenderPreview } },
 	{ path: /^\/api\/media$/, handlers: { POST: handleUploadMedia } },
+	{ path: /^\/api\/media\/upload$/, handlers: { POST: handlePrepareUpload } },
+	{ path: /^\/api\/media\/complete$/, handlers: { POST: handleCompleteUpload } },
 	{ path: /^\/api\/media\/([^/]+)$/, handlers: { GET: handleMedia, DELETE: handleMedia } }
 ];
 

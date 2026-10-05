@@ -54,6 +54,11 @@ export const handleMedia: ApiHandler = async (req, res, deps, _url, key) => {
 		if (!await deps.media.remove(key)) { sendJson(res, 404, { error: 'not_found' }); return; }
 		res.writeHead(204); res.end(); return;
 	}
+	if (deps.media.readUrl) {
+		const location = await deps.media.readUrl(key);
+		if (!location) { sendJson(res, 404, { error: 'not_found' }); return; }
+		res.writeHead(307, { location, 'cache-control': 'no-store' }); res.end(); return;
+	}
 	const file = await deps.media.load(key);
 	if (!file) { sendJson(res, 404, { error: 'not_found' }); return; }
 	res.writeHead(200, {

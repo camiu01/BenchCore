@@ -7,7 +7,7 @@
 
 - Node.js **24**.
 - pnpm **10.15.0**, matching `packageManager` in the root manifest.
-- PostgreSQL **17**, or Docker with Compose for database/full-stack execution.
+- PostgreSQL **17**, installed locally or provided by a managed database host.
 - Git and a modern browser.
 
 ```sh
@@ -30,8 +30,8 @@ Copy-Item .env.example .env
 
 POSIX equivalent: `cp .env.example .env`.
 
-`.env` is private configuration, not a committed source artifact. Docker
-Compose reads its substitution values. API development, migrate, import and
+`.env` is private configuration, not a committed source artifact.
+API development, migrate, import and
 seed/account-creation scripts load the root `.env` through Node's optional
 environment-file flag. Vite reads only the frontend's three server-side URL
 settings from that file. Exported process variables take precedence.
@@ -49,10 +49,9 @@ does not export it into your terminal.
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`, `ADMIN_USERNAME` | Seed script | Initial admin bootstrap; username optional |
 | `BODY_SIZE_LIMIT` | Adapter-node | Set to `8M` for supported multipart image uploads |
 | `CONTENT_DIR` | Import/seed scripts | Authoring directory override |
-| `MEDIA_STORAGE` | API | `local` or `database` storage selection |
+| `MEDIA_STORAGE` | API | `local`, `database` or private `r2` storage selection |
 | `MEDIA_DIR` | Local media provider | Persistent filesystem media directory |
 | `NODE_ENV` | Runtime | Production cookie/security behavior |
-| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Compose | Database initialization configuration |
 
 Do not treat an unused placeholder secret as active cookie signing. Sessions
 are opaque random tokens verified by looking up their stored hashes.
@@ -112,9 +111,8 @@ Seed is idempotent for an existing email: it does **not** reset that user's
 password. It also imports content, so it is not a harmless password-management
 command. Review authoring files before seeding a database with existing edits.
 
-Compose's PostgreSQL service is not necessarily published to the host. If
-running the API locally against it, explicitly add a local-only database port
-mapping in a development override; do not assume `localhost:5432` works.
+PostgreSQL must accept connections from the API process at the configured host
+and port. Use certificate-verified TLS for remote database hosts.
 
 ## Commands
 
@@ -135,9 +133,8 @@ mapping in a development override; do not assume `localhost:5432` works.
 | `pnpm build` | Recursive production builds |
 | `pnpm --filter benchcore-frontend start` | Start `frontend/server.mjs` with trusted runtime origins |
 | `pnpm format` | Check frontend formatting without modifying files |
-| `pnpm docker:up` | Build and start the Compose stack |
-| `pnpm docker:down` | Stop/remove Compose containers, preserving named volumes |
-| `pnpm docker:logs` | Follow stack logs; stop with Ctrl+C |
+| `pnpm start` | Start the unified Node service after building and configuring PostgreSQL |
+| `pnpm beta:package` | Assemble the production-only Node delivery directory |
 
 ## Development boundaries
 

@@ -39,7 +39,15 @@
 				<span class="record-title">EDIT // {values.slug || 'UNSAVED'}</span>
 				<span class="stamp">{data.status.toUpperCase()}</span>
 			</div>
-			<PostEditor {values} {previewHtml} {uploadedUrl} {errorMsg} isNew={false} />
+			<PostEditor
+				{values}
+				{previewHtml}
+				{uploadedUrl}
+				{errorMsg}
+				isNew={false}
+				directUploads={data.directUploads}
+				schedulerEnabled={data.schedulerEnabled}
+			/>
 		</article>
 	</main>
 </DocShell>

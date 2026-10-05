@@ -1,6 +1,8 @@
 <!-- @file PostEditor.svelte @brief Engineering-log page and presentation component. -->
 <script lang="ts">
 	import type { EditorValues } from '../server/editor-values.js';
+	import DirectUpload from './DirectUpload.svelte';
+	import { insertImageReference } from '../direct-upload.js';
 
 	/**
 	 * Obsidian-style record editor: write mode plus API-rendered preview,
@@ -12,9 +14,21 @@
 		uploadedUrl: string | null;
 		errorMsg: string | null;
 		isNew: boolean;
+		directUploads?: boolean;
+		schedulerEnabled?: boolean;
 	}
 
-	let { values, previewHtml, uploadedUrl, errorMsg, isNew }: Props = $props();
+	let {
+		values,
+		previewHtml,
+		uploadedUrl,
+		errorMsg,
+		isNew,
+		directUploads = false,
+		schedulerEnabled = true
+	}: Props = $props();
+	let contentInput: HTMLTextAreaElement;
+	let scheduleInput: HTMLInputElement;
 </script>
 
 {#if errorMsg !== null}
@@ -75,13 +89,30 @@
 				class="field-input"
 				id="publish_at"
 				name="publish_at"
+				bind:this={scheduleInput}
 				placeholder="2026-10-01T18:00:00Z"
 				value={values.publishAt}
+				readonly={!schedulerEnabled}
 			/>
+			{#if !schedulerEnabled && values.publishAt}
+				<button
+					class="btn"
+					type="button"
+					onclick={() => {
+						scheduleInput.value = '';
+					}}>CLEAR SCHEDULE</button
+				>
+			{/if}
+			{#if !schedulerEnabled}<p class="summary">
+					Automatic publication is temporarily disabled. Existing schedules are preserved; clear a
+					schedule before publishing manually.
+				</p>{/if}
 		</div>
 		<div>
 			<label class="field-label" for="content">Content (Markdown + [[wikilinks]])</label>
-			<textarea class="field-input" id="content" name="content">{values.content}</textarea>
+			<textarea bind:this={contentInput} class="field-input" id="content" name="content"
+				>{values.content}</textarea
+			>
 		</div>
 	</div>
 	<div class="btn-row">
@@ -93,17 +124,21 @@
 	</div>
 
 	<hr />
-	<label class="field-label" for="image">Attach image (png/jpg/webp/gif, max 5 MiB)</label>
-	<input
-		class="field-input"
-		id="image"
-		name="image"
-		type="file"
-		accept="image/png,image/jpeg,image/webp,image/gif"
-	/>
-	<div class="btn-row">
-		<button class="btn" type="submit" formaction="?/upload" formnovalidate>UPLOAD →</button>
-	</div>
+	{#if directUploads}
+		<DirectUpload onuploaded={(url) => insertImageReference(contentInput, url)} />
+	{:else}
+		<label class="field-label" for="image">Attach image (png/jpg/webp/gif, max 5 MiB)</label>
+		<input
+			class="field-input"
+			id="image"
+			name="image"
+			type="file"
+			accept="image/png,image/jpeg,image/webp,image/gif"
+		/>
+		<div class="btn-row">
+			<button class="btn" type="submit" formaction="?/upload" formnovalidate>UPLOAD →</button>
+		</div>
+	{/if}
 	{#if uploadedUrl !== null}
 		<p class="summary upload-note">
 			Filed at <code>{uploadedUrl}</code> (appended to the content above).

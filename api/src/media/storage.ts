@@ -24,7 +24,7 @@ const ALLOWED_MIME: Record<string, string> = {
 export const MAX_MEDIA_BYTES = 5 * 1024 * 1024;
 
 /** @brief Validated sidecar metadata, never trusted as a filesystem path. */
-const mediaRecord = z.object({
+export const mediaRecord = z.object({
 	key: z.string().regex(/^[A-Za-z0-9]{32}\.(png|jpg|jpeg|webp|gif)$/),
 	filename: z.string(),
 	mime: z.enum(['image/png', 'image/jpeg', 'image/webp', 'image/gif']),
@@ -61,6 +61,15 @@ export interface StoredMedia {
  * @brief Pluggable media backend contract.
  */
 export interface StorageProvider {
+	/** @brief Optional browser-direct upload support without server body buffering. */
+	direct?: {
+		/** @brief Signs a bounded upload for one authenticated administrator. */
+		prepare(input: { filename: string; mime: string; sizeBytes: number }, owner: string): Promise<{ uploadUrl: string; ticket: string }>;
+		/** @brief Checks the object and publishes metadata for the same administrator. */
+		complete(ticket: string, owner: string): Promise<StoredMedia>;
+	};
+	/** @brief Optional redirect URL for files larger than serverless response limits. */
+	readUrl?(key: string): Promise<string | null>;
 	/**
 	 * @brief Stores an upload and returns its record.
 	 * @param data The file bytes.

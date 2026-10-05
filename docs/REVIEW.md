@@ -23,7 +23,7 @@ issues or an independent penetration test.
 | P2 | Malformed cookie escapes caused request failures | Invalid cookie pairs are ignored; prototype-free cookie maps |
 | P2 | Repository contract syntax/implementation mismatches broke type checking | Corrected contracts and split repository implementations |
 | P2 | Duplicate tag links could violate the composite primary key | Canonical/deduplicated links and transactional replacement |
-| P2 | Runtime images lacked frontend server dependencies | Production dependency deployment included in Docker |
+| P2 | Deployment lacked frontend server dependencies | Production-only dependencies included in the Node bundle |
 | P2 | Relative media URLs did not resolve through the frontend | Narrow validated same-origin media proxy |
 | P2 | Windows frontmatter and CLI BOM input failed parsing | CRLF normalization and BOM-safe stdin parsing |
 | P2 | Uploads discarded unsaved editor fields | Server-side editor values preserve form state and append uploaded images |
@@ -32,6 +32,20 @@ issues or an independent penetration test.
 Further fixes validate session/admin DTOs, use trusted server-side canonical
 URLs, escape feed XML, paginate sitemap generation, allow nullable cover
 clearing and keep scheduled drafts private until atomic promotion.
+
+## Packaging maintenance — 2026-10-05
+
+- Dependency installation runs in a metadata-only temporary workspace under
+  `artifacts/`, so legacy pnpm bin linking stays within writable owned staging.
+- Windows bundles reserve their final directory before creating junctions;
+  Linux bundles retain staged publication. Existing releases are not overwritten.
+- 95 API and 60 frontend tests, workspace/runtime typechecks, lint and formatting
+  pass. Isolated packaging, cleanup, dependency imports, refusal to overwrite,
+  and source/packaged PostgreSQL-wire smoke pass on Windows.
+- Docker deployment files, scripts, variables and operational instructions are
+  removed. Ephemeral PostgreSQL CI services remain integration-test fixtures.
+- Native Linux execution is not available locally. Re-run GitHub CD after these
+  changes are published; remote workflow outcomes still require verification.
 
 ## 0.6.0-beta.1 verification
 
@@ -54,7 +68,7 @@ clearing and keep scheduled drafts private until atomic promotion.
   The homepage contains no milestone appendix, passes selected WCAG 2 A/AA checks
   with zero violations/incomplete checks and fits the 390px viewport.
 - Native PostgreSQL 17 simultaneous-admin mutation tests and Linux bundle checks
-  are CI gates, not locally executed Docker tests. Remote workflow outcomes
+  are CI gates, not locally executed Linux tests. Remote workflow outcomes
   have not been verified. No hosted release, public deployment or backup/restore
   drill is claimed.
 - Existing weak development passwords remain unchanged by design. Rotate them
@@ -84,7 +98,7 @@ posts were imported or published to the configured PostgreSQL.
 
 ## Not performed
 
-- Docker engine build/Compose execution, because Docker was unavailable locally.
+- Native Linux artifact execution.
 - A production backup/restore drill, load test or independent penetration test.
 - Actual release publication or public deployment.
 - Live-data search/blob write tests on the configured database; synthetic feature
