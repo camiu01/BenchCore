@@ -44,12 +44,29 @@ export function buildSessionExpiry(now: Date = new Date()): Date {
  * @return The header value.
  */
 export function sessionCookieHeader(token: string, secure: boolean): string {
+	return tokenCookieHeader(SESSION_COOKIE, token, secure, SESSION_TTL_MS / 1000);
+}
+
+/**
+ * @brief Builds a protected same-site token cookie.
+ * @param name Cookie name.
+ * @param token Raw token value.
+ * @param secure Whether to add the Secure flag.
+ * @param maxAge Lifetime in seconds.
+ * @return The Set-Cookie header value.
+ */
+export function tokenCookieHeader(
+	name: string,
+	token: string,
+	secure: boolean,
+	maxAge: number
+): string {
 	const parts = [
-		`${SESSION_COOKIE}=${token}`,
+		`${name}=${token}`,
 		'Path=/',
 		'HttpOnly',
 		'SameSite=Lax',
-		`Max-Age=${SESSION_TTL_MS / 1000}`
+		`Max-Age=${maxAge}`
 	];
 	if (secure) {
 		parts.push('Secure');

@@ -117,11 +117,19 @@ describe('session and response protection', () => {
 
 describe('editor and API integration', () => {
 	it('uses the protected tag registry for admin-only tag names', async () => {
-		const fetcher = vi
-			.fn()
-			.mockResolvedValue(
-				Response.json({ items: [{ name: 'private', slug: 'private', count: 0 }] })
-			);
+		const fetcher = vi.fn().mockResolvedValue(
+			Response.json({
+				items: [
+					{
+						id: '00000000-0000-4000-8000-000000000001',
+						name: 'private',
+						slug: 'private',
+						color: '#64748B',
+						count: 0
+					}
+				]
+			})
+		);
 		vi.stubGlobal('fetch', fetcher);
 		expect(await adminListTags('session=token')).toMatchObject({ items: [{ name: 'private' }] });
 		expect(fetcher.mock.calls[0]![0]).toContain('/api/admin/tags');

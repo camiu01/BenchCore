@@ -35,10 +35,21 @@ not accept a slug for mutation even though the public route shares the prefix.
 | GET | `/api/auth/me` | Session | Current user |
 | GET | `/api/posts` | Public | Published-only page |
 | GET | `/api/posts/:slug` | Public | Published detail and backlinks |
-| GET | `/api/tags` | Public | Tags and public-post counts |
+| GET | `/api/posts/:slug/comments` | Public | Approved comments |
+| POST | `/api/posts/:slug/comments` | Trusted Origin | Submit a pending comment |
+| GET | `/api/posts/:slug/likes` | Public | Like count and current browser state |
+| POST | `/api/posts/:slug/likes` | Trusted Origin | Toggle an anonymous like |
+| GET | `/api/tags` | Public | Tags, colors and public-post counts |
+| GET | `/api/graph` | Public | Published posts and valid wikilink edges |
 | GET | `/api/admin/posts` | Session | Admin list, including unpublished posts |
+| GET | `/api/admin/posts/suggestions` | Administrator session | Up to 200 recently updated post identifiers, titles and slugs |
 | GET | `/api/admin/posts/:id` | Session | Editable post, including Markdown |
 | GET | `/api/admin/tags` | Administrator session | Full tag registry, including draft-only names |
+| PATCH | `/api/admin/tags/:id` | Administrator + trusted Origin | Change a tag HEX color |
+| DELETE | `/api/admin/tags/:id` | Administrator + trusted Origin | Delete tag and post associations |
+| GET | `/api/admin/comments` | Administrator session | Moderation queue, optionally filtered by status |
+| PATCH | `/api/admin/comments/:id` | Administrator + trusted Origin | Change moderation status |
+| DELETE | `/api/admin/comments/:id` | Administrator + trusted Origin | Delete a comment |
 | GET | `/api/admin/users` | Administrator session | Account page, `limit` 1–100 and bounded `offset` |
 | POST | `/api/admin/users` | Administrator + trusted Origin | Create an explicit reader/admin account |
 | PATCH | `/api/admin/users/:id` | Administrator + trusted Origin | Change role or activation, revoke sessions |
@@ -50,9 +61,36 @@ not accept a slug for mutation even though the public route shares the prefix.
 | GET | `/api/media/:key` | Public | Raw image bytes |
 | DELETE | `/api/media/:key` | Session + trusted Origin | Delete image |
 
-There is no promised comments API, tag mutation API,
-revision API, or media-list HTTP route. A provider's internal `list()` method
-is not an endpoint.
+There is no promised revision API or media-list HTTP route. A provider's
+internal `list()` method is not an endpoint.
+
+## Graph, tags and engagement
+
+`GET /api/graph` returns only currently published posts. Nodes contain safe
+metadata and colored tags; edges are deduplicated `[[wikilink]]` references
+whose source and target are both visible. Markdown, drafts, archived posts and
+broken targets are never included.
+
+Tag colors are uppercase `#RRGGBB` values. Deleting a tag removes its
+associations from every post through cascading foreign keys; it never deletes
+posts.
+
+New comments start as `pending` and are absent from public reads until an
+administrator approves them. Public comment reads return at most 100 comments,
+oldest first; moderation queues return at most 100, newest first.
+Both GET endpoints accept optional `offset` (default `0`), a decimal integer
+from `0` through `2147483647`; invalid values return HTTP 400 with
+`{ "error": "validation" }`. Responses are `{ "items": [...], "hasMore": boolean }`.
+When `hasMore` is true, request the next batch with `offset` increased by 100,
+preserving the admin `status` filter (`pending`, `approved`, or `rejected`).
+Equal creation timestamps are ordered by comment UUID (ascending publicly,
+descending for moderation). Public items contain `id`, `authorName`, `content`
+and `createdAt`; admin items additionally contain `postId`, `status` and
+`post` (nullable `{ "slug": "...", "title": "..." }`). Offset pagination reflects
+current moderation state, so concurrent additions or moderation may shift pages.
+Comment input is plain text, 2–80 characters for
+the author name and 2–2000 for content. Anonymous likes use a random HttpOnly
+browser token; only its SHA-256 digest is stored.
 
 ## Origin and sessions
 

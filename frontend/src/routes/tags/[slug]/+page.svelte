@@ -26,6 +26,7 @@
 	{nav}
 	footerLeft="PAGE {data.page} OF {data.totalPages}"
 	footerRight="TAG FILTER ACTIVE"
+	activeHref="/tags"
 >
 	<main>
 		{#if !data.online}

@@ -5,8 +5,22 @@
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createMemoryPosts, createMemorySessions, createMemoryTags, createMemoryUsers } from '../src/db/memory.js';
-import type { PostRepository, SessionRepository, TagRepository, UserRepository } from '../src/db/repositories.js';
+import {
+	createMemoryComments,
+	createMemoryLikes,
+	createMemoryPosts,
+	createMemorySessions,
+	createMemoryTags,
+	createMemoryUsers
+} from '../src/db/memory.js';
+import type {
+	CommentRepository,
+	LikeRepository,
+	PostRepository,
+	SessionRepository,
+	TagRepository,
+	UserRepository
+} from '../src/db/repositories.js';
 import { createLocalStorage, type StorageProvider } from '../src/media/storage.js';
 import type { ApiDeps } from '../src/server.js';
 
@@ -18,6 +32,8 @@ export interface TestRepos {
 	sessions: SessionRepository;
 	posts: PostRepository;
 	tags: TagRepository;
+	comments: CommentRepository;
+	likes: LikeRepository;
 	media: StorageProvider;
 }
 
@@ -34,6 +50,8 @@ export function createTestRepos(): TestRepos {
 		sessions: createMemorySessions(users),
 		posts: createMemoryPosts(tags, links),
 		tags,
+		comments: createMemoryComments(),
+		likes: createMemoryLikes(),
 		media: createLocalStorage(mkdtempSync(join(tmpdir(), 'blog-media-')))
 	};
 }

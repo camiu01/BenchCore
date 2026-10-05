@@ -11,6 +11,7 @@ import type {
 import type { SessionRow, TagRow, UserRow } from './schema.js';
 export { createMemoryPosts } from './memory-posts.js';
 export { createMemoryUsers } from './memory-users.js';
+export { createMemoryComments, createMemoryLikes } from './memory-engagement.js';
 
 /**
  * @brief Creates an in-memory session repository.
@@ -73,6 +74,28 @@ class MemoryTags implements TagRepository {
 		return [...this.rows.values()].sort((a, b) => a.name.localeCompare(b.name));
 	}
 
+	/** @brief Changes a tag color. @param id Tag id. @param color HEX color. @return Updated row or null. */
+	async updateColor(id: string, color: string): Promise<TagRow | null> {
+		const row = this.rows.get(id);
+		if (!row) { return null; }
+		const updated = { ...row, color };
+		this.rows.set(id, updated);
+		this.byName.set(updated.name, updated);
+		this.bySlug.set(updated.slug, updated);
+		return updated;
+	}
+
+	/** @brief Deletes a tag and removes it from every link set. @param id Tag id. @return Whether deleted. */
+	async remove(id: string): Promise<boolean> {
+		const row = this.rows.get(id);
+		if (!row) { return false; }
+		this.rows.delete(id);
+		this.byName.delete(row.name);
+		this.bySlug.delete(row.slug);
+		for (const ids of this.links.values()) { ids.delete(id); }
+		return true;
+	}
+
 	/**
 	 * @brief Resolves names and slug aliases without duplicate result ids.
 	 * @param names The submitted names.
@@ -89,7 +112,7 @@ class MemoryTags implements TagRepository {
 				if (!result.some((row) => row.id === existing.id)) { result.push(existing); }
 				continue;
 			}
-			const row = { id: randomUUID(), slug: slug || randomUUID(), name };
+			const row = { id: randomUUID(), slug: slug || randomUUID(), name, color: '#64748B' };
 			this.rows.set(row.id, row);
 			this.byName.set(name, row);
 			this.bySlug.set(row.slug, row);

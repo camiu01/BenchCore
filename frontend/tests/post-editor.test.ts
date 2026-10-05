@@ -19,8 +19,11 @@ describe('temporarily disabled scheduling', () => {
 				schedulerEnabled: false
 			}
 		});
-		expect(result.body).toContain('CLEAR SCHEDULE');
-		expect(result.body).toMatch(/name="publish_at"[^>]*value="2026-10-10T12:00:00Z"[^>]*readonly/);
+		expect(result.body).toContain('CLEAR');
+		expect(result.body).toMatch(
+			/type="hidden"[^>]*name="publish_at"[^>]*value="2026-10-10T12:00:00Z"/
+		);
+		expect(result.body).toMatch(/type="datetime-local"[^>]*readonly/);
 	});
 	it('does not offer a clear button for an empty disabled schedule', () => {
 		const result = render(PostEditor, {

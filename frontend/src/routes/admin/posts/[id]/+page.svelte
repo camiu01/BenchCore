@@ -47,6 +47,7 @@
 				isNew={false}
 				directUploads={data.directUploads}
 				schedulerEnabled={data.schedulerEnabled}
+				wikilinkSuggestions={data.wikilinkSuggestions}
 			/>
 		</article>
 	</main>

@@ -3,7 +3,7 @@
  * @brief Validated, outage-tolerant admin API client with trusted mutation origins.
  */
 import { z } from 'zod';
-import { apiBase } from '../api.js';
+import { apiBase, tagSchema } from '../api.js';
 import { mutationOrigin } from '../site.js';
 import { payloadFromValues, type EditorValues } from './editor-values.js';
 import { apiFetch } from './transport.js';
@@ -36,6 +36,9 @@ const detailSchema = z.object({
 	contentMarkdown: z.string()
 });
 const listSchema = z.object({ items: z.array(rowSchema), total: z.number().int().nonnegative() });
+const postSuggestionsSchema = z.object({
+	items: z.array(z.object({ id: z.uuid(), slug: z.string(), title: z.string() }))
+});
 const errorSchema = z.object({ message: z.string() });
 const previewSchema = z.object({ html: z.string() });
 const uploadSchema = z.object({
@@ -43,7 +46,25 @@ const uploadSchema = z.object({
 });
 const tagsSchema = z.object({
 	items: z.array(
-		z.object({ name: z.string(), slug: z.string(), count: z.number().int().nonnegative() })
+		tagSchema.extend({
+			id: z.uuid(),
+			count: z.number().int().nonnegative()
+		})
+	)
+});
+export const commentStatusSchema = z.enum(['pending', 'approved', 'rejected']);
+const commentsSchema = z.object({
+	hasMore: z.boolean(),
+	items: z.array(
+		z.object({
+			id: z.uuid(),
+			postId: z.uuid(),
+			authorName: z.string(),
+			content: z.string(),
+			status: commentStatusSchema,
+			createdAt: z.iso.datetime({ offset: true }),
+			post: z.object({ slug: z.string(), title: z.string() }).nullable()
+		})
 	)
 });
 export type AdminPostRow = z.infer<typeof rowSchema>;
@@ -106,6 +127,17 @@ export async function adminListPosts(cookie: string | null) {
 }
 
 /**
+ * @brief Loads a bounded lightweight post index for wikilink completion.
+ * @param cookie Session Cookie header.
+ * @return Protected post suggestions or null during an outage.
+ */
+export async function adminListPostSuggestions(cookie: string | null) {
+	const { status, data } = await authedJson(cookie, 'GET', '/api/admin/posts/suggestions');
+	const parsed = postSuggestionsSchema.safeParse(data);
+	return status === 200 && parsed.success ? parsed.data.items : null;
+}
+
+/**
  * @brief Loads all tag names without exposing private tags through the public API.
  * @param cookie Session Cookie header.
  * @return Protected registry or null during an outage.
@@ -114,6 +146,105 @@ export async function adminListTags(cookie: string | null) {
 	const { status, data } = await authedJson(cookie, 'GET', '/api/admin/tags');
 	const parsed = tagsSchema.safeParse(data);
 	return status === 200 && parsed.success ? parsed.data : null;
+}
+
+/**
+ * @brief Changes a tag color.
+ * @param cookie Session Cookie header.
+ * @param id Tag id.
+ * @param color Validated HEX color.
+ * @return Success or a safe failure.
+ */
+export async function adminUpdateTagColor(cookie: string | null, id: string, color: string) {
+	const { status, data } = await authedJson(
+		cookie,
+		'PATCH',
+		`/api/admin/tags/${encodeURIComponent(id)}`,
+		{ color }
+	);
+	return status === 200
+		? { ok: true as const }
+		: { ok: false as const, error: messageFrom(data, `Color update failed (${status}).`) };
+}
+
+/**
+ * @brief Deletes a tag and its post associations.
+ * @param cookie Session Cookie header.
+ * @param id Tag id.
+ * @return Success or a safe failure.
+ */
+export async function adminDeleteTag(cookie: string | null, id: string) {
+	const { status, data } = await authedJson(
+		cookie,
+		'DELETE',
+		`/api/admin/tags/${encodeURIComponent(id)}`
+	);
+	return status === 204
+		? { ok: true as const }
+		: { ok: false as const, error: messageFrom(data, `Tag deletion failed (${status}).`) };
+}
+
+/**
+ * @brief Lists comments for moderation.
+ * @param cookie Session Cookie header.
+ * @param status Moderation filter.
+ * @param offset Validated row offset, default zero.
+ * @return Comment registry or null.
+ */
+export async function adminListComments(cookie: string | null, status: string, offset = 0) {
+	const query = new URLSearchParams({ offset: String(offset) });
+	if (['pending', 'approved', 'rejected'].includes(status)) {
+		query.set('status', status);
+	}
+	const { status: code, data } = await authedJson(cookie, 'GET', `/api/admin/comments?${query}`);
+	const parsed = commentsSchema.safeParse(data);
+	return code === 200 && parsed.success ? parsed.data : null;
+}
+
+/**
+ * @brief Changes comment moderation state.
+ * @param cookie Session Cookie header.
+ * @param id Comment id.
+ * @param status Desired state.
+ * @return Success or failure.
+ */
+export async function adminModerateComment(
+	cookie: string | null,
+	id: string,
+	status: z.infer<typeof commentStatusSchema>
+) {
+	const result = await authedJson(
+		cookie,
+		'PATCH',
+		`/api/admin/comments/${encodeURIComponent(id)}`,
+		{ status }
+	);
+	return result.status === 200
+		? { ok: true as const }
+		: {
+				ok: false as const,
+				error: messageFrom(result.data, `Moderation failed (${result.status}).`)
+			};
+}
+
+/**
+ * @brief Deletes a comment.
+ * @param cookie Session Cookie header.
+ * @param id Comment id.
+ * @return Success or failure.
+ */
+export async function adminDeleteComment(cookie: string | null, id: string) {
+	const result = await authedJson(
+		cookie,
+		'DELETE',
+		`/api/admin/comments/${encodeURIComponent(id)}`
+	);
+	return result.status === 204
+		? { ok: true as const }
+		: {
+				ok: false as const,
+				error: messageFrom(result.data, `Comment deletion failed (${result.status}).`)
+			};
 }
 
 /**

@@ -6,11 +6,14 @@ import { eq, lte, or } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { AppDb } from './client.js';
 import { createDrizzlePosts } from './drizzle-posts.js';
+import { createDrizzleComments, createDrizzleLikes } from './drizzle-engagement.js';
 import type {
 	PostRepository,
 	SessionRepository,
 	TagRepository,
-	UserRepository
+	UserRepository,
+	CommentRepository,
+	LikeRepository
 } from './repositories.js';
 import { postTags, sessions, tags, users, type TagRow } from './schema.js';
 
@@ -65,6 +68,16 @@ class DrizzleTags implements TagRepository {
 	/** @brief Lists tags. @return Rows ordered by name. */
 	async list(): Promise<TagRow[]> {
 		return this.db.select().from(tags).orderBy(tags.name);
+	}
+
+	/** @brief Changes a tag color. @param id Tag id. @param color HEX color. @return Updated row or null. */
+	async updateColor(id: string, color: string): Promise<TagRow | null> {
+		return (await this.db.update(tags).set({ color }).where(eq(tags.id, id)).returning())[0] ?? null;
+	}
+
+	/** @brief Deletes a tag; database cascades its links. @param id Tag id. @return Whether deleted. */
+	async remove(id: string): Promise<boolean> {
+		return (await this.db.delete(tags).where(eq(tags.id, id)).returning({ id: tags.id })).length > 0;
 	}
 
 	/**
@@ -131,9 +144,18 @@ export function createDrizzleRepos(db: AppDb): {
 	sessions: SessionRepository;
 	posts: PostRepository;
 	tags: TagRepository;
+	comments: CommentRepository;
+	likes: LikeRepository;
 } {
 	const users = createDrizzleUsers(db);
 	const sessions = createDrizzleSessions(db);
 	const tags = createDrizzleTags(db);
-	return { users, sessions, posts: createDrizzlePosts(db, tags), tags };
+	return {
+		users,
+		sessions,
+		posts: createDrizzlePosts(db, tags),
+		tags,
+		comments: createDrizzleComments(db),
+		likes: createDrizzleLikes(db)
+	};
 }

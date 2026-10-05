@@ -8,7 +8,8 @@
 Bootstrap an admin with `pnpm seed`, sign in at `/login`, and open `/admin`.
 The deck lists posts including drafts and archived records. Use
 `/admin/posts/new` to create and `/admin/posts/<id>` to edit. The tags view
-provides a tag inventory; it is not a promised independent tag-management API.
+assigns accessible colors and can delete a tag from every post. The comments
+view approves, rejects, reopens or deletes reader responses.
 
 Admin routes resolve the browser session through the API. Redirects and page
 guards are convenience controls; the API also requires a session for protected
@@ -19,13 +20,16 @@ available when their deployment settings are configured.
 
 1. Give the post a title, unique lowercase/dash slug, and description.
 2. Enter tags as comma-separated names; blank segments are ignored.
-3. Write Markdown in the content area.
+3. Write Markdown in the content area. Typing `[[` opens a keyboard-accessible
+   list of existing posts; choosing one inserts its slug and closes the wikilink.
 4. Preview to see API-rendered sanitized HTML.
 5. Save deliberately; preview alone is not persistence.
 6. Choose draft/published/archived and verify public visibility.
-7. Use a timezone-qualified `publishAt` schedule for delayed publication.
+7. Use the local-time date picker for delayed publication.
 
 `publishedAt` identifies publication time; `publishAt` is the separate schedule.
+The editor displays both in the browser's local timezone and submits canonical
+UTC timestamps.
 Blank publication metadata can use the service's automatic stamping behavior.
 Do not treat blank form fields as universally clearing nullable API fields.
 Use explicit API `null` where the documented contract supports it.
@@ -37,6 +41,16 @@ upload form. Inspect the editor after an upload and save the intended content.
 
 Deletion is a real database mutation. Back up first when recovery matters;
 revision-table groundwork is not a safety net for deleted posts.
+
+## Graph and engagement
+
+The public `/graph` page displays only published records and valid wikilinks.
+Node colors use the first tag attached to each post. Search, keyboard focus,
+zoom, drag and an accessible record index are available.
+
+Comments submitted from a post remain private until approved under
+`/admin/comments`. Likes are anonymous and toggle per browser. Moderation and
+tag deletion are permanent database mutations.
 
 ## Images
 

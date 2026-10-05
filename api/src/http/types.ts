@@ -3,7 +3,14 @@
  * @brief Dependencies and transport contracts shared by API handlers.
  */
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { PostRepository, SessionRepository, TagRepository, UserRepository } from '../db/repositories.js';
+import type {
+	CommentRepository,
+	LikeRepository,
+	PostRepository,
+	SessionRepository,
+	TagRepository,
+	UserRepository
+} from '../db/repositories.js';
 import type { PasswordResetDelivery } from '../auth/password-reset-delivery.js';
 import type { StorageProvider } from '../media/storage.js';
 
@@ -12,6 +19,8 @@ export interface ApiDeps {
 	sessions: SessionRepository;
 	posts: PostRepository;
 	tags: TagRepository;
+	comments: CommentRepository;
+	likes: LikeRepository;
 	media: StorageProvider;
 	passwordReset?: { delivery: PasswordResetDelivery; siteUrl: string };
 	cookieSecure: boolean;

@@ -9,9 +9,10 @@
 	const nav = [
 		{ href: '/posts', label: '[01] records' },
 		{ href: '/tags', label: '[02] tags' },
-		{ href: '/account', label: '[03] account' },
-		{ href: '/admin', label: '[04] admin' },
-		{ href: '/register', label: '[05] register' }
+		{ href: '/graph', label: '[03] graph' },
+		{ href: '/account', label: '[04] account' },
+		{ href: '/admin', label: '[05] admin' },
+		{ href: '/register', label: '[06] register' }
 	];
 </script>
 
@@ -24,6 +25,7 @@
 	{nav}
 	footerLeft="RELEASE: BETA // STATUS: ONLINE"
 	footerRight="STACK: SVELTEKIT + TS"
+	activeHref="/"
 >
 	<main id="records">
 		{#if data.posts === null}

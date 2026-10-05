@@ -153,6 +153,54 @@ describe('post endpoints', () => {
 		});
 		expect(dupe.status).toBe(409);
 	});
+
+	it('moderates comments and toggles anonymous likes on published posts', async () => {
+		const cookie = await loginCookie();
+		const created = await apiFetch('/api/posts', {
+			method: 'POST',
+			cookie,
+			body: JSON.stringify({
+				title: 'Discussion',
+				slug: 'discussion',
+				status: 'published',
+				contentMarkdown: 'Public body.'
+			})
+		});
+		expect(created.status).toBe(201);
+		const comment = await apiFetch('/api/posts/discussion/comments', {
+			method: 'POST',
+			body: JSON.stringify({ authorName: 'Reader', content: 'Useful record.' })
+		});
+		expect(comment.status).toBe(202);
+		expect(await fetch(`${baseUrl}/api/posts/discussion/comments`).then((response) => response.json()))
+			.toEqual({ items: [], hasMore: false });
+		const queue = await fetch(`${baseUrl}/api/admin/comments?status=pending`, {
+			headers: { cookie }
+		});
+		const queued = await queue.json() as { items: { id: string }[] };
+		expect(queued.items).toHaveLength(1);
+		expect((await apiFetch(`/api/admin/comments/${queued.items[0]!.id}`, {
+			method: 'PATCH',
+			cookie,
+			body: JSON.stringify({ status: 'approved' })
+		})).status).toBe(200);
+		const approved = await fetch(`${baseUrl}/api/posts/discussion/comments`);
+		expect((await approved.json() as { items: { content: string }[] }).items[0]?.content)
+			.toBe('Useful record.');
+
+		const firstLike = await apiFetch('/api/posts/discussion/likes', { method: 'POST' });
+		expect(await firstLike.json()).toMatchObject({ liked: true, count: 1 });
+		const voterCookie = firstLike.headers.getSetCookie()[0]!.split(';')[0]!;
+		const likedState = await fetch(`${baseUrl}/api/posts/discussion/likes`, {
+			headers: { cookie: voterCookie }
+		});
+		expect(await likedState.json()).toEqual({ liked: true, count: 1 });
+		const removedLike = await apiFetch('/api/posts/discussion/likes', {
+			method: 'POST',
+			cookie: voterCookie
+		});
+		expect(await removedLike.json()).toMatchObject({ liked: false, count: 0 });
+	});
 });
 
 describe('media endpoints', () => {
@@ -200,6 +248,20 @@ describe('media endpoints', () => {
 });
 
 describe('admin and render endpoints', () => {
+	it('guards the lightweight wikilink index and excludes content fields', async () => {
+		expect((await fetch(`${baseUrl}/api/admin/posts/suggestions`)).status).toBe(401);
+		const cookie = await loginCookie();
+		const response = await apiFetch('/api/admin/posts/suggestions', { cookie });
+		expect(response.status).toBe(200);
+		const result = await response.json() as {
+			items: { id: string; slug: string; title: string }[];
+		};
+		expect(result.items.length).toBeGreaterThan(0);
+		expect(result.items.length).toBeLessThanOrEqual(200);
+		for (const row of result.items) {
+			expect(Object.keys(row).sort()).toEqual(['id', 'slug', 'title']);
+		}
+	});
 	it('serves drafts by id behind auth and renders previews', async () => {
 		const anon = await fetch(`${baseUrl}/api/admin/posts`);
 		expect(anon.status).toBe(401);
@@ -229,5 +291,25 @@ describe('admin and render endpoints', () => {
 			body: JSON.stringify({ markdown: '# Hi' })
 		});
 		expect(denied.status).toBe(401);
+	});
+
+	it('updates and deletes tags through administrator endpoints', async () => {
+		const cookie = await loginCookie();
+		const [tag] = await repos.tags.upsertByName(['graph']);
+		const updated = await apiFetch(`/api/admin/tags/${tag!.id}`, {
+			method: 'PATCH',
+			cookie,
+			body: JSON.stringify({ color: '#2563eb' })
+		});
+		expect(updated.status).toBe(200);
+		expect(await updated.json()).toMatchObject({ color: '#2563EB' });
+		expect((await apiFetch(`/api/admin/tags/${tag!.id}`, {
+			method: 'PATCH',
+			cookie,
+			body: JSON.stringify({ color: 'red' })
+		})).status).toBe(400);
+		expect((await apiFetch(`/api/admin/tags/${tag!.id}`, { method: 'DELETE' })).status).toBe(401);
+		expect((await apiFetch(`/api/admin/tags/${tag!.id}`, { method: 'DELETE', cookie })).status).toBe(204);
+		expect((await repos.tags.list()).find((item) => item.id === tag!.id)).toBeUndefined();
 	});
 });

@@ -28,8 +28,8 @@ rate limits, response headers/CSP, full-text search, scheduled publishing,
 database media storage, and CI. Version bumps do not publish packages, tags,
 releases, or a hosted service automatically.
 
-Revision tables are groundwork, not a revision product. No comments, reactions,
-email subscriptions, newsletter jobs, multi-user collaboration, or automatic
+Revision tables are groundwork, not a revision product. Public moderated comments
+and anonymous likes are available. No email subscriptions, newsletter jobs, multi-user collaboration, or automatic
 revision history is promised by this documentation. Schema presence alone is
 not evidence of a working user-facing feature. [TODO.md](../TODO.md) owns the
 roadmap; source and committed migrations own exact implementation details.

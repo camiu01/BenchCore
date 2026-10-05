@@ -65,9 +65,13 @@ export type PostDetail = z.infer<typeof postDetailSchema>;
 /**
  * @brief A tag with its published-post count DTO.
  */
-export const tagWithCountSchema = z.object({
+export const tagSchema = z.object({
 	name: z.string(),
 	slug: z.string(),
+	color: z.string().regex(/^#[0-9A-F]{6}$/)
+});
+
+export const tagWithCountSchema = tagSchema.extend({
 	count: z.number().int().nonnegative()
 });
 
@@ -75,6 +79,24 @@ export const tagWithCountSchema = z.object({
  * @brief A tag with its published-post count.
  */
 export type TagWithCount = z.infer<typeof tagWithCountSchema>;
+
+/** @brief Public graph response schema. */
+export const graphSchema = z.object({
+	nodes: z.array(
+		z.object({
+			id: z.uuid(),
+			slug: z.string(),
+			title: z.string(),
+			description: z.string(),
+			publishedAt: z.iso.datetime({ offset: true }),
+			tags: z.array(tagSchema)
+		})
+	),
+	edges: z.array(z.object({ source: z.string(), target: z.string() }))
+});
+
+/** @brief Public graph response. */
+export type GraphData = z.infer<typeof graphSchema>;
 
 /**
  * @brief Returns the API base URL (falls back to local dev default).
@@ -206,4 +228,12 @@ export function getPostsByTag(
  */
 export function getTags(): Promise<{ items: TagWithCount[] } | null> {
 	return getDto(z.object({ items: z.array(tagWithCountSchema) }), '/api/tags');
+}
+
+/**
+ * @brief Loads the published wikilink graph.
+ * @return Graph data or null when the API is unavailable.
+ */
+export function getGraph(): Promise<GraphData | null> {
+	return getDto(graphSchema, '/api/graph');
 }

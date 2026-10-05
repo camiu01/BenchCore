@@ -17,6 +17,17 @@ function newestFirst(rows: PostRow[]): PostRow[] {
 		|| b.id.localeCompare(a.id));
 }
 
+/**
+ * @brief Checks whether a post is public at the reference time.
+ * @param row Post row.
+ * @param now Visibility reference time.
+ * @return Whether the row may be exposed publicly.
+ */
+function isPublic(row: PostRow, now: Date): boolean {
+	return row.status === 'published' && row.publishedAt !== null && row.publishedAt <= now
+		&& (row.publishAt === null || row.publishAt <= now);
+}
+
 /** @brief In-memory implementation of the post repository contract. */
 class MemoryPosts implements PostRepository {
 	private readonly rows = new Map<string, PostRow>();
@@ -101,8 +112,7 @@ class MemoryPosts implements PostRepository {
 	 */
 	async listPublished(options: Parameters<PostRepository['listPublished']>[0]) {
 		const visible = newestFirst([...this.rows.values()].filter((row) =>
-			row.status === 'published' && row.publishedAt !== null && row.publishedAt <= options.now
-			&& (row.publishAt === null || row.publishAt <= options.now) && matchesSearch(row, options.search)));
+			isPublic(row, options.now) && matchesSearch(row, options.search)));
 		const filtered: PostRow[] = [];
 		for (const row of visible) {
 			const names = options.tag === undefined ? [] : await this.tags.getPostTagNames(row.id);
@@ -110,6 +120,16 @@ class MemoryPosts implements PostRepository {
 		}
 		const page = filtered.slice(options.offset, options.offset + options.limit);
 		return { items: await Promise.all(page.map((row) => this.withTags(row))), total: filtered.length };
+	}
+
+	/**
+	 * @brief Lists every currently public row for graph construction.
+	 * @param now Visibility reference time.
+	 * @return Public rows with tags.
+	 */
+	async listGraph(now: Date): Promise<PostWithTags[]> {
+		const rows = newestFirst([...this.rows.values()].filter((row) => isPublic(row, now)));
+		return Promise.all(rows.map((row) => this.withTags(row)));
 	}
 
 	/**
@@ -135,6 +155,18 @@ class MemoryPosts implements PostRepository {
 		const rows = [...this.rows.values()].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()
 			|| b.id.localeCompare(a.id));
 		return Promise.all(rows.map((row) => this.withTags(row)));
+	}
+
+	/**
+	 * @brief Lists a bounded lightweight post index.
+	 * @param limit Maximum rows.
+	 * @return Suggestion fields only.
+	 */
+	async listSuggestions(limit: number) {
+		return [...this.rows.values()]
+			.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime() || b.id.localeCompare(a.id))
+			.slice(0, limit)
+			.map(({ id, slug, title }) => ({ id, slug, title }));
 	}
 }
 

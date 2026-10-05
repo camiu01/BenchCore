@@ -1,0 +1,210 @@
+/**
+ * @file graph-renderer.ts
+ * @brief D3 rendering adapter for the interactive public post graph.
+ */
+import { drag, type D3DragEvent } from 'd3-drag';
+import {
+	forceCenter,
+	forceCollide,
+	forceLink,
+	forceManyBody,
+	forceSimulation,
+	type Simulation,
+	type SimulationLinkDatum,
+	type SimulationNodeDatum
+} from 'd3-force';
+import { select, type Selection } from 'd3-selection';
+import { zoom, zoomIdentity } from 'd3-zoom';
+import type { GraphData } from './api.js';
+
+type SimNode = GraphData['nodes'][number] & SimulationNodeDatum & { degree: number };
+interface SimLink extends SimulationLinkDatum<SimNode> {
+	source: string | SimNode;
+	target: string | SimNode;
+}
+type NodeSelection = Selection<SVGCircleElement, SimNode, SVGGElement, unknown>;
+type LinkSelection = Selection<SVGLineElement, SimLink, SVGGElement, unknown>;
+type LabelSelection = Selection<SVGTextElement, SimNode, SVGGElement, unknown>;
+
+export interface GraphController {
+	filter(query: string): void;
+	select(slug: string | null): void;
+	reset(): void;
+	destroy(): void;
+}
+
+/** @brief Builds simulation nodes and links. @param graph Public graph. @return Mutable D3 model. */
+export function buildModel(graph: GraphData): { nodes: SimNode[]; links: SimLink[] } {
+	const degrees = new Map<string, number>();
+	for (const edge of graph.edges) {
+		degrees.set(edge.source, (degrees.get(edge.source) ?? 0) + 1);
+		degrees.set(edge.target, (degrees.get(edge.target) ?? 0) + 1);
+	}
+	return {
+		nodes: graph.nodes.map((node) => ({ ...node, degree: degrees.get(node.slug) ?? 0 })),
+		links: graph.edges.map((edge) => ({ ...edge }))
+	};
+}
+
+/** @brief Draws graph primitives. @param svg SVG root. @param nodes Nodes. @param links Edges. @return D3 selections. */
+function drawScene(svg: SVGSVGElement, nodes: SimNode[], links: SimLink[]) {
+	const root = select(svg);
+	const scene = root.append('g').attr('class', 'graph-scene');
+	const link = scene
+		.append('g')
+		.attr('class', 'graph-links')
+		.selectAll<SVGLineElement, SimLink>('line')
+		.data(links)
+		.join('line');
+	const node = scene
+		.append('g')
+		.attr('class', 'graph-nodes')
+		.selectAll<SVGCircleElement, SimNode>('circle')
+		.data(nodes)
+		.join('circle')
+		.attr('r', (item) => Math.min(16, 7 + item.degree * 1.5))
+		.attr('fill', (item) => item.tags[0]?.color ?? '#64748B')
+		.attr('tabindex', 0)
+		.attr('role', 'button')
+		.attr('aria-label', (item) => `${item.title}, ${item.degree} connections`);
+	const label = scene
+		.append('g')
+		.attr('class', 'graph-labels')
+		.selectAll<SVGTextElement, SimNode>('text')
+		.data(nodes)
+		.join('text')
+		.text((item) => item.title);
+	return { root, scene, link, node, label };
+}
+
+/** @brief Starts and paints the force simulation. @param nodes Nodes. @param links Edges. @param link Lines. @param node Circles. @param label Labels. @return Simulation. */
+function startSimulation(
+	nodes: SimNode[],
+	links: SimLink[],
+	link: LinkSelection,
+	node: NodeSelection,
+	label: LabelSelection
+): Simulation<SimNode, SimLink> {
+	const simulation = forceSimulation(nodes)
+		.force(
+			'link',
+			forceLink<SimNode, SimLink>(links)
+				.id((item) => item.slug)
+				.distance(105)
+				.strength(0.6)
+		)
+		.force('charge', forceManyBody().strength(-260))
+		.force('center', forceCenter(490, 310))
+		.force(
+			'collision',
+			forceCollide<SimNode>().radius((item) => Math.min(16, 7 + item.degree * 1.5) + 20)
+		);
+	simulation.on('tick', () => {
+		link
+			.attr('x1', (item) => (item.source as SimNode).x ?? 0)
+			.attr('y1', (item) => (item.source as SimNode).y ?? 0)
+			.attr('x2', (item) => (item.target as SimNode).x ?? 0)
+			.attr('y2', (item) => (item.target as SimNode).y ?? 0);
+		node.attr('cx', (item) => item.x ?? 0).attr('cy', (item) => item.y ?? 0);
+		label.attr('x', (item) => (item.x ?? 0) + 12).attr('y', (item) => (item.y ?? 0) + 4);
+	});
+	return simulation;
+}
+
+/** @brief Enables pointer, keyboard and drag interaction. @param node Circles. @param simulation Simulation. @param onSelect Selection callback. @return Nothing. */
+function enableNodeInteraction(
+	node: NodeSelection,
+	simulation: Simulation<SimNode, SimLink>,
+	onSelect: (slug: string) => void
+): void {
+	node
+		.on('click', (_event, item) => onSelect(item.slug))
+		.on('keydown', (event, item) => {
+			if (event.key !== 'Enter' && event.key !== ' ') return;
+			event.preventDefault();
+			onSelect(item.slug);
+		});
+	node.call(
+		drag<SVGCircleElement, SimNode>()
+			.on('start', (event: D3DragEvent<SVGCircleElement, SimNode, SimNode>, item) => {
+				if (!event.active) simulation.alphaTarget(0.25).restart();
+				item.fx = item.x;
+				item.fy = item.y;
+			})
+			.on('drag', (event: D3DragEvent<SVGCircleElement, SimNode, SimNode>, item) => {
+				item.fx = event.x;
+				item.fy = event.y;
+			})
+			.on('end', (event: D3DragEvent<SVGCircleElement, SimNode, SimNode>, item) => {
+				if (!event.active) simulation.alphaTarget(0);
+				item.fx = null;
+				item.fy = null;
+			})
+	);
+}
+
+/** @brief Creates graph search highlighting. @param node Circles. @param label Labels. @return Filter callback. */
+function createFilter(node: NodeSelection, label: LabelSelection): (query: string) => void {
+	return (query) => {
+		const needle = query.trim().toLowerCase();
+		const muted = (item: SimNode) =>
+			needle !== '' &&
+			!item.title.toLowerCase().includes(needle) &&
+			!item.tags.some((tag) => tag.name.toLowerCase().includes(needle));
+		node.classed('search-muted', muted);
+		label.classed('search-muted', muted);
+	};
+}
+
+/** @brief Creates connected-node highlighting. @param graph Public graph. @param node Circles. @param label Labels. @param link Lines. @return Selection callback. */
+function createSelection(
+	graph: GraphData,
+	node: NodeSelection,
+	label: LabelSelection,
+	link: LinkSelection
+): (slug: string | null) => void {
+	return (slug) => {
+		const neighbors = new Set([slug]);
+		for (const edge of graph.edges) {
+			if (edge.source === slug) neighbors.add(edge.target);
+			if (edge.target === slug) neighbors.add(edge.source);
+		}
+		node
+			.classed('selected', (item) => item.slug === slug)
+			.classed('selection-muted', (item) => slug !== null && !neighbors.has(item.slug));
+		label.classed('selection-muted', (item) => slug !== null && !neighbors.has(item.slug));
+		link.classed('selection-muted', (item) => {
+			const source = typeof item.source === 'string' ? item.source : item.source.slug;
+			const target = typeof item.target === 'string' ? item.target : item.target.slug;
+			return slug !== null && source !== slug && target !== slug;
+		});
+	};
+}
+
+/**
+ * @brief Mounts an interactive graph and returns its controls.
+ * @param svg SVG root.
+ * @param graph Public graph.
+ * @param onSelect Selection callback.
+ * @return Graph controls and cleanup.
+ */
+export function createGraphRenderer(
+	svg: SVGSVGElement,
+	graph: GraphData,
+	onSelect: (slug: string) => void
+): GraphController {
+	const { nodes, links } = buildModel(graph);
+	const { root, scene, link, node, label } = drawScene(svg, nodes, links);
+	const simulation = startSimulation(nodes, links, link, node, label);
+	enableNodeInteraction(node, simulation, onSelect);
+	const zoomBehavior = zoom<SVGSVGElement, unknown>()
+		.scaleExtent([0.35, 4])
+		.on('zoom', (event) => scene.attr('transform', event.transform.toString()));
+	root.call(zoomBehavior);
+	return {
+		filter: createFilter(node, label),
+		select: createSelection(graph, node, label, link),
+		reset: () => root.call(zoomBehavior.transform, zoomIdentity),
+		destroy: () => simulation.stop()
+	};
+}

@@ -120,4 +120,15 @@ describe('post database groundwork', () => {
 		const aliases = await tags.upsertByName(['web dev', 'web-dev']);
 		expect(aliases).toHaveLength(1);
 	});
+
+	it('updates tag colors and removes tag associations without deleting posts', async () => {
+		const { posts, tags } = repositories();
+		const row = await posts.create(post());
+		const [tag] = await tags.upsertByName(['private']);
+		await tags.setPostTags(row.id, [tag!.id]);
+		expect(await tags.updateColor(tag!.id, '#2563EB')).toMatchObject({ color: '#2563EB' });
+		expect(await tags.remove(tag!.id)).toBe(true);
+		expect(await tags.getPostTagNames(row.id)).toEqual([]);
+		expect(await posts.findById(row.id)).not.toBeNull();
+	});
 });

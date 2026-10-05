@@ -66,10 +66,109 @@ textarea.field-input {
 	resize: vertical;
 }
 
+.wikilink-editor {
+	position: relative;
+}
+
+.wikilink-suggestions {
+	position: absolute;
+	z-index: 10;
+	left: 0;
+	right: 0;
+	max-height: 230px;
+	overflow-y: auto;
+	border: 1px solid var(--border);
+	background: var(--sheet-bg);
+	box-shadow: 4px 4px 0 rgb(0 0 0 / 15%);
+}
+
+.wikilink-suggestions button {
+	display: flex;
+	justify-content: space-between;
+	gap: 14px;
+	width: 100%;
+	padding: 8px 10px;
+	border: 0;
+	border-bottom: 1px solid var(--border-light);
+	background: none;
+	color: var(--ink);
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.wikilink-suggestions button:hover,
+.wikilink-suggestions button.active {
+	background: var(--accent-bg);
+	color: var(--accent);
+}
+
+.wikilink-suggestions code {
+	color: var(--muted);
+}
+
 .field-row {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
 	gap: 12px;
+}
+
+.field-help {
+	display: block;
+	margin-top: 4px;
+	color: var(--muted);
+	font-size: 10px;
+}
+
+.datetime-controls,
+.tag-custom-color,
+.graph-controls {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.datetime-controls .field-input,
+.graph-controls .field-input {
+	flex: 1;
+}
+
+.tag-color-form {
+	display: grid;
+	gap: 8px;
+	min-width: 220px;
+}
+
+.tag-swatches {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+
+.tag-swatch {
+	width: 22px;
+	height: 22px;
+	border: 2px solid var(--sheet-bg);
+	outline: 1px solid var(--border-light);
+	cursor: pointer;
+}
+
+.tag-swatch.active,
+.tag-swatch:focus-visible {
+	outline: 2px solid var(--ink);
+	outline-offset: 1px;
+}
+
+.tag-custom-color input[type='color'] {
+	width: 36px;
+	height: 34px;
+	padding: 1px;
+	border: 1px solid var(--border);
+	background: var(--sheet-bg);
+}
+
+.color-code {
+	width: 92px;
 }
 
 .btn {
@@ -89,6 +188,18 @@ textarea.field-input {
 .btn:hover {
 	border-color: var(--accent);
 	color: var(--accent);
+}
+
+.btn:focus-visible,
+.field-input:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+.btn.danger {
+	margin-top: 8px;
+	color: var(--accent);
+	border-color: var(--accent);
 }
 
 .btn-accent {

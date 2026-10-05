@@ -3,14 +3,16 @@
 	import type { PageData } from './$types';
 	import DocShell from '../../../lib/components/DocShell.svelte';
 	import Seo from '../../../lib/components/Seo.svelte';
+	import PostEngagement from '../../../lib/components/PostEngagement.svelte';
 
 	let { data }: { data: PageData } = $props();
 
-	const nav = [
+	const nav = $derived([
 		{ href: '/', label: '[01] index' },
 		{ href: '/posts', label: '[02] records' },
-		{ href: '/tags', label: '[03] tags' }
-	];
+		{ href: '/tags', label: '[03] tags' },
+		{ href: `/graph?focus=${encodeURIComponent(data.post.slug)}`, label: '[04] graph' }
+	]);
 	const cover = $derived(data.cover);
 	const canonical = $derived(`${data.siteBase}/posts/${encodeURIComponent(data.post.slug)}`);
 </script>
@@ -29,6 +31,7 @@
 	{nav}
 	footerLeft="READ: {data.post.readingMinutes} MIN"
 	footerRight="FILED: {data.post.publishedAt ?? 'UNDATED'}"
+	activeHref="/posts"
 >
 	<main>
 		<article class="record">
@@ -94,5 +97,8 @@
 				</table>
 			</section>
 		{/if}
+		{#key data.post.slug}
+			<PostEngagement slug={data.post.slug} />
+		{/key}
 	</main>
 </DocShell>

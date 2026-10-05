@@ -19,13 +19,25 @@
 		nav: NavItem[];
 		footerLeft: string;
 		footerRight: string;
+		wide?: boolean;
+		activeHref?: string;
 		children: Snippet;
 	}
 
-	let { docId, title, sub, nav, footerLeft, footerRight, children }: Props = $props();
+	let {
+		docId,
+		title,
+		sub,
+		nav,
+		footerLeft,
+		footerRight,
+		wide = false,
+		activeHref,
+		children
+	}: Props = $props();
 </script>
 
-<div class="wrapper">
+<div class:wide class="wrapper">
 	<div class="doc-meta-bar">
 		<span class="doc-id">{docId}</span>
 		<ThemePicker />
@@ -36,7 +48,9 @@
 		<div class="doc-sub">{sub}</div>
 		<nav class="doc-nav">
 			{#each nav as item (item.href)}
-				<a href={item.href}>{item.label}</a>
+				<a href={item.href} aria-current={item.href === activeHref ? 'page' : undefined}
+					>{item.label}</a
+				>
 			{/each}
 		</nav>
 	</header>

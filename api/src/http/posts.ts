@@ -18,6 +18,9 @@ const pageSchema = z.object({
 	search: z.string().trim().max(200).optional()
 });
 const previewSchema = z.object({ markdown: z.string().max(200_000) });
+const tagColorSchema = z.object({
+	color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).transform((color) => color.toUpperCase())
+}).strict();
 
 /**
  * @brief Lists visible posts using validated page and search options.
@@ -91,7 +94,9 @@ export const handleListTags: ApiHandler = async (_req, res, deps) => {
 	const now = new Date();
 	for (const tag of await deps.tags.list()) {
 		const page = await deps.posts.listPublished({ limit: 1, offset: 0, tag: tag.name, now });
-		if (page.total > 0) { items.push({ name: tag.name, slug: tag.slug, count: page.total }); }
+		if (page.total > 0) {
+			items.push({ name: tag.name, slug: tag.slug, color: tag.color, count: page.total });
+		}
 	}
 	sendJson(res, 200, { items });
 };
@@ -103,13 +108,28 @@ export const handleListTags: ApiHandler = async (_req, res, deps) => {
  * @param deps Repositories.
  * @return Nothing.
  */
-export const handleAdminTags: ApiHandler = async (req, res, deps) => {
+export const handleAdminTags: ApiHandler = async (req, res, deps, _url, id) => {
 	if (!await requireUser(req, res, deps)) { return; }
+	if (id) {
+		if (!z.uuid().safeParse(id).success) { sendJson(res, 404, { error: 'not_found' }); return; }
+		if (req.method === 'DELETE') {
+			const removed = await deps.tags.remove(id);
+			if (!removed) { sendJson(res, 404, { error: 'not_found' }); return; }
+			res.writeHead(204); res.end(); return;
+		}
+		const body = await readBody(req, res);
+		if (!body) { return; }
+		const parsed = tagColorSchema.safeParse(body.data);
+		if (!parsed.success) { sendJson(res, 400, { error: 'validation' }); return; }
+		const updated = await deps.tags.updateColor(id, parsed.data.color);
+		sendJson(res, updated ? 200 : 404, updated ?? { error: 'not_found' });
+		return;
+	}
 	const items = [];
 	const now = new Date();
 	for (const tag of await deps.tags.list()) {
 		const page = await deps.posts.listPublished({ limit: 1, offset: 0, tag: tag.name, now });
-		items.push({ name: tag.name, slug: tag.slug, count: page.total });
+		items.push({ id: tag.id, name: tag.name, slug: tag.slug, color: tag.color, count: page.total });
 	}
 	sendJson(res, 200, { items });
 };
@@ -140,6 +160,18 @@ export const handleAdminPosts: ApiHandler = async (req, res, deps, _url, id) => 
 		});
 	}
 	sendJson(res, 200, id ? items[0] : { items, total: items.length });
+};
+
+/**
+ * @brief Serves a bounded lightweight post index for wikilink completion.
+ * @param req Incoming request.
+ * @param res Response stream.
+ * @param deps Repositories.
+ * @return Nothing.
+ */
+export const handleAdminPostSuggestions: ApiHandler = async (req, res, deps) => {
+	if (!await requireUser(req, res, deps)) { return; }
+	sendJson(res, 200, { items: await deps.posts.listSuggestions(200) });
 };
 
 /**

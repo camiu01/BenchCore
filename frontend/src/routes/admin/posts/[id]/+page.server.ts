@@ -7,6 +7,7 @@ import type { Actions, PageServerLoad } from './$types';
 import {
 	adminDeletePost,
 	adminGetPost,
+	adminListPostSuggestions,
 	adminRenderPreview,
 	adminSavePost,
 	adminUploadMedia,
@@ -21,7 +22,11 @@ import {
  * @param event The current request event.
  */
 export const load: PageServerLoad = async ({ params, request }) => {
-	const post = await adminGetPost(request.headers.get('cookie'), params.id);
+	const cookie = request.headers.get('cookie');
+	const [post, suggestions] = await Promise.all([
+		adminGetPost(cookie, params.id),
+		adminListPostSuggestions(cookie)
+	]);
 	if (post === null) {
 		throw error(404, 'record not found');
 	}
@@ -36,7 +41,15 @@ export const load: PageServerLoad = async ({ params, request }) => {
 		coverImage: post.coverImage ?? '',
 		content: post.contentMarkdown
 	};
-	return { values, previewHtml: null, uploadedUrl: null, status: post.status };
+	return {
+		values,
+		previewHtml: null,
+		uploadedUrl: null,
+		status: post.status,
+		wikilinkSuggestions: (suggestions ?? [])
+			.filter((item) => item.id !== post.id)
+			.map(({ slug, title }) => ({ slug, title }))
+	};
 };
 
 export const actions: Actions = {

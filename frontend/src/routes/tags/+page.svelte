@@ -9,7 +9,8 @@
 	const nav = [
 		{ href: '/', label: '[01] index' },
 		{ href: '/posts', label: '[02] records' },
-		{ href: '/admin', label: '[03] admin' }
+		{ href: '/graph', label: '[03] graph' },
+		{ href: '/admin', label: '[04] admin' }
 	];
 </script>
 
@@ -26,6 +27,7 @@
 	{nav}
 	footerLeft="TAGS: {data.items.length}"
 	footerRight="INDEX COMPLETE"
+	activeHref="/tags"
 >
 	<main>
 		{#if !data.online}
@@ -48,7 +50,11 @@
 				<tbody>
 					{#each data.items as tag (tag.slug)}
 						<tr>
-							<td class="item"><a href="/tags/{encodeURIComponent(tag.name)}">{tag.name}</a></td>
+							<td class="item">
+								<a href="/tags/{encodeURIComponent(tag.name)}">
+									<span class="tag-chip" style:--tag-color={tag.color}>{tag.name}</span>
+								</a>
+							</td>
 							<td class="code">{tag.slug}</td>
 							<td class="dim">{tag.count}</td>
 						</tr>

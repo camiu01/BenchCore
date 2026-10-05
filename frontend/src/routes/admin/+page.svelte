@@ -10,8 +10,9 @@
 		{ href: '/', label: '[01] index' },
 		{ href: '/admin/posts/new', label: '[02] new record' },
 		{ href: '/admin/tags', label: '[03] tags' },
-		{ href: '/admin/users', label: '[04] users' },
-		{ href: '/account', label: '[05] account' }
+		{ href: '/admin/comments', label: '[04] comments' },
+		{ href: '/admin/users', label: '[05] users' },
+		{ href: '/account', label: '[06] account' }
 	];
 </script>
 
@@ -28,6 +29,7 @@
 	{nav}
 	footerLeft="RECORDS: {data.total}"
 	footerRight={data.online ? 'API: LINKED' : 'API: OFFLINE'}
+	activeHref="/admin"
 >
 	<main>
 		{#if !data.online}

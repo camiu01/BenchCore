@@ -7,6 +7,19 @@ import type { AppDb } from './client.js';
 import type { PostCreate, PostRepository, PostWithTags, TagRepository } from './repositories.js';
 import { posts, postTags, tags, type PostRow } from './schema.js';
 
+/**
+ * @brief Builds the shared public-post visibility predicate.
+ * @param now Visibility reference time.
+ * @return Drizzle SQL predicate.
+ */
+function publicPostFilter(now: Date) {
+	return and(
+		eq(posts.status, 'published'),
+		lte(posts.publishedAt, now),
+		or(isNull(posts.publishAt), lte(posts.publishAt, now))
+	);
+}
+
 /** @brief SQL implementation of the post repository contract. */
 class DrizzlePosts implements PostRepository {
 	/**
@@ -99,13 +112,24 @@ class DrizzlePosts implements PostRepository {
 		const tagFilter = options.tag === undefined ? undefined : inArray(posts.id,
 			this.db.select({ postId: postTags.postId }).from(postTags)
 				.innerJoin(tags, eq(postTags.tagId, tags.id)).where(eq(tags.name, options.tag)));
-		const visible = and(eq(posts.status, 'published'), lte(posts.publishedAt, options.now),
-			or(isNull(posts.publishAt), lte(posts.publishAt, options.now)), tagFilter,
+		const visible = and(publicPostFilter(options.now), tagFilter,
 			search ? sql`${posts.searchVector} @@ websearch_to_tsquery('simple', ${search})` : undefined);
 		const rows = await this.db.select().from(posts).where(visible)
 			.orderBy(desc(posts.publishedAt), desc(posts.id)).limit(options.limit).offset(options.offset);
 		const totals = await this.db.select({ value: count() }).from(posts).where(visible);
 		return { items: await this.withTags(rows), total: totals[0]?.value ?? 0 };
+	}
+
+	/**
+	 * @brief Lists every row satisfying public visibility.
+	 * @param now Visibility reference time.
+	 * @return Public rows with tags.
+	 */
+	async listGraph(now: Date): Promise<PostWithTags[]> {
+		const visible = publicPostFilter(now);
+		return this.withTags(
+			await this.db.select().from(posts).where(visible).orderBy(desc(posts.publishedAt), desc(posts.id))
+		);
 	}
 
 	/**
@@ -126,6 +150,19 @@ class DrizzlePosts implements PostRepository {
 	 */
 	async listAll(): Promise<PostWithTags[]> {
 		return this.withTags(await this.db.select().from(posts).orderBy(desc(posts.createdAt), desc(posts.id)));
+	}
+
+	/**
+	 * @brief Lists a bounded lightweight post index.
+	 * @param limit Maximum rows.
+	 * @return Suggestion fields only.
+	 */
+	async listSuggestions(limit: number) {
+		return this.db
+			.select({ id: posts.id, slug: posts.slug, title: posts.title })
+			.from(posts)
+			.orderBy(desc(posts.updatedAt), desc(posts.id))
+			.limit(limit);
 	}
 }
 

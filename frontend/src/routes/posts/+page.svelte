@@ -9,7 +9,8 @@
 	const nav = [
 		{ href: '/', label: '[01] index' },
 		{ href: '/tags', label: '[02] tags' },
-		{ href: '/admin', label: '[03] admin' }
+		{ href: '/graph', label: '[03] graph' },
+		{ href: '/admin', label: '[04] admin' }
 	];
 </script>
 
@@ -26,6 +27,7 @@
 	{nav}
 	footerLeft="PAGE {data.page} OF {data.totalPages}"
 	footerRight="PER PAGE: {data.perPage}"
+	activeHref="/posts"
 >
 	<main>
 		<form method="GET" action="/posts" class="form-grid">

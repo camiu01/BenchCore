@@ -6,7 +6,14 @@ import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createMemoryPosts, createMemorySessions, createMemoryTags, createMemoryUsers } from '../src/db/memory.js';
+import {
+	createMemoryComments,
+	createMemoryLikes,
+	createMemoryPosts,
+	createMemorySessions,
+	createMemoryTags,
+	createMemoryUsers
+} from '../src/db/memory.js';
 import { createLocalStorage } from '../src/media/storage.js';
 import { importDirectory } from '../src/posts/import-service.js';
 import { createPost } from '../src/posts/post-service.js';
@@ -18,7 +25,14 @@ import { createHandler, parsePort, startServer } from '../src/server.js';
 const links = new Map<string, Set<string>>();
 const users = createMemoryUsers();
 const tags = createMemoryTags(links);
-const repos = { users, tags, posts: createMemoryPosts(tags, links), sessions: createMemorySessions(users) };
+const repos = {
+	users,
+	tags,
+	posts: createMemoryPosts(tags, links),
+	sessions: createMemorySessions(users),
+	comments: createMemoryComments(),
+	likes: createMemoryLikes()
+};
 const adminUsername = process.env['ADMIN_USERNAME'];
 const adminPassword = process.env['ADMIN_PASSWORD'];
 if (adminUsername && adminPassword) {

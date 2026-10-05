@@ -7,6 +7,7 @@ import type { Actions, PageServerLoad } from './$types';
 import {
 	adminRenderPreview,
 	adminSavePost,
+	adminListPostSuggestions,
 	adminUploadMedia,
 	blankValues,
 	withUploadedImage,
@@ -18,8 +19,14 @@ import {
  * @returns Empty values with no preview.
  * @param event The current request event.
  */
-export const load: PageServerLoad = () => {
-	return { values: blankValues(), previewHtml: null, uploadedUrl: null };
+export const load: PageServerLoad = async ({ request }) => {
+	const posts = await adminListPostSuggestions(request.headers.get('cookie'));
+	return {
+		values: blankValues(),
+		previewHtml: null,
+		uploadedUrl: null,
+		wikilinkSuggestions: posts?.map(({ slug, title }) => ({ slug, title })) ?? []
+	};
 };
 
 export const actions: Actions = {

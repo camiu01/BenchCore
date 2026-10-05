@@ -7,7 +7,7 @@ import type { ApiDeps, ApiHandler } from './http/types.js';
 import { sendJson } from './http/response.js';
 import { createSecurityGuard, securityHeaders } from './http/security.js';
 import { handleLogin, handleLogout, handleMe } from './http/auth.js';
-import { handleAdminPosts, handleAdminTags, handleGetPost, handleListPosts, handleListTags,
+import { handleAdminPostSuggestions, handleAdminPosts, handleAdminTags, handleGetPost, handleListPosts, handleListTags,
 	handleRenderPreview, handleWritePost } from './http/posts.js';
 import { handleMedia, handleUploadMedia } from './http/media.js';
 import {
@@ -18,6 +18,13 @@ import {
 	handleUsers
 } from './http/accounts.js';
 import { handlePrepareUpload, handleCompleteUpload } from './http/direct-media.js';
+import { handleGraph } from './http/graph.js';
+import {
+	handleAdminComment,
+	handleAdminComments,
+	handleComments,
+	handleLikes
+} from './http/engagement.js';
 
 export type { ApiDeps, ErrorPayload } from './http/types.js';
 export { MEDIA_PREFIX } from './http/response.js';
@@ -39,9 +46,16 @@ const routes: { path: RegExp; handlers: Record<string, ApiHandler> }[] = [
 	{ path: /^\/api\/auth\/me$/, handlers: { GET: handleMe } },
 	{ path: /^\/api\/posts$/, handlers: { GET: handleListPosts, POST: handleWritePost } },
 	{ path: /^\/api\/posts\/([^/]+)$/, handlers: { GET: handleGetPost, PUT: handleWritePost, DELETE: handleWritePost } },
+	{ path: /^\/api\/posts\/([^/]+)\/comments$/, handlers: { GET: handleComments, POST: handleComments } },
+	{ path: /^\/api\/posts\/([^/]+)\/likes$/, handlers: { GET: handleLikes, POST: handleLikes } },
 	{ path: /^\/api\/tags$/, handlers: { GET: handleListTags } },
+	{ path: /^\/api\/graph$/, handlers: { GET: handleGraph } },
+	{ path: /^\/api\/admin\/posts\/suggestions$/, handlers: { GET: handleAdminPostSuggestions } },
 	{ path: /^\/api\/admin\/posts(?:\/([^/]+))?$/, handlers: { GET: handleAdminPosts } },
 	{ path: /^\/api\/admin\/tags$/, handlers: { GET: handleAdminTags } },
+	{ path: /^\/api\/admin\/tags\/([^/]+)$/, handlers: { PATCH: handleAdminTags, DELETE: handleAdminTags } },
+	{ path: /^\/api\/admin\/comments$/, handlers: { GET: handleAdminComments } },
+	{ path: /^\/api\/admin\/comments\/([^/]+)$/, handlers: { PATCH: handleAdminComment, DELETE: handleAdminComment } },
 	{ path: /^\/api\/admin\/users$/, handlers: { GET: handleUsers, POST: handleUsers } },
 	{ path: /^\/api\/admin\/users\/([^/]+)$/, handlers: { PATCH: handleUsers } },
 	{ path: /^\/api\/render$/, handlers: { POST: handleRenderPreview } },

@@ -17,6 +17,7 @@ import {
 	updatePost
 } from '../src/posts/post-service.js';
 import { createTestRepos, type TestRepos } from './helpers.js';
+import { buildPublicGraph } from '../src/posts/graph-service.js';
 
 let repos: TestRepos;
 let deps: PostServiceDeps;
@@ -72,6 +73,27 @@ describe('post service', () => {
 		});
 		const detail = await getPublishedPost(deps, 'target');
 		expect(detail?.backlinks).toEqual([{ slug: 'referrer', title: 'Referrer' }]);
+	});
+
+	it('builds a deduplicated graph without draft or broken targets', async () => {
+		await createPost(deps, {
+			title: 'Target', slug: 'target', status: 'published',
+			publishedAt: '2020-01-01T00:00:00Z', contentMarkdown: 'Body.', tags: ['graph']
+		});
+		await createPost(deps, {
+			title: 'Source', slug: 'source', status: 'published',
+			publishedAt: '2020-01-02T00:00:00Z',
+			contentMarkdown: 'See [[target]], [[target]] and [[missing]].'
+		});
+		await createPost(deps, {
+			title: 'Draft', slug: 'draft', status: 'draft', contentMarkdown: 'See [[target]].'
+		});
+		const graphTag = (await repos.tags.list()).find((tag) => tag.name === 'graph')!;
+		await repos.tags.updateColor(graphTag.id, '#2563EB');
+		const graph = await buildPublicGraph(repos.posts, repos.tags, new Date('2021-01-01T00:00:00Z'));
+		expect(graph.nodes.map((node) => node.slug)).toEqual(['source', 'target']);
+		expect(graph.nodes.find((node) => node.slug === 'target')?.tags[0]?.color).toBe('#2563EB');
+		expect(graph.edges).toEqual([{ source: 'source', target: 'target' }]);
 	});
 
 	it('rejects duplicate slugs and invalid payloads', async () => {

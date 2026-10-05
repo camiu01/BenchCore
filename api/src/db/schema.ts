@@ -96,7 +96,8 @@ export const mediaBlobs = pgTable('media_blobs', {
 export const tags = pgTable('tags', {
 	id: uuid('id').primaryKey(),
 	slug: text('slug').notNull().unique(),
-	name: text('name').notNull().unique()
+	name: text('name').notNull().unique(),
+	color: text('color').notNull().default('#64748B')
 });
 
 /**

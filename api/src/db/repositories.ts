@@ -99,6 +99,13 @@ export interface PostWithTags extends PostRow {
 	tags: string[];
 }
 
+/** @brief Minimal administrator post projection for editor suggestions. */
+export interface PostSuggestion {
+	id: string;
+	slug: string;
+	title: string;
+}
+
 /**
  * @brief Writable creation fields with nullable groundwork fields defaulted.
  */
@@ -153,10 +160,22 @@ export interface PostRepository {
 		now: Date;
 	}): Promise<{ items: PostWithTags[]; total: number }>;
 	/**
+	 * @brief Lists every currently public post for graph construction.
+	 * @param now The visibility reference time.
+	 * @return Public rows with tag names.
+	 */
+	listGraph(now: Date): Promise<PostWithTags[]>;
+	/**
 	 * @brief Lists every post, newest first (admin view).
 	 * @return All rows with tag names.
 	 */
 	listAll(): Promise<PostWithTags[]>;
+	/**
+	 * @brief Lists a bounded lightweight post index for editor suggestions.
+	 * @param limit Maximum rows.
+	 * @return Post identifiers, slugs and titles.
+	 */
+	listSuggestions(limit: number): Promise<PostSuggestion[]>;
 	/**
 	 * @brief Atomically publishes due drafts and clears their schedules.
 	 * @param now The reference time.
@@ -174,6 +193,19 @@ export interface TagRepository {
 	 * @return The tag rows.
 	 */
 	list(): Promise<TagRow[]>;
+	/**
+	 * @brief Changes one tag color.
+	 * @param id The tag id.
+	 * @param color Validated HEX color.
+	 * @return The updated row or null.
+	 */
+	updateColor(id: string, color: string): Promise<TagRow | null>;
+	/**
+	 * @brief Deletes a tag and every post association.
+	 * @param id The tag id.
+	 * @return Whether a tag was deleted.
+	 */
+	remove(id: string): Promise<boolean>;
 	/**
 	 * @brief Ensures one row per name (slugified), creating missing ones.
 	 * @param names The tag names.
@@ -207,15 +239,17 @@ export interface CommentRepository {
 	/**
 	 * @brief Lists approved comments for a post, oldest first.
 	 * @param postId The post id.
-	 * @return The approved rows.
+	 * @param offset The row offset, default zero.
+	 * @return Up to 101 approved rows, including a pagination lookahead.
 	 */
-	listApproved(postId: string): Promise<CommentRow[]>;
+	listApproved(postId: string, offset?: number): Promise<CommentRow[]>;
 	/**
 	 * @brief Lists comments by status, newest first (admin view).
 	 * @param status The status filter, if any.
-	 * @return The matching rows.
+	 * @param offset The row offset, default zero.
+	 * @return Up to 101 matching rows, including a pagination lookahead.
 	 */
-	listByStatus(status?: CommentStatus): Promise<CommentRow[]>;
+	listByStatus(status?: CommentStatus, offset?: number): Promise<CommentRow[]>;
 	/**
 	 * @brief Changes a comment status.
 	 * @param id The comment id.
@@ -247,6 +281,13 @@ export interface LikeRepository {
 	 * @return True when the post is now liked.
 	 */
 	toggle(postId: string, voterHash: string): Promise<boolean>;
+	/**
+	 * @brief Checks whether a voter likes a post.
+	 * @param postId The post id.
+	 * @param voterHash The anonymous voter hash.
+	 * @return Whether the row exists.
+	 */
+	has(postId: string, voterHash: string): Promise<boolean>;
 	/**
 	 * @brief Counts likes for a post.
 	 * @param postId The post id.
