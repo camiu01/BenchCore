@@ -4,10 +4,17 @@
 	import Seo from '../../lib/components/Seo.svelte';
 	import type { ActionData, PageData } from './$types';
 	let { data, form }: { data: PageData; form: ActionData } = $props();
-	const nav = [{ href: '/login', label: '[01] login' }, { href: '/', label: '[02] index' }];
+	const nav = [
+		{ href: '/login', label: '[01] login' },
+		{ href: '/', label: '[02] index' }
+	];
 </script>
 
-<Seo title="Reset password | BenchCore" description="Choose a new account password." canonical="{data.siteBase}/reset-password" />
+<Seo
+	title="Reset password | BenchCore"
+	description="Choose a new account password."
+	canonical="{data.siteBase}/reset-password"
+/>
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: RESET"
 	title="RESET PASSWORD"
@@ -24,12 +31,30 @@
 				<form method="POST" class="form-grid">
 					<input type="hidden" name="token" value={data.token} />
 					<label class="field-label" for="newPassword">New password, 12+ characters</label>
-					<input class="field-input" id="newPassword" name="newPassword" type="password" required
-						minlength="12" maxlength="200" autocomplete="new-password" />
+					<input
+						class="field-input"
+						id="newPassword"
+						name="newPassword"
+						type="password"
+						required
+						minlength="12"
+						maxlength="200"
+						autocomplete="new-password"
+					/>
 					<label class="field-label" for="confirmation">Confirm new password</label>
-					<input class="field-input" id="confirmation" name="confirmation" type="password" required
-						minlength="12" maxlength="200" autocomplete="new-password" />
-					<div class="btn-row"><button class="btn btn-accent" type="submit">RESET PASSWORD</button></div>
+					<input
+						class="field-input"
+						id="confirmation"
+						name="confirmation"
+						type="password"
+						required
+						minlength="12"
+						maxlength="200"
+						autocomplete="new-password"
+					/>
+					<div class="btn-row">
+						<button class="btn btn-accent" type="submit">RESET PASSWORD</button>
+					</div>
 				</form>
 			{:else}
 				<p class="error-stamp" role="alert">This reset link is invalid. Request a new one.</p>
