@@ -5,6 +5,10 @@ Version 0.6.0-beta.1 is prepared locally. No tag, hosted release or deployment i
 
 ## Unreleased
 
+- Relicense BenchCore under AGPL-3.0-or-later: replace `LICENSE` with the
+  official GNU Affero text, update manifest `license` fields, expose `license`
+  in `GET /health`, add the footer AGPL notice and refresh README/CONTRIBUTING.
+
 - Preserve the installed pnpm store explicitly in the credential-free Vercel
   packaging test so CI environment isolation does not break offline installs.
 

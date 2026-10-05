@@ -148,6 +148,14 @@ Do not reintroduce incompatible legacy configuration.
 
 ---
 
+## License
+
+BenchCore is licensed under the **GNU Affero General Public License v3.0
+or later (AGPL-3.0-or-later)** — see [LICENSE](LICENSE). By contributing,
+you agree that incoming contributions are governed by the same license.
+
+---
+
 ## Development and testing checklist
 
 - [ ] API typecheck: `pnpm --filter benchcore-api exec tsc --noEmit`.

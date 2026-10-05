@@ -13,7 +13,7 @@ with Obsidian-style `[[wikilinks]]`, and publish through a session-protected
 admin editor. PostgreSQL is the runtime source of truth; the frontend never
 reads the database or the authoring directory.
 
-License: **GPL-3.0-only** · Runtime: **Node.js 24** · Package manager:
+License: **AGPL-3.0-or-later** · Runtime: **Node.js 24** · Package manager:
 **pnpm 10.15.0** · Release target: **0.6.0-beta.1**
 
 ## Beta, one origin
@@ -237,4 +237,4 @@ identifier. See [Admin & themes](docs/ADMIN_AND_THEMES.md).
 ## License
 
 Maintained by **Camiu** ([@camiu01](https://github.com/camiu01)).
-GPL-3.0-only — see [LICENSE](LICENSE).
+GNU Affero General Public License v3.0 (AGPL-3.0-or-later) — see [LICENSE](LICENSE).

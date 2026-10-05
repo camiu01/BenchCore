@@ -12,7 +12,7 @@ Development task management for BenchCore (research frontend + standalone API).
 - [x] Pre-paint theme script in `frontend/src/app.html` (no flash of default theme) #theme #perf
 - [x] API health probe: `GET /health` + JSON 404/405 handling, `parsePort()` env parsing (`api/src/server.ts`, `api/src/index.ts`, `tests/health.test.ts`) #api #tests
 - [x] Root DX: workspace scripts (`dev:frontend`, `dev:api`, `test`, `check`, `lint`, `build`), `.env.example` for both packages #dx
-- [x] House style: `TODO.md` + `AGENTS.md` + GPL-3.0-only `LICENSE`, `@file`/`@brief` headers, TSDoc on functions, tabs/single quotes/semicolons, `tests/` mirroring `src/` #docs #style
+- [x] House style: `TODO.md` + `AGENTS.md` + AGPL-3.0-or-later `LICENSE`, `@file`/`@brief` headers, TSDoc on functions, tabs/single quotes/semicolons, `tests/` mirroring `src/` #docs #style
 - [x] TypeScript 5.9 pin (SvelteKit 3 tooling reads `ts.sys` APIs the TS 7 native port breaks); `$app/tsconfig` extends; `sveltekit()` plugin config; relative imports (no deprecated `kit.alias`); `$app/env` replaced by `process.env` (server-only); `Handle` from `@sveltejs/kit/hooks` #infra
 
 ### v0.2.0 milestone — Content pipeline & auth core (api, shipped)

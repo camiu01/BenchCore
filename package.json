@@ -2,7 +2,7 @@
 	"name": "benchcore",
 	"version": "0.6.0-beta.1",
 	"private": true,
-	"license": "GPL-3.0-only",
+	"license": "AGPL-3.0-or-later",
 	"author": "Camiu (https://github.com/camiu01)",
 	"type": "module",
 	"packageManager": "pnpm@10.15.0",

@@ -33,6 +33,7 @@ export { MEDIA_PREFIX } from './http/response.js';
 export interface HealthPayload {
 	status: 'ok';
 	service: 'benchcore-api';
+	license: 'AGPL-3.0-or-later';
 }
 
 export const DEFAULT_PORT = 5181;
@@ -89,7 +90,7 @@ export function parsePort(raw: string | undefined, fallback: number = DEFAULT_PO
 async function handleRequest(req: IncomingMessage, res: ServerResponse, deps: ApiDeps, url: URL): Promise<void> {
 	const method = req.method ?? 'GET';
 	if (url.pathname === '/health') {
-		if (method === 'GET') { sendJson(res, 200, { status: 'ok', service: 'benchcore-api' }); }
+		if (method === 'GET') { sendJson(res, 200, { status: 'ok', service: 'benchcore-api', license: 'AGPL-3.0-or-later' }); }
 		else { sendJson(res, 405, { error: 'method_not_allowed' }, { allow: 'GET' }); }
 		return;
 	}

@@ -25,7 +25,7 @@ not accept a slug for mutation even though the public route shares the prefix.
 
 | Method | Path | Authentication | Result |
 |---|---|---|---|
-| GET | `/health` | Public | Service status |
+| GET | `/health` | Public | Service status (`{ status, service, license }`) |
 | POST | `/api/auth/login` | Credentials + trusted Origin | User and session cookie |
 | POST | `/api/auth/register` | Trusted Origin, no session | Create a reader; no automatic login |
 | POST | `/api/auth/password` | Session + current password + trusted Origin | Rotate own password, revoke all sessions |

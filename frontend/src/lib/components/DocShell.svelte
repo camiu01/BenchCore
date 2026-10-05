@@ -59,6 +59,10 @@
 
 	<footer class="doc-footer">
 		<span>{footerLeft}</span>
+		<span class="license-note">
+			<a href="https://github.com/camiu01/BenchCore">AGPL-3.0 open source</a> ·
+			<a href="https://www.gnu.org/licenses/agpl-3.0.html">License</a>
+		</span>
 		<span>{footerRight}</span>
 	</footer>
 </div>

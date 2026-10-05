@@ -29,7 +29,7 @@ describe('GET /health', () => {
 		const response = await fetch(`${baseUrl}/health`);
 		expect(response.status).toBe(200);
 		expect(response.headers.get('content-type')).toContain('application/json');
-		expect(await response.json()).toEqual({ status: 'ok', service: 'benchcore-api' });
+		expect(await response.json()).toEqual({ status: 'ok', service: 'benchcore-api', license: 'AGPL-3.0-or-later' });
 	});
 
 	it('returns JSON 404 for unknown routes', async () => {
