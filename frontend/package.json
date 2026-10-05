@@ -25,6 +25,7 @@
 		"d3-force": "3.0.0",
 		"d3-selection": "3.0.0",
 		"d3-zoom": "3.0.0",
+		"marked": "18.0.14",
 		"zod": "4.6.5"
 	},
 	"devDependencies": {

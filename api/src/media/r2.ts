@@ -3,7 +3,7 @@
  * @brief Private R2 media with owner-bound direct uploads and validated metadata.
  */
 import { randomUUID } from 'node:crypto';
-import { CopyObjectCommand, DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, HeadObjectCommand, ListObjectsV2Command,
+import { CopyObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, ListObjectsV2Command,
 	PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { mediaRecord, sanitizeKey, validateUpload, type StorageProvider, type StoredMedia } from './storage.js';
@@ -159,9 +159,13 @@ class R2Storage implements StorageProvider {
 	async remove(key: string): Promise<boolean> {
 		const record = await this.metadata(key);
 		if (!record) { return false; }
-		const result = await this.client.send(new DeleteObjectsCommand({ Bucket: this.settings.bucket,
-			Delete: { Objects: [{ Key: `objects/${record.objectKey}` }, { Key: `media/${key}.json` }], Quiet: true } }));
-		return !result.Errors?.length;
+		await this.client.send(new DeleteObjectCommand({
+			Bucket: this.settings.bucket, Key: `objects/${record.objectKey}`
+		}));
+		await this.client.send(new DeleteObjectCommand({
+			Bucket: this.settings.bucket, Key: `media/${key}.json`
+		}));
+		return true;
 	}
 
 	/**

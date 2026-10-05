@@ -97,6 +97,20 @@ class MemoryPosts implements PostRepository {
 	async findById(id: string): Promise<PostRow | null> { return this.rows.get(id) ?? null; }
 
 	/**
+	 * @brief Replaces image references only when every post version matches.
+	 * @param patches Expected versions and replacement fields.
+	 * @return Whether every replacement was applied.
+	 */
+	async updateMediaReferences(patches: Parameters<PostRepository['updateMediaReferences']>[0]) {
+		if (patches.some((patch) =>
+			this.rows.get(patch.id)?.updatedAt.getTime() !== patch.expectedUpdatedAt.getTime())) return false;
+		for (const { id, expectedUpdatedAt: _version, ...fields } of patches) {
+			this.rows.set(id, { ...this.rows.get(id)!, ...fields, updatedAt: new Date() });
+		}
+		return true;
+	}
+
+	/**
 	 * @brief Finds a post regardless of publication status.
 	 * @param slug The post slug.
 	 * @return The row or null.

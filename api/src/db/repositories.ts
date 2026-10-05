@@ -99,6 +99,15 @@ export interface PostWithTags extends PostRow {
 	tags: string[];
 }
 
+/** @brief Optimistically checked image-reference replacement. */
+export interface MediaReferencePatch {
+	id: string;
+	expectedUpdatedAt: Date;
+	contentMarkdown: string;
+	contentHtml: string;
+	coverImage: string | null;
+}
+
 /** @brief Minimal administrator post projection for editor suggestions. */
 export interface PostSuggestion {
 	id: string;
@@ -129,6 +138,12 @@ export interface PostRepository {
 	 * @return The updated row or null when missing.
 	 */
 	update(id: string, patch: Partial<PostRow>): Promise<PostRow | null>;
+	/**
+	 * @brief Atomically replaces image references if every post is unchanged.
+	 * @param patches Expected versions and replacement content.
+	 * @return False on a concurrent post change, without partial writes.
+	 */
+	updateMediaReferences(patches: MediaReferencePatch[]): Promise<boolean>;
 	/**
 	 * @brief Deletes a post row.
 	 * @param id The post id.

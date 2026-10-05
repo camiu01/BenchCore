@@ -1,5 +1,40 @@
 /* @file forms.css @brief Shared editor, authentication and search form styles. */
 /* Forms (login + admin editor). */
+.field-input.dragging-images {
+	outline: 2px dashed var(--accent);
+	outline-offset: 4px;
+}
+
+.image-upload-list {
+	list-style: none;
+	padding: 0;
+	margin: 12px 0;
+}
+
+.image-upload-list li {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
+	padding: 8px 0;
+	border-bottom: 1px solid var(--border-light);
+	overflow-wrap: anywhere;
+}
+
+.image-upload-thumbnail {
+	width: 64px;
+	height: 48px;
+	object-fit: cover;
+	border: 1px solid var(--border);
+}
+
+.image-removal-confirmation {
+	padding: 16px;
+	margin: 16px 0;
+	border: 2px solid var(--accent);
+	background: var(--sheet-bg);
+}
+
 .form-grid {
 	display: grid;
 	gap: 12px;

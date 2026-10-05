@@ -10,6 +10,7 @@ import { handleLogin, handleLogout, handleMe } from './http/auth.js';
 import { handleAdminPostSuggestions, handleAdminPosts, handleAdminTags, handleGetPost, handleListPosts, handleListTags,
 	handleRenderPreview, handleWritePost } from './http/posts.js';
 import { handleMedia, handleUploadMedia } from './http/media.js';
+import { handleAdminMedia } from './http/media-admin.js';
 import {
 	handleChangePassword,
 	handlePasswordReset,
@@ -57,6 +58,7 @@ const routes: { path: RegExp; handlers: Record<string, ApiHandler> }[] = [
 	{ path: /^\/api\/admin\/comments$/, handlers: { GET: handleAdminComments } },
 	{ path: /^\/api\/admin\/comments\/([^/]+)$/, handlers: { PATCH: handleAdminComment, DELETE: handleAdminComment } },
 	{ path: /^\/api\/admin\/users$/, handlers: { GET: handleUsers, POST: handleUsers } },
+	{ path: /^\/api\/admin\/media\/([^/]+)$/, handlers: { GET: handleAdminMedia, DELETE: handleAdminMedia } },
 	{ path: /^\/api\/admin\/users\/([^/]+)$/, handlers: { PATCH: handleUsers } },
 	{ path: /^\/api\/render$/, handlers: { POST: handleRenderPreview } },
 	{ path: /^\/api\/media$/, handlers: { POST: handleUploadMedia } },

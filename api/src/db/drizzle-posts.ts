@@ -73,6 +73,28 @@ class DrizzlePosts implements PostRepository {
 	}
 
 	/**
+	 * @brief Atomically replaces image references with optimistic version checks.
+	 * @param patches Expected post versions and replacement fields.
+	 * @return Whether every replacement was applied.
+	 */
+	async updateMediaReferences(patches: Parameters<PostRepository['updateMediaReferences']>[0]) {
+		try {
+			await this.db.transaction(async (tx) => {
+				for (const { id, expectedUpdatedAt, ...fields } of patches) {
+					const rows = await tx.update(posts).set({ ...fields, updatedAt: new Date() })
+						.where(and(eq(posts.id, id), eq(posts.updatedAt, expectedUpdatedAt)))
+						.returning({ id: posts.id });
+					if (rows.length === 0) throw new Error('media_reference_conflict');
+				}
+			});
+			return true;
+		} catch (cause) {
+			if (cause instanceof Error && cause.message === 'media_reference_conflict') return false;
+			throw cause;
+		}
+	}
+
+	/**
 	 * @brief Deletes a post.
 	 * @param id The post id.
 	 * @return Whether a row was deleted.

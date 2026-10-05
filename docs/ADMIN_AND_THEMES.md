@@ -54,9 +54,31 @@ tag deletion are permanent database mutations.
 
 ## Images
 
-The upload control accepts PNG/JPEG/WebP/GIF up to 5 MiB. SvelteKit converts
-the submitted file to the API's JSON/base64 payload. The API returns a
-generated media URL that can be inserted into Markdown.
+The upload control accepts PNG/JPEG/WebP/GIF up to 5 MiB per image.
+With R2, select up to 20 images per batch, or drop files onto the Markdown
+editor to start uploading. Successful uploads are inserted at the current
+cursor automatically, with editable filename-based descriptions. The first
+successful image fills the cover field only when it is empty.
+Progress and errors are shown per file; retrying skips successful uploads.
+The editor and save controls are locked during a batch to preserve insertion
+positions. Save the record after uploading.
+Other storage providers retain the single-file server upload control.
+
+The **Post images** panel includes existing Markdown images and the cover.
+**Remove** first checks saved usages and lists every affected post. Cancel
+leaves both content and storage unchanged. Confirming **Delete file and all
+references** permanently deletes the file and immediately removes its image
+references and cover from saved posts, including other posts using it.
+Unsaved references in the current editor and upload previews are also removed.
+Code examples and external image URLs are not treated as managed uploads.
+
+If saved usages change before confirmation, inspect them again before retrying.
+Storage deletion follows the atomic update of saved references; these are not
+one cross-system transaction. A storage failure can leave an unreferenced file,
+so the editor reports it explicitly rather than claiming successful deletion.
+Avoid concurrent edits while removing shared assets. The confirmation detects
+changed saved usages and affected-post versions, but does not reserve the media
+key against a new reference added after reference cleanup.
 
 - Add meaningful alt text rather than leaving `![](...)` empty.
 - Use the returned `/api/media/<key>` URL for Markdown and cover images.

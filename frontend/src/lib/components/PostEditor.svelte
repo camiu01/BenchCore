@@ -3,7 +3,9 @@
 	import type { EditorValues } from '../server/editor-values.js';
 	import DirectUpload from './DirectUpload.svelte';
 	import DateTimeField from './DateTimeField.svelte';
-	import { insertImageReference } from '../direct-upload.js';
+	import PostImages from './PostImages.svelte';
+	import { removeImageFromEditor } from '../image-manager.js';
+	import { insertUploadedImage } from '../image-batch.js';
 	import {
 		filterWikilinkSuggestions,
 		findWikilinkQuery,
@@ -37,6 +39,53 @@
 		wikilinkSuggestions = []
 	}: Props = $props();
 	let contentInput: HTMLTextAreaElement;
+	let coverInput: HTMLInputElement;
+	let imageUploader = $state<DirectUpload>();
+	let uploadingImages = $state(false);
+	let removingImages = $state(false);
+	const editingMedia = $derived(uploadingImages || removingImages);
+	let imageContent = $state<string | null>(null);
+	let imageCover = $state<string | null>(null);
+	$effect(() => {
+		imageContent = values.content;
+		imageCover = values.coverImage;
+	});
+	let uploadCursor = 0;
+	let draggingImages = $state(false);
+
+	/** @brief Locks the insertion position while files upload. @param busy Upload state. @return Nothing. */
+	function setUploadBusy(busy: boolean): void {
+		if (busy) uploadCursor = contentInput.selectionStart;
+		uploadingImages = busy;
+		wikiMatches = [];
+	}
+
+	/** @brief Inserts an uploaded image and advances the batch cursor. @param url Media URL. @param file Uploaded file. @return Nothing. */
+	function attachImage(url: string, file: File): void {
+		uploadCursor = insertUploadedImage(contentInput, coverInput, url, uploadCursor, file.name);
+	}
+	/** @brief Removes the deleted asset from unsaved fields and upload previews. @param key Media key. @return Nothing. */
+	function detachImage(key: string): void {
+		removeImageFromEditor(contentInput, coverInput, key);
+		imageUploader?.forgetImage(key);
+	}
+
+	/** @brief Allows file drops onto the editor. @param event Drag event. @return Nothing. */
+	function handleImageDrag(event: DragEvent): void {
+		if (!directUploads || !event.dataTransfer?.types.includes('Files')) return;
+		event.preventDefault();
+		event.dataTransfer.dropEffect = editingMedia ? 'none' : 'copy';
+		draggingImages = !editingMedia;
+	}
+
+	/** @brief Queues dropped files without navigating away from unsaved content. @param event Drop event. @return Nothing. */
+	function handleImageDrop(event: DragEvent): void {
+		if (!directUploads || !event.dataTransfer?.types.includes('Files')) return;
+		event.preventDefault();
+		draggingImages = false;
+		if (editingMedia) return;
+		void imageUploader?.queueFiles(Array.from(event.dataTransfer.files), true);
+	}
 	let wikiMatches = $state<{ slug: string; title: string }[]>([]);
 	let wikiStart = $state(-1);
 	let wikiActive = $state(0);
@@ -46,6 +95,7 @@
 	 * @return Nothing.
 	 */
 	function updateWikiMatches(): void {
+		imageContent = contentInput.value;
 		const cursor = contentInput.selectionStart;
 		const activeQuery = findWikilinkQuery(contentInput.value, cursor);
 		if (activeQuery === null) {
@@ -117,7 +167,13 @@
 	<span class="error-stamp">{errorMsg}</span>
 {/if}
 
-<form method="POST" enctype="multipart/form-data">
+<form
+	method="POST"
+	enctype="multipart/form-data"
+	onsubmit={(event) => {
+		if (editingMedia) event.preventDefault();
+	}}
+>
 	<div class="form-grid">
 		<div class="field-row">
 			<div>
@@ -156,7 +212,17 @@
 			/>
 			<div>
 				<label class="field-label" for="cover_image">Cover image (URL or media key)</label>
-				<input class="field-input" id="cover_image" name="cover_image" value={values.coverImage} />
+				<input
+					bind:this={coverInput}
+					class="field-input"
+					id="cover_image"
+					name="cover_image"
+					value={values.coverImage}
+					readonly={removingImages}
+					oninput={(event) => {
+						imageCover = event.currentTarget.value;
+					}}
+				/>
 			</div>
 		</div>
 		<div>
@@ -174,12 +240,25 @@
 		</div>
 		<div>
 			<label class="field-label" for="content">Content (Markdown + [[wikilinks]])</label>
+			{#if directUploads}
+				<p class="summary">
+					Place the cursor where images should go, then select files below or drop them here. Images
+					are inserted automatically.
+				</p>
+			{/if}
 			<div class="wikilink-editor">
 				<textarea
 					bind:this={contentInput}
 					class="field-input"
+					class:dragging-images={draggingImages}
 					id="content"
 					name="content"
+					readonly={editingMedia}
+					ondragover={handleImageDrag}
+					ondragleave={() => {
+						draggingImages = false;
+					}}
+					ondrop={handleImageDrop}
 					oninput={updateWikiMatches}
 					onclick={updateWikiMatches}
 					onkeydown={handleWikiKeydown}>{values.content}</textarea
@@ -205,16 +284,36 @@
 		</div>
 	</div>
 	<div class="btn-row">
-		<button class="btn btn-accent" type="submit" formaction="?/save">SAVE →</button>
-		<button class="btn" type="submit" formaction="?/preview" formnovalidate>PREVIEW</button>
+		<button class="btn btn-accent" type="submit" formaction="?/save" disabled={editingMedia}
+			>SAVE →</button
+		>
+		<button class="btn" type="submit" formaction="?/preview" formnovalidate disabled={editingMedia}
+			>PREVIEW</button
+		>
 		{#if !isNew}
-			<button class="btn" type="submit" formaction="?/delete" formnovalidate>DELETE</button>
+			<button class="btn" type="submit" formaction="?/delete" formnovalidate disabled={editingMedia}
+				>DELETE</button
+			>
 		{/if}
 	</div>
 
 	<hr />
+	<PostImages
+		content={imageContent ?? values.content}
+		cover={imageCover ?? values.coverImage}
+		disabled={uploadingImages}
+		onbusy={(busy) => {
+			removingImages = busy;
+		}}
+		onremoved={detachImage}
+	/>
 	{#if directUploads}
-		<DirectUpload onuploaded={(url) => insertImageReference(contentInput, url)} />
+		<DirectUpload
+			bind:this={imageUploader}
+			onuploaded={attachImage}
+			onbusy={setUploadBusy}
+			disabled={removingImages}
+		/>
 	{:else}
 		<label class="field-label" for="image">Attach image (png/jpg/webp/gif, max 5 MiB)</label>
 		<input

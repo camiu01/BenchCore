@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import { flattenIssues } from '../markdown/schema.js';
 import { sanitizeKey } from '../media/storage.js';
+import { imageUsage } from '../media/deletion-service.js';
 import type { ApiHandler } from './types.js';
 import { requireUser } from './auth.js';
 import { MEDIA_BODY_LIMIT, MEDIA_PREFIX, readBody, sendJson } from './response.js';
@@ -51,6 +52,10 @@ export const handleMedia: ApiHandler = async (req, res, deps, _url, key) => {
 	if (req.method === 'DELETE' && !await requireUser(req, res, deps)) { return; }
 	if (!sanitizeKey(key)) { sendJson(res, 404, { error: 'not_found' }); return; }
 	if (req.method === 'DELETE') {
+		if ((await imageUsage(deps.posts, key)).rows.length > 0) {
+			sendJson(res, 409, { error: 'image_in_use', message: 'Confirm deletion through the editor.' });
+			return;
+		}
 		if (!await deps.media.remove(key)) { sendJson(res, 404, { error: 'not_found' }); return; }
 		res.writeHead(204); res.end(); return;
 	}

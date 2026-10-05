@@ -204,6 +204,33 @@ describe('post endpoints', () => {
 });
 
 describe('media endpoints', () => {
+	it('requires administrator auth and an explicit current usage confirmation before deletion', async () => {
+		const cookie = await loginCookie();
+		const media = await repos.media.save(Buffer.from('test image'), 'shared.png', 'image/png');
+		const path = `/api/admin/media/${media.key}`;
+		expect((await apiFetch(path)).status).toBe(401);
+		const created = await apiFetch('/api/posts', {
+			method: 'POST', cookie,
+			body: JSON.stringify({
+				title: 'Shared image post', slug: 'shared-image-post',
+				contentMarkdown: `![shared](/api/media/${media.key})`
+			})
+		});
+		expect(created.status).toBe(201);
+		expect((await apiFetch(`/api/media/${media.key}`, { method: 'DELETE', cookie })).status).toBe(409);
+		const inspect = await apiFetch(path, { cookie });
+		const usage = await inspect.json() as { uses: { title: string }[]; version: string };
+		expect(usage.uses[0]?.title).toBe('Shared image post');
+		expect((await apiFetch(path, { method: 'DELETE', cookie, body: '{}' })).status).toBe(400);
+		expect((await fetch(`${baseUrl}${path}`, {
+			method: 'DELETE', headers: { cookie, origin: 'https://evil.test', 'content-type': 'application/json' },
+			body: JSON.stringify({ version: usage.version })
+		})).status).toBe(403);
+		expect((await apiFetch(path, {
+			method: 'DELETE', cookie, body: JSON.stringify({ version: usage.version })
+		})).status).toBe(204);
+		expect(await repos.media.load(media.key)).toBeNull();
+	});
 	it('accepts the complete advertised 5 MiB limit without regex stack overflow', async () => {
 		const cookie = await loginCookie();
 		const uploaded = await apiFetch('/api/media', {
