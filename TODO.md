@@ -1,165 +1,262 @@
 <!-- @file TODO.md -->
-<!-- @brief Completed work and versioned development roadmap for BenchCore. -->
+<!-- @brief Versioned development roadmap in Haguruma README style. -->
 
 # TODO
 
-Development task management for BenchCore (research frontend + standalone API).
+**Bench-testing, Embedded Networks, & Circuit Hacks: Centralized Open-source Research Engine**
+
+A self-hosted research publishing platform with a SvelteKit frontend and a
+standalone TypeScript API. Markdown with TOML frontmatter is the authoring
+format, PostgreSQL is the runtime source of truth, and the frontend renders
+API data only.
+
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
+[![Node](https://img.shields.io/badge/Node-24-green.svg)](https://nodejs.org/)
+[![pnpm](https://img.shields.io/badge/pnpm-10.15.0-yellow.svg)](https://pnpm.io/)
+[![Vitest](https://img.shields.io/badge/Vitest-5.0.3-green.svg)](https://vitest.dev/)
+
+## What's new in 0.7.0
+
+Stable release of the v0.7.0 milestone: knowledge navigation and media refinement.
+
+- **Link previews:** hover or focus a wikilink or graph node for a lightweight
+  session-aware preview. Unpublished records stay masked, reader-only bodies
+  stay redacted, and no persistent client preview cache is created.
+- **Fuzzy suggestions:** accent-insensitive editor completion across slugs,
+  titles and tags, without new dependencies.
+- **Reader navigation:** collapsible heading index from sanitized Markdown
+  headings with stable anchors, fitted graph views and focused neighborhoods.
+- **Archive filters:** combine up to 20 tags with AND/OR, sort by publication,
+  last update or existing likes, and preserve filters across pages. Protected
+  engagement counts and rank stay hidden from guests.
+- **Media lifecycle:** dry-run-first orphan cleanup CLI with bounded batches
+  and saved-reference rechecks, strict 5 MiB direct-upload limits with exact
+  signed length/type and owner-bound completion, immediate local previews with
+  measured progress and reordering, and audience-safe cache controls.
+- **Delivery gates:** stable workspace metadata with exact-tag validation and
+  separate stable/beta approval environments. Packaging and publication remain
+  separate operator actions.
+
+Local verification and remaining hosting gates are recorded in
+[release preparation](docs/RELEASE_0.7.0.md).
+
+## Previously in 0.6.0
+
+**Media management.** The orphan cleanup CLI defaults to dry-run with bounded
+batches and saved-use rechecks; apply mode needs stopped writers and an
+explicit maintenance acknowledgement. Direct uploads keep the allowlisted MIME
+set and the 5 MiB cap with exact signed length/type and owner-bound completion.
+
+**Graph navigation.** Published posts connect through shared tags with
+linear-size hub links for large topic groups, plus topic shortcuts, readable
+graph labels, related-post lists and direct reading links.
+
+**Reader UX.** Shared typography, navigation, topic cards, touch targets,
+keyboard focus and recovery messages were refined; reader and admin pages hold
+at the tested narrow viewport with no horizontal overflow.
+
+**Admin safety.** Title/slug/status filters, explicit delete confirmation,
+image link copy controls with clipboard feedback and a selectable manual
+fallback, and server-side pagination with status counts.
+
+**Vercel and private R2.** Full app and API on Node 24 Vercel Functions with
+no listeners or startup migrations, browser-direct R2 uploads via signed
+length/type with owner-bound tickets and immutable conditional publication,
+and scheduling temporarily disabled on that target.
+
+**Online beta.** One public Node service for frontend and `/api/*` on 5180,
+private loopback SSR bridge, reader-only registration, admin user management
+with last-active-admin protection, own-password changes with global revocation,
+and tag-matched environment-gated prerelease delivery.
+
+The full milestone history lives below under Done.
 
 ## Done
 
-- [x] Monorepo scaffold: `frontend/` (SvelteKit 3, TS strict) + `api/` (standalone `node:http` TS service) + `content/posts/` authoring folder, pnpm workspace (`pnpm-workspace.yaml`) #infra #dx
-- [x] SvelteKit 3 config migration: `sveltekit()` plugin in `frontend/vite.config.ts`, `tsconfig.json` extends `$app/tsconfig`, relative imports (no deprecated `kit.alias`) #infra
-- [x] TypeScript 5.9 pin (SvelteKit 3 tooling reads `ts.sys` APIs the TS 7 native port breaks) #infra
-- [x] Engineering-log design system (`frontend/src/app.css`): monospace spec sheet, blueprint grid, light/dark/oled themes via `data-theme`, `.record`/`.stamp`/`.spec-table`/`.inventory-table` recipe #theme #ux
-- [x] Theme preference helpers (`frontend/src/lib/theme.ts`): `THEMES`, `isTheme()`, `getStoredTheme()`, `applyTheme()` with SSR guards (+ `tests/theme.test.ts`) #theme #tests
-- [x] Pre-paint theme script in `frontend/src/app.html` (no flash of default theme) #theme #perf
-- [x] API health probe: `GET /health` + JSON 404/405 handling, `parsePort()` env parsing (`api/src/server.ts`, `api/src/index.ts`, `tests/health.test.ts`) #api #tests
-- [x] Root DX: workspace scripts (`dev:frontend`, `dev:api`, `test`, `check`, `lint`, `build`), `.env.example` for both packages #dx
-- [x] House style: `TODO.md` + `AGENTS.md` + AGPL-3.0-or-later `LICENSE`, `@file`/`@brief` headers, TSDoc on functions, tabs/single quotes/semicolons, `tests/` mirroring `src/` #docs #style
-- [x] TypeScript 5.9 pin (SvelteKit 3 tooling reads `ts.sys` APIs the TS 7 native port breaks); `$app/tsconfig` extends; `sveltekit()` plugin config; relative imports (no deprecated `kit.alias`); `$app/env` replaced by `process.env` (server-only); `Handle` from `@sveltejs/kit/hooks` #infra
+### Bootstrap — monorepo, themes and health (shipped)
 
-### v0.2.0 milestone — Content pipeline & auth core (api, shipped)
+- **Monorepo scaffold** — `frontend/` (SvelteKit 3, strict TS) + `api/`
+  (standalone `node:http` service) + `content/posts/` authoring folder with a
+  pnpm workspace. #infra #dx
+- **SvelteKit 3 config** — `sveltekit()` plugin in `frontend/vite.config.ts`,
+  `tsconfig.json` extends `$app/tsconfig`, relative imports, server-only
+  `process.env`, `Handle` from `@sveltejs/kit/hooks`. #infra
+- **TypeScript 5.9 pin** — SvelteKit 3 tooling reads `ts.sys` APIs the TS 7
+  native port breaks. #infra
+- **Engineering-log design system** — monospace spec sheet, blueprint grid,
+  light/dark/oled themes via `data-theme`, `.record` / `.stamp` /
+  `.spec-table` / `.inventory-table` recipe. #theme #ux
+- **Theme preference** — `THEMES`, `isTheme()`, `getStoredTheme()`,
+  `applyTheme()` with SSR guards plus `tests/theme.test.ts`, and a pre-paint
+  script in `app.html` with no flash of the default theme. #theme #tests #perf
+- **API health probe** — `GET /health` with JSON 404/405 handling and
+  `parsePort()` env parsing. #api #tests
+- **Root DX** — workspace scripts (`dev:frontend`, `dev:api`, `test`,
+  `check`, `lint`, `build`) and `.env.example` files for both packages. #dx
+- **House style** — `TODO.md` + `AGENTS.md` + AGPL-3.0-or-later `LICENSE`,
+  `@file` / `@brief` headers, TSDoc on functions, tabs, single quotes,
+  semicolons, `tests/` mirroring `src/`. #docs #style
 
-- [x] Frontmatter extractor (`api/src/markdown/frontmatter.ts`): `+++` fences, structured `{ file, kind, message }` errors #content
-- [x] Zod frontmatter schema (`api/src/markdown/schema.ts`): title, slug, description, status, tags, `published_at`, optional `cover_image` #content
-- [x] Markdown render + sanitize (`api/src/markdown/render.ts`): `marked` + `sanitize-html` allowlist, excerpt, reading minutes, relative-image prefixing #content #security
-- [x] Obsidian-style `[[slug]]` / `[[slug|label]]` wikilinks with broken-link marks plus backlink scan in the post service #content #ux
-- [x] Password hashing (`api/src/auth/password.ts`): scrypt envelope, `timingSafeEqual` verify, tests #auth #security #tests
-- [x] Sessions (`api/src/auth/session.ts`): 32-byte token, SHA-256 hash at rest, 30-day expiry, HttpOnly `SameSite=Lax` cookie helpers, tests #auth #security #tests
+### v0.2.0 milestone — Content pipeline & auth core (shipped)
 
-### v0.3.0 milestone — Database, API & media (api, shipped)
+- **Frontmatter extractor** — `api/src/markdown/frontmatter.ts` with `+++`
+  fences and structured `{ file, kind, message }` errors. #content
+- **Frontmatter schema** — Zod title, slug, description, status, tags,
+  `published_at` and optional `cover_image`. #content
+- **Markdown render** — `marked` + `sanitize-html` allowlist, excerpts,
+  reading minutes and relative-image prefixing. #content #security
+- **Wikilinks** — Obsidian-style `[[slug]]` / `[[slug|label]]` with
+  broken-link marks plus a backlink scan in the post service. #content #ux
+- **Password hashing** — scrypt envelope with `timingSafeEqual` verify and
+  tests. #auth #security #tests
+- **Sessions** — 32-byte token, SHA-256 hash at rest, 30-day expiry, HttpOnly
+  `SameSite=Lax` cookie helpers and tests. #auth #security #tests
 
-- [x] Drizzle schema (`api/src/db/schema.ts`): `users`, `posts`, `tags`, `post_tags`, `sessions`, `post_status` enum, slug uniques, `(status, published_at)` index; app-generated UUIDs, no DB extensions #db
-- [x] Migration SQL via `drizzle-kit generate` (`api/drizzle/0000_parched_dormammu.sql`) #db
-- [x] Repository interfaces + Drizzle + in-memory implementations (`api/src/db/repositories.ts`, `drizzle.ts`, `memory.ts`); services test with zero live DB #db #tests
-- [x] Publishing rules (`api/src/posts/publishing.ts`): `isPublic()`, `canTransition()`, slug normalization; auto-stamp `publishedAt` on publish; unit tests #posts #tests
-- [x] Post service (`api/src/posts/post-service.ts`): paginated published list, masked detail with backlinks, guarded create/update/delete #posts
-- [x] Import service (`api/src/posts/import-service.ts`): file -> pipeline -> upsert by slug, per-file error report #content
-- [x] `content:import`, `db:migrate` and `seed` scripts (`api/scripts/`): admin bootstrap from env plus sample import #dx
-- [x] Auth endpoints: `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` with Zod boundary validation #api #auth
-- [x] Posts endpoints: `GET /api/posts` (paginated, published-only), `GET /api/posts/:slug` (404 masks drafts), `GET /api/tags`, `GET /api/admin/posts*` (session-guarded), `POST/PUT/DELETE /api/posts`, `POST /api/render` preview #api #posts
-- [x] Media endpoints over the StorageProvider seam (`api/src/media/storage.ts` local-filesystem backend): `POST /api/media` (JSON base64, auth, 5 MiB cap, type allowlist), `GET /api/media/:key`, `DELETE /api/media/:key` #api #media
-- [x] Router hardening: JSON body caps, cookie parsing, JSON 404/405/500 shapes; 42-test router + service suite #api #security #tests
+### v0.3.0 milestone — Database, API & media (shipped)
+
+- **Drizzle schema** — `users`, `posts`, `tags`, `post_tags`, `sessions`,
+  `post_status` enum, slug uniques and a `(status, published_at)` index;
+  app-generated UUIDs with no DB extensions. #db
+- **Migrations** — SQL via `drizzle-kit generate`
+  (`api/drizzle/0000_parched_dormammu.sql`). #db
+- **Repositories** — interfaces plus Drizzle and in-memory implementations;
+  services test with zero live DB. #db #tests
+- **Publishing rules** — `isPublic()`, `canTransition()`, slug
+  normalization and auto-stamped `publishedAt` on publish, with unit tests.
+  #posts #tests
+- **Post service** — paginated published list, masked detail with backlinks
+  and guarded create/update/delete. #posts
+- **Import service** — file-to-pipeline upsert by slug with a per-file error
+  report, plus `content:import`, `db:migrate` and `seed` scripts. #content #dx
+- **Auth endpoints** — `POST /api/auth/login`, `POST /api/auth/logout` and
+  `GET /api/auth/me` with Zod boundary validation. #api #auth
+- **Posts endpoints** — `GET /api/posts` (paginated, published-only),
+  `GET /api/posts/:slug` (404 masks drafts), `GET /api/tags`,
+  session-guarded `GET /api/admin/posts*`, `POST` / `PUT` / `DELETE`
+  `/api/posts` and `POST /api/render` preview. #api #posts
+- **Media endpoints** — `StorageProvider` seam with a local-filesystem
+  backend: `POST /api/media` (JSON base64, auth, 5 MiB cap, type allowlist),
+  `GET /api/media/:key` and `DELETE /api/media/:key`. #api #media
+- **Router hardening** — JSON body caps, cookie parsing and JSON 404/405/500
+  shapes with a 42-test router and service suite. #api #security #tests
 
 ### v0.4.0 milestone — Public site and admin (shipped)
 
-- [x] Typed API client (`frontend/src/lib/api.ts`): Zod-validated DTOs, graceful `null` on API downtime (pages never 500) #frontend #api
-- [x] Public routes: `/` recent records, `/posts` + pagination, `/posts/[slug]` with cover/backlinks/reading time, `/tags`, `/tags/[slug]`; offline stamps everywhere #frontend #ux
-- [x] Reusable `Seo` + `DocShell`/`ThemePicker` components: title, description, canonical, Open Graph, Twitter/X cards #seo
-- [x] `sitemap.xml`, `robots.txt`, `RSS` feed server routes (tolerant to API downtime) #seo
-- [x] Login/logout pages + `hooks.server.ts` session resolve + `/admin` guard #frontend #auth
-- [x] Obsidian-style admin editor (`PostEditor.svelte`): write mode, API-rendered read mode, status stamps, tag CSV, image upload with cursor insertion #admin #ux
-- [x] `/admin` ledger, `/admin/posts/new`, `/admin/posts/[id]` (save/preview/delete/upload), `/admin/tags` registry #admin
+- **Typed API client** — Zod-validated DTOs in `frontend/src/lib/api.ts`
+  with graceful `null` on API downtime so pages never 500. #frontend #api
+- **Public routes** — `/` recent records, `/posts` with pagination,
+  `/posts/[slug]` with cover, backlinks and reading time, `/tags` and
+  `/tags/[slug]` with offline stamps everywhere. #frontend #ux
+- **SEO shell** — reusable `Seo` + `DocShell` / `ThemePicker` components with
+  title, description, canonical, Open Graph and Twitter/X cards, plus
+  `sitemap.xml`, `robots.txt` and an RSS feed tolerant to API downtime. #seo
+- **Session guard** — login/logout pages with `hooks.server.ts` session
+  resolve and an `/admin` guard. #frontend #auth
+- **Admin editor** — Obsidian-style `PostEditor.svelte` with write and
+  API-rendered read modes, status stamps, tag CSV and image upload with
+  cursor insertion. #admin #ux
+- **Admin screens** — `/admin` ledger, `/admin/posts/new`,
+  `/admin/posts/[id]` (save, preview, delete, upload) and `/admin/tags`
+  registry. #admin
 
 ### v0.5.0 milestone — Hardening & release (prepared locally)
 
-- [x] CSRF exact Origin checks on mutating API routes, bounded rate limits, security headers; administrator role enforcement and non-cacheable private responses #security #tests
-- [x] Strict nonce-backed script/style CSP (no unsafe-inline), contrast-safe themes, no-telemetry policy and threat model #security #docs #ux
-- [x] Scheduled publishing: nullable `publish_at`, atomic due-draft promotion, non-overlapping minute job; migrated `revisions` groundwork (no automatic capture/restore UI) #posts #db #tests
-- [x] Full-text search: generated Postgres `tsvector`, GIN index, parameterized web search, public search form and pagination #search #tests
-- [x] Pluggable data storage: local-filesystem and PostgreSQL blob StorageProvider backends; shared validation, same-origin media proxy and working 5 MiB frontend uploads #media #data #tests
-- [x] CI: both package typechecks, tests, frontend lint and recursive build on push/pull request #ci
-- [x] Release 0.5.0 prepared locally: package version bumps and Conventional-Commit-based changelog; no tag, push or hosted release created #release
-- [x] Whole-project review fixes: repository contracts, cookie handling, tag privacy, duplicate tag links, Windows frontmatter/stdin, editor state, XML feeds, sitemap pagination and runtime dependencies #quality #tests
-- [x] Haguruma-style documentation: contributor/security/conduct policies, architecture, authoring, API, operations, testing, troubleshooting, threat model and review record #docs
-- [x] Username/email login, private-stdin database user creation, ignored local `.env` without `ADMIN_*`; authorized PostgreSQL migrations and persistent-account login verified #auth #ops
-- [x] Runtime canonical-origin bootstrap and default frontend/API ports 5180/5181, leaving 3000/3001 for other applications #ops #dx
+- **API hardening** — CSRF exact-Origin checks on mutating routes, bounded
+  rate limits, security headers, administrator role enforcement and
+  non-cacheable private responses. #security #tests
+- **Content policy** — strict nonce-backed script/style CSP with no
+  unsafe-inline, contrast-safe themes, no-telemetry policy and a threat
+  model. #security #docs #ux
+- **Scheduled publishing** — nullable `publish_at` with atomic due-draft
+  promotion and a non-overlapping minute job; migrated `revisions`
+  groundwork with no automatic capture or restore UI. #posts #db #tests
+- **Full-text search** — generated Postgres `tsvector` with a GIN index,
+  parameterized web search and a public search form with pagination.
+  #search #tests
+- **Pluggable storage** — local-filesystem and PostgreSQL blob
+  `StorageProvider` backends with shared validation, a same-origin media
+  proxy and working 5 MiB frontend uploads. #media #data #tests
+- **CI and release** — typechecks, tests, lint and recursive build on
+  push/pull request; 0.5.0 prepared locally with version bumps and a
+  Conventional-Commit changelog and no tag, push or hosted release. #ci #release
+- **Review fixes** — repository contracts, cookie handling, tag privacy,
+  duplicate tag links, Windows frontmatter/stdin, editor state, XML feeds,
+  sitemap pagination and runtime dependencies. #quality #tests
+- **Documentation** — contributor, security and conduct policies plus
+  architecture, authoring, API, operations, testing, troubleshooting, threat
+  model and review records. #docs
+- **Accounts and ops** — username/email login, private-stdin user creation,
+  ignored local `.env` without `ADMIN_*`, authorized migrations, persistent
+  login verification, canonical-origin bootstrap and default ports
+  5180/5181. #auth #ops #dx
 
-Validation: 85 API + 41 frontend tests passed; both typechecks, frontend lint/format
-and both builds passed. Three migrations verified in embedded PostgreSQL and
-applied to the authorized configured PostgreSQL. Production browser checks cover
-login, preview, search, themes, private headers and full-size uploads.
-A backup/restore drill was not run locally.
+### v0.6.0-beta.1 — Online beta preparation (shipped)
 
-### v0.6.0-beta.1 — Online beta preparation
+- **One origin** — public Node service for frontend and `/api/*` on 5180
+  with a private loopback SSR bridge preserving visitor quotas.
+  #runtime #security
+- **Production posture** — HTTPS origin checks, explicitly trusted proxies,
+  coalesced DB/schema readiness and bounded shutdown. #ops
+- **Accounts** — public reader-only registration with admin user
+  listing/creation/roles and account disabling/reactivation. #auth
+- **Recovery** — own-password changes, explicit CLI recovery, atomic
+  revocation of all sessions and last-active-admin protection.
+  #auth #security
+- **Email identity** — account/session migration with case-folded unique
+  emails and an authorized fourth migration without password or content
+  changes. #db
+- **Delivery** — reusable GitHub CI with PostgreSQL integration checks and
+  tag-matched environment-gated beta prerelease with an allowlisted Node
+  archive/checksum and no GHCR. #ci #cd #release
+- **Beta docs** — production-only dependency bundle, single-origin
+  hosting/backup/recovery guide and documented beta limits. #docs #ops
+- **Identity** — BenchCore name and expanded title across pages, Open Graph,
+  RSS, packages, docs and delivery artifacts. #branding #tests
 
-- [x] One public Node service for frontend and `/api/*` on 5180; private loopback SSR bridge preserves visitor quotas #runtime #security
-- [x] HTTPS origin checks, explicitly trusted proxies, coalesced DB/schema readiness and bounded shutdown #ops
-- [x] Public reader-only registration, admin user listing/creation/roles and account disabling/reactivation #auth
-- [x] Own-password changes and explicit CLI recovery, atomic revocation of all sessions, last-active-admin protection #auth #security
-- [x] Account/session migration and case-folded unique emails; authorized fourth migration applied without password/content changes #db
-- [x] Reusable GitHub CI with PostgreSQL integration checks; CD delivers an allowlisted Node archive/checksum without GHCR #ci #cd
-- [x] Tag-matched, environment-gated beta prerelease workflow; no tag or hosted release created locally #release
-- [x] Production-only dependency bundle, single-origin hosting/backup/recovery guide and documented beta limits #docs #ops
-- [x] BenchCore identity and expanded project title across pages, Open Graph, RSS, packages, documentation and delivery artifacts #branding #tests
-- [x] Remove the development milestone ledger from the homepage; version CD artifact names by run/attempt with a download link #ux #cd
+### Maintenance — Node artifacts, Vercel/R2 and graph UX (shipped)
 
-Validation: 95 API + 54 frontend tests, typechecks (including runtime/scripts),
-lint, formatting, builds and source-size checks pass. All four migrations pass
-embedded PostgreSQL checks. Source and packaged beta smoke tests pass with real
-SQL repositories over the PGlite wire protocol, including reader isolation,
-disable/reactivate and the browser password action/session revocation.
-The configured PostgreSQL accepted the fourth migration; the unified preview
-is active on 5180 and the owned split API listener on 5181 was stopped.
-Registration passes selected automated accessibility checks and a 390px viewport
-has no horizontal overflow. Native PostgreSQL 17 concurrency and Linux artifact
-checks are configured in GitHub but have not run remotely; public hosting,
-branch/environment protection and backup/restore remain operator release gates.
-The BenchCore homepage also passes selected WCAG 2 A/AA checks with zero
-violations/incomplete checks, displays the expanded name and has no mobile overflow.
+- **Artifact staging** — isolated dependency workspace under writable
+  staging avoids legacy pnpm `/home/tmp` bin-link resolution; Windows
+  bundle paths are reserved before creating junctions. #cd #tests #ops
+- **Docker removal** — deployment files, commands, example variables and
+  guides removed; PostgreSQL integration fixtures stay in GitHub CI.
+  #ops #docs
+- **Vercel target** — full app and API on Node 24 Functions with no
+  listeners or startup migrations, plus a deployment guide. #ops #api
+- **Private R2** — browser-direct uploads with signed length/type,
+  owner-bound tickets and immutable conditional publication; scheduling
+  stays disabled on serverless while dates remain editable. #media #security
+- **Regression cover** — transport cancellation, session isolation, upload
+  and scheduled-editor suites. #tests #docs
+- **Graph links** — published posts connect through shared tags with
+  deduplicated wikilinks and linear-size hub links. #graph #perf #tests
+- **Discovery UX** — topic shortcuts, readable graph labels, related-post
+  lists and direct reading links. #graph #ux
 
-### Node artifact maintenance — 2026-10-05
+## Milestones
 
-- [x] Isolated dependency workspace under writable artifact staging avoids legacy pnpm `/home/tmp` bin-link resolution #cd #tests
-- [x] Reserve Windows final bundle paths before creating junctions; keep existing artifacts intact and remove owned staging #ops #tests
-- [x] Remove Docker deployment files, commands, example variables and guides; retain PostgreSQL integration fixtures in GitHub CI #ops #docs
+| Version | Focus | Status |
+|:---|---|---|
+| 0.2.0 | Content pipeline and auth core | Shipped |
+| 0.3.0 | Database, API and media | Shipped |
+| 0.4.0 | Public site and admin | Shipped |
+| 0.5.0 | Hardening and release | Prepared locally |
+| 0.6.0-beta.1 | Online beta preparation | Shipped |
+| 0.6.0 | Media management and storage refinement | Shipped |
+| 0.7.0 | Social graph, links and knowledge navigation | Shipped |
+| 0.8.0 | Engagement, moderation and auth hardening | Pending |
+| 0.9.0 | Stabilization, performance and deployment parity | Pending |
+| 1.0.0 | Production readiness and developer experience | Pending |
 
-Validation: 95 API + 60 frontend tests, workspace/runtime typechecks, lint,
-formatting and isolated source/bundle SQL smoke pass. Native Linux execution
-must be rechecked in GitHub CD.
+### Validation anchor (0.7.0)
 
-### Vercel and private R2
-
-- [x] Full application and API on Node 24 Vercel Functions, without listeners or startup migrations #ops #api
-- [x] Private R2 browser-direct uploads with signed length/type, owner-bound tickets and immutable conditional publication #media #security
-- [x] Disable serverless scheduling temporarily; preserve dates and allow explicit clearing for manual publication #posts
-- [x] Add transport cancellation, session isolation, upload and scheduled-editor regressions plus deployment guide #tests #docs
-
-Cloud account configuration, real R2 browser uploads and public deployment remain
-operator gates. Offline signature tests and generated-function SQL smoke do not
-claim configured cloud resources or a published site.
-
-### Graph and usability maintenance: 2026-10-06
-
-- [x] Connect published posts through shared tags; deduplicate wikilinks and use linear-size hub links for large topic groups. #graph #perf #tests
-- [x] Add topic shortcuts, readable graph labels, related-post lists and direct reading links. #graph #ux
-- [x] Refine shared typography, navigation, topic cards, touch targets, keyboard focus and reader recovery messages. #frontend #theme #ux
-- [x] Add admin title/slug/status filters and require an explicit confirmation before post deletion. #admin #ux #tests
-- [x] Add image link copy controls to existing attachments and completed uploads, with clipboard feedback and a selectable manual fallback. #media #ux #tests
-- [x] Document the English roadmap from version 0.6.0 through 1.0.0 and add local STRIDE review context. #docs #security
-
-Validation: 160 API + 135 frontend tests, workspace/runtime typechecks, lint
-and production builds pass. Disposable browser tests exercise admin creation,
+160 API + 135 frontend tests, workspace/runtime typechecks, lint and
+production builds pass. Disposable browser tests cover admin creation,
 editing, preview, deletion confirmation/cancellation and cleanup. Image link
-controls pass clipboard success/denial checks with a test double;
-the temporary upload is deleted after verification. Reader and
-admin pages have no horizontal overflow at the tested narrow viewport.
-Selected WCAG A/AA checks report no violations; SVG label contrast was checked
-from computed theme colors. Screenshots and native-pointer automation were
-unreliable in this session, so browser interactions used DOM events.
-Live PostgreSQL, hosted R2 and deployment checks were not run.
-
-### Version 0.6.0: Media management & storage refinement
-
-Focus: optimize the file lifecycle, clean up orphaned media and refine CDN/R2 management.
-
-- [x] Dedicated orphan cleanup CLI (`api/src/cli/media.ts`) using `deletion-service.ts`: dry-run default, bounded batches, saved-use rechecks and explicit maintenance-only apply. All saved statuses and audiences are protected. No automatic job is started. #media #storage #ops
-- [x] Select the strict direct-upload limits alternative: allowlisted MIME, 5 MiB cap, exact signed length/type and owner-bound completion. Compression/resizing and byte-level decoding are not implemented. #media #security #perf
-- [x] Immediate local previews, measured percentage upload progress, queued-file reordering and safe stand-alone Markdown attachment reordering. #media #ux
-- [x] Audience-safe cache controls: private public-image browser revalidation, no-store reader-only/R2 reads and explicit shared-CDN exclusion. Mutable audiences prevent safe long-lived public edge caching. #media #security #perf
-
-### Version 0.7.0: Social graph, bidirectional links & knowledge navigation
-
-Focus: strengthen the wiki/knowledge-base experience and connections between posts.
-
-- [x] Hover/focus previews for wikilinks and graph nodes through lightweight session-aware endpoints. Escape/close dismissal, cancellation, locked-record redaction and no persistent client preview cache. #content #graph #ux
-- [x] Bounded accent-insensitive fuzzy editor suggestions across slugs, titles and tags, without new dependencies. #content #search #ux
-- [x] Collapsible reader TOC from sanitized Markdown headings with stable anchors and no locked-content leakage. #content #frontend #ux
-- [x] Repeated multi-tag filters (AND/OR), update/popularity sorting and filter-preserving pagination in PostgreSQL and memory repositories. Existing likes only; protected engagement counts/rank are hidden from guests. #posts #search #ux
-- [x] Stable 0.7.0 workspace metadata and packaging with exact-tag validation and separate stable/beta approval environments. Publication/deployment remain separate operator actions. #release #cd
-
-Local verification and remaining hosting gates are recorded in
-[`docs/RELEASE_0.7.0.md`](docs/RELEASE_0.7.0.md).
+controls pass clipboard success/denial checks with a test double. Selected
+WCAG A/AA checks report no violations. Live PostgreSQL, hosted R2 and
+deployment checks were not run.
 
 ## Pending
 
@@ -210,3 +307,52 @@ Focus: guarantee stability, freeze API v1 and prepare for enterprise deployment.
 - [ ] Newsletters #data
 - [ ] Multiple authors UI (schema already supports `author_id`) #auth
 - [ ] Public API tokens #api
+
+## Run it
+
+Prerequisites: Node.js 24, pnpm 10.15.0 and PostgreSQL 17.
+
+```sh
+git clone https://github.com/camiu01/BenchCore.git
+cd BenchCore
+pnpm install --frozen-lockfile
+```
+
+Checks:
+
+```sh
+pnpm check
+pnpm test
+pnpm lint
+pnpm build
+```
+
+`pnpm test` runs the recursive Vitest suites; `pnpm check` runs the
+workspace typechecks including the runtime.
+
+## Structure
+
+```text
+content/posts/              # authoring source (*.md + +++ TOML frontmatter)
+frontend/
+  src/lib/                  # API client, site helpers, components, theme state
+  src/routes/               # public pages, login/logout, admin, feeds
+  tests/                    # Vitest suites mirroring src/
+api/
+  src/auth/                 # scrypt passwords and token sessions
+  src/db/                   # contracts, schema, Drizzle, memory repos
+  src/markdown/             # frontmatter validation and safe rendering
+  src/posts/                # publishing, CRUD, import
+  src/media/                # StorageProvider and backend implementations
+  src/server.ts             # standalone node:http API
+  tests/                    # Vitest suites mirroring src/
+runtime/                    # unified production Node listener
+docs/                       # architecture, authoring, API, operations guides
+TODO.md                     # versioned roadmap
+```
+
+Conventions: tabs, single quotes, semicolons, TSDoc on every function, feature files <400 lines, functions <50 lines.
+
+## License
+
+Maintained by **Camiu** ([@camiu01](https://github.com/camiu01)). GNU Affero General Public License v3.0 (AGPL-3.0-or-later) — see [LICENSE](LICENSE).
