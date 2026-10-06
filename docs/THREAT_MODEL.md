@@ -3,6 +3,11 @@
 
 # Threat model
 
+Security model behind BENCHCORE. Every control below is enforced in
+`api/src/` (Origin guard, rate limits, sanitizer, repository parameterization)
+with the frontend CSP in `frontend/`; report new vectors privately under
+[SECURITY.md](../SECURITY.md).
+
 ## Scope
 
 A self-hosted personal publishing application with a trusted operator and an

@@ -1,7 +1,7 @@
 <!-- @file README.md -->
 <!-- @brief Project overview, features, quick start, and documentation map. -->
 
-# BenchCore
+# BENCHCORE
 
 **Bench-testing, Embedded Networks, & Circuit Hacks: Centralized Open-source Research Engine**
 
@@ -13,25 +13,69 @@ with Obsidian-style `[[wikilinks]]`, and publish through a session-protected
 admin editor. PostgreSQL is the runtime source of truth; the frontend never
 reads the database or the authoring directory.
 
-License: **AGPL-3.0-or-later** · Runtime: **Node.js 24** · Package manager:
-**pnpm 10.15.0** · Release target: **0.7.0**
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
+[![Node](https://img.shields.io/badge/Node-24-green.svg)](https://nodejs.org/)
+[![pnpm](https://img.shields.io/badge/pnpm-10.15.0-yellow.svg)](https://pnpm.io/)
+[![Vitest](https://img.shields.io/badge/Vitest-5.0.3-green.svg)](https://vitest.dev/)
 
-## One origin
+## What's new in 0.7.0
 
-The production runtime combines frontend and backend into one Node service.
-Pages and `/api/*` share the same domain and port. Run `pnpm build`, configure
-the database and trusted origin, then run `pnpm start` on port **5180**.
-`/register` creates readers only; `/account` changes passwords; `/admin/users`
-manages accounts and protects the final active administrator.
+Stable release of the v0.7.0 milestone: knowledge navigation and media refinement.
 
-[Node deployment](docs/BETA_DEPLOYMENT.md) covers the unified Node artifact,
-GitHub CI/CD, HTTPS hosting, explicit migrations, backups and release limits.
-No GHCR/container images are required. **GitHub Pages cannot run the backend.**
+- **Link previews:** hover or focus a wikilink or graph node for a lightweight
+  session-aware preview. Unpublished records stay masked and reader-only bodies
+  stay redacted, with no persistent client preview cache.
+- **Fuzzy suggestions:** accent-insensitive editor completion across slugs,
+  titles and tags, without new dependencies.
+- **Reader navigation:** collapsible heading index from sanitized Markdown
+  headings with stable anchors, fitted graph views and focused neighborhoods.
+- **Archive filters:** combine up to 20 tags with AND/OR, sort by publication,
+  last update or existing likes, and preserve filters across pages. Protected
+  engagement counts and rank stay hidden from guests.
+- **Media lifecycle:** dry-run-first orphan cleanup CLI with bounded batches
+  and saved-reference rechecks, strict 5 MiB direct-upload limits with exact
+  signed length/type and owner-bound completion, immediate local previews with
+  measured progress and reordering, and audience-safe cache controls.
+- **Delivery gates:** stable workspace metadata with exact-tag validation and
+  separate stable/beta approval environments. Packaging and publication remain
+  separate operator actions.
 
-[Vercel deployment](docs/VERCEL_DEPLOYMENT.md) runs independently built frontend
-and API services in one project/domain, with a private runtime binding and R2
-browser-direct uploads. Scheduled publication
-is temporarily disabled on that target; the persistent Node runtime remains available.
+For release checks and the remaining operator gates, see
+[0.7.0 release preparation](docs/RELEASE_0.7.0.md). `pnpm release:check`
+validates workspace versions; `pnpm release:package` builds the versioned Node
+bundle after `pnpm build`. Neither command tags, publishes or deploys.
+
+## Previously in 0.6.0
+
+**Media management.** The orphan cleanup CLI defaults to dry-run with bounded
+batches and saved-use rechecks; apply mode needs stopped writers and an
+explicit maintenance acknowledgement. Direct uploads keep the allowlisted MIME
+set and the 5 MiB cap with exact signed length/type and owner-bound completion.
+
+**Graph navigation.** Published posts connect through shared tags with
+linear-size hub links for large topic groups, plus topic shortcuts, readable
+graph labels, related-post lists and direct reading links.
+
+**Reader UX.** Shared typography, navigation, topic cards, touch targets,
+keyboard focus and recovery messages were refined; reader and admin pages hold
+at the tested narrow viewport with no horizontal overflow.
+
+**Admin safety.** Title/slug/status filters, explicit delete confirmation,
+image link copy controls with clipboard feedback and a selectable manual
+fallback, and server-side pagination with status counts.
+
+**Vercel and private R2.** Full app and API on Node 24 Vercel Functions with
+no listeners or startup migrations, browser-direct R2 uploads via signed
+length/type with owner-bound tickets and immutable conditional publication,
+and scheduling temporarily disabled on that target.
+
+**Online beta.** One public Node service for frontend and `/api/*` on 5180
+with a private loopback SSR bridge, reader-only registration, admin user
+management with last-active-admin protection, own-password changes with global
+revocation, and tag-matched environment-gated prerelease delivery.
+
+The full checklist lives in [TODO.md](TODO.md).
 
 ## Features
 
@@ -80,10 +124,62 @@ Basic moderated comments and anonymous likes are implemented. Advanced anti-spam
 MFA, revision workflows and other deferred features are not claimed.
 See [TODO.md](TODO.md) for milestone status.
 
-For release checks and the remaining operator gates, see
-[0.7.0 release preparation](docs/RELEASE_0.7.0.md). `pnpm release:check`
-validates workspace versions; `pnpm release:package` builds the versioned Node
-bundle after `pnpm build`. Neither command tags, publishes or deploys.
+## One origin
+
+The production runtime combines frontend and backend into one Node service.
+Pages and `/api/*` share the same domain and port. Run `pnpm build`, configure
+the database and trusted origin, then run `pnpm start` on port **5180**.
+`/register` creates readers only; `/account` changes passwords; `/admin/users`
+manages accounts and protects the final active administrator.
+
+[Node deployment](docs/BETA_DEPLOYMENT.md) covers the unified Node artifact,
+GitHub CI/CD, HTTPS hosting, explicit migrations, backups and release limits.
+No GHCR/container images are required. **GitHub Pages cannot run the backend.**
+
+[Vercel deployment](docs/VERCEL_DEPLOYMENT.md) runs independently built frontend
+and API services in one project/domain, with a private runtime binding and R2
+browser-direct uploads. Scheduled publication
+is temporarily disabled on that target; the persistent Node runtime remains available.
+
+## Publishing engine
+
+| Layer | Responsibility |
+|---|---|
+| `api/src/markdown/` | Split `+++` fences, parse TOML, validate with Zod, render and sanitize Markdown |
+| `api/src/posts/` | Publishing rules, timestamps, slug conflicts, imports, public DTOs |
+| `api/src/db/` | Repository contracts, memory test doubles, Drizzle implementations and schema |
+| `api/src/auth/` | Password verification, token generation, session hashing and cookies |
+| `api/src/media/` | Swappable image storage behind `StorageProvider` |
+| `api/src/server.ts` | HTTP boundary and routing; services own business rules |
+| `frontend/src/lib/` | Server-only API clients, SEO URL helpers, components, theme state |
+| `frontend/src/routes/` | Public pages, authentication, guarded admin, feeds and metadata routes |
+
+The database and uploaded media contain runtime state. Import is a deliberate
+upsert by slug, not a live filesystem watcher or two-way editor synchronization.
+Re-importing a file can overwrite later admin edits.
+
+## Milestones
+
+| Version | Focus | Status |
+|:---|---|---|
+| 0.2.0 | Content pipeline and auth core | Shipped |
+| 0.3.0 | Database, API and media | Shipped |
+| 0.4.0 | Public site and admin | Shipped |
+| 0.5.0 | Hardening and release | Prepared locally |
+| 0.6.0-beta.1 | Online beta preparation | Shipped |
+| 0.6.0 | Media management and storage refinement | Shipped |
+| 0.7.0 | Social graph, links and knowledge navigation | Shipped |
+| 0.8.0 | Engagement, moderation and auth hardening | Pending |
+| 0.9.0 | Stabilization, performance and deployment parity | Pending |
+| 1.0.0 | Production readiness and developer experience | Pending |
+
+### Validation anchor (0.7.0)
+
+160 API + 135 frontend tests, workspace/runtime typechecks, lint and
+production builds pass. Disposable browser tests cover admin creation,
+editing, preview, deletion confirmation/cancellation and cleanup. Selected
+WCAG A/AA checks report no violations. Live PostgreSQL, hosted R2 and
+deployment checks were not run.
 
 ## Run it
 
@@ -210,23 +306,6 @@ The diagram shows logical boundaries. Development uses frontend port **5173**
 and API port **5181**; the production Node runtime serves pages and `/api/*`
 through one origin on port **5180**.
 
-## Publishing engine
-
-| Layer | Responsibility |
-|---|---|
-| `api/src/markdown/` | Split `+++` fences, parse TOML, validate with Zod, render and sanitize Markdown |
-| `api/src/posts/` | Publishing rules, timestamps, slug conflicts, imports, public DTOs |
-| `api/src/db/` | Repository contracts, memory test doubles, Drizzle implementations and schema |
-| `api/src/auth/` | Password verification, token generation, session hashing and cookies |
-| `api/src/media/` | Swappable image storage behind `StorageProvider` |
-| `api/src/server.ts` | HTTP boundary and routing; services own business rules |
-| `frontend/src/lib/` | Server-only API clients, SEO URL helpers, components, theme state |
-| `frontend/src/routes/` | Public pages, authentication, guarded admin, feeds and metadata routes |
-
-The database and uploaded media contain runtime state. Import is a deliberate
-upsert by slug, not a live filesystem watcher or two-way editor synchronization.
-Re-importing a file can overwrite later admin edits.
-
 ## Structure
 
 ```text
@@ -255,6 +334,8 @@ runtime/                        # unified production Node listener
 scripts/                        # allowlisted packaging and isolated SQL smoke
 TODO.md                         # milestone roadmap
 ```
+
+Conventions: tabs, single quotes, semicolons, TSDoc on every function, feature files <400 lines, functions <50 lines.
 
 ## Design system
 

@@ -3,6 +3,11 @@
 
 # API reference
 
+HTTP boundary behind BENCHCORE. Every route below is dispatched in
+`api/src/server.ts`, validated with Zod at the boundary, served by the rules
+in `api/src/posts/` and `api/src/auth/`, and mirrored by the suites in
+`api/tests/`.
+
 ## Base URLs and conventions
 
 The **0.7.0 unified runtime** exposes `/api/*` on the same origin as

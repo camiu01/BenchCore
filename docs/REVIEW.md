@@ -3,6 +3,11 @@
 
 # Review and validation
 
+Review record behind BENCHCORE. Every finding below was verified against
+`api/src/`, `frontend/src/` and `runtime/` with regression tests where the
+behavior is testable; this is a code review and release check, not a
+guarantee against all security issues or an independent penetration test.
+
 Reviewed the API router, authentication, content pipeline, publishing services,
 repositories, media providers, frontend routes/components, deployment wiring
 and configuration. Fixes include regression tests where behavior is testable.

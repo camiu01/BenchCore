@@ -3,6 +3,13 @@
 
 # Preparing 0.7.0
 
+**Bench-testing, Embedded Networks, & Circuit Hacks: Centralized Open-source Research Engine**
+
+Local preparation behind BENCHCORE 0.7.0. Every check below runs from the
+repository root with `pnpm release:check` and `pnpm release:package`;
+publication stays a separate operator action behind the `stable-release` /
+`beta-release` environments.
+
 Version 0.7.0 includes the unfinished 0.6 media work and the 0.7 knowledge
 navigation milestone. Preparing source and artifacts does not publish a release
 or deploy the application.

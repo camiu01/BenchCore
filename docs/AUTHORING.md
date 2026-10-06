@@ -3,6 +3,10 @@
 
 # Authoring and publishing
 
+Authoring model behind BENCHCORE. Every field below is validated in
+`api/src/markdown/` and applied by the import pipeline in `api/src/posts/`,
+and mirrored by the suites in `api/tests/`.
+
 ## A complete post
 
 Create `content/posts/first-note.md`:

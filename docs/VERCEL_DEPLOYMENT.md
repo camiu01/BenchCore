@@ -3,6 +3,10 @@
 
 # Vercel and private R2
 
+Serverless target behind BENCHCORE. The API entrypoint is `api/src/vercel.ts`,
+the build is assembled by `scripts/build-vercel.mjs`, and the checks are
+mirrored by `pnpm test:vercel-api` and CI in `.github/`.
+
 Deploy the **whole app** as two independently built services on Node.js 24.
 `frontend` serves pages; `api` serves `/api`, `/api/*`, `/health` and `/health/*`.
 The API runs native Node Functions, without listeners, migrations or scheduler

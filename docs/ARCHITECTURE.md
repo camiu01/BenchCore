@@ -3,6 +3,10 @@
 
 # Architecture
 
+Layer responsibilities behind BENCHCORE. Every relation below is implemented
+in `api/src/` (plus `frontend/src/routes/` and `runtime/`) and mirrored by
+the suites in `api/tests/` and `frontend/tests/`.
+
 ## Overview
 
 A pnpm monorepo contains two independently built applications:

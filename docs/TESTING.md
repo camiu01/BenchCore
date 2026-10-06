@@ -3,6 +3,10 @@
 
 # Testing
 
+Quality gates behind BENCHCORE. Every suite below lives in `api/tests/` or
+`frontend/tests/` mirroring `src/`, service tests run against in-memory
+repositories, and CI in `.github/` runs the same gates.
+
 ## Required checks
 
 Run from the repository root:

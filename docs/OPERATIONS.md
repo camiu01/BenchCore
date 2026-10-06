@@ -3,6 +3,10 @@
 
 # Operations
 
+Runbook behind BENCHCORE. Every procedure below acts on the single-origin
+Node service in `runtime/server.mjs` with PostgreSQL 17 as the stateful
+dependency; the packaged artifact is assembled by `scripts/package-beta.mjs`.
+
 For **0.7.0 single-origin Node deployment**, use
 [Node deployment](BETA_DEPLOYMENT.md). The supported deployment is the
 production-only Node artifact, with a separately managed PostgreSQL database.

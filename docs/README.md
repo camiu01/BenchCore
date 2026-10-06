@@ -3,9 +3,11 @@
 
 # Documentation
 
-The platform separates **authoring files**, **runtime data**, and **presentation**.
-These guides describe that separation rather than treating the project as a
-static-site generator.
+**Bench-testing, Embedded Networks, & Circuit Hacks: Centralized Open-source Research Engine**
+
+Reading paths behind BENCHCORE. Every guide below is implemented in
+`frontend/`, `api/` or `runtime/` and mirrored by the checks in
+[Testing](TESTING.md); [TODO.md](../TODO.md) owns the roadmap.
 
 ## Choose a path
 

@@ -3,6 +3,11 @@
 
 # Admin workbench and themes
 
+Editorial workflow behind BENCHCORE. Every screen below lives in
+`frontend/src/routes/admin/` with the editor in
+`frontend/src/lib/components/PostEditor.svelte`, and the theme tokens live in
+`frontend/src/app.css` with state in `frontend/src/lib/theme.ts`.
+
 ## Access and navigation
 
 Bootstrap an admin with `pnpm seed`, sign in at `/login`, and open `/admin`.
@@ -194,12 +199,12 @@ Core tokens include `--bg`, `--sheet-bg`, `--card-bg`, `--grid`, `--ink`,
 
 ## Page recipe
 
-- `.wrapper`: bordered sheet and hard shadow.
-- `.doc-meta-bar`: document metadata and theme controls.
-- `.doc-header`: title and introduction.
-- `.record` / `.record-body`: content cards and readable Markdown.
-- `.stamp`: status/category badge.
-- `.spec-table` / `.inventory-table`: technical data and lists.
+- **`.wrapper`** — bordered sheet and hard shadow.
+- **`.doc-meta-bar`** — document metadata and theme controls.
+- **`.doc-header`** — title and introduction.
+- **`.record` / `.record-body`** — content cards and readable Markdown.
+- **`.stamp`** — status/category badge.
+- **`.spec-table` / `.inventory-table`** — technical data and lists.
 
 New components should reuse tokens and patterns rather than hardcode
 dark/light colors. Theme state belongs in the presentation layer; publication
