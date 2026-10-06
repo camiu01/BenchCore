@@ -33,6 +33,7 @@
 					class:btn-accent={data.status === status}
 					class="btn"
 					href="/admin/comments?status={status}"
+					aria-current={data.status === status ? 'page' : undefined}
 				>
 					{status}
 				</a>
@@ -58,7 +59,13 @@
 							<form method="POST" action="?/moderate&status={data.status}&offset={data.offset}">
 								<input type="hidden" name="id" value={comment.id} />
 								<input type="hidden" name="status" value={status} />
-								<button class="btn" type="submit">{status}</button>
+								<button class="btn" type="submit"
+									>{status === 'approved'
+										? 'Approve'
+										: status === 'rejected'
+											? 'Reject'
+											: 'Mark pending'}</button
+								>
 							</form>
 						{/each}
 						<form method="POST" action="?/delete&status={data.status}&offset={data.offset}">

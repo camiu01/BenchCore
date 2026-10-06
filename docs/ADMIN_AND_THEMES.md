@@ -6,7 +6,9 @@
 ## Access and navigation
 
 Bootstrap an admin with `pnpm seed`, sign in at `/login`, and open `/admin`.
-The deck lists posts including drafts and archived records. Use
+The dashboard lists posts including drafts and archived records. Search titles
+or slugs and use status buttons to filter the loaded page; counts are not a
+full-archive search. Use
 `/admin/posts/new` to create and `/admin/posts/<id>` to edit. The tags view
 assigns accessible colors and can delete a tag from every post. The comments
 view approves, rejects, reopens or deletes reader responses.
@@ -65,12 +67,20 @@ upload form. Inspect the editor after an upload and save the intended content.
 
 Deletion is a real database mutation. Back up first when recovery matters;
 revision-table groundwork is not a safety net for deleted posts.
+The editor's **Delete post** button first opens a confirmation panel. Choose
+**Keep post** to cancel without a mutation, or **Yes, delete permanently** to
+submit the protected delete action. The confirmation is an accident-prevention
+control, not a replacement for API authorization.
 
 ## Graph and engagement
 
-The public `/graph` page displays only published records and valid wikilinks.
-Node colors use the first tag attached to each post. Search, keyboard focus,
-zoom, drag and an accessible record index are available.
+The public `/graph` page connects published posts through shared tags and valid
+wikilinks. Node colors use the first tag attached to each post. Search matches
+titles and tags in both the map and the visible post list. Select a post to see
+its connections and their shared topics, or open posts directly from the list.
+Topic shortcuts, keyboard selection, zoom buttons and dragging are available.
+Groups above 24 posts use hub links to avoid a dense quadratic mesh; the detail
+panel still lists all posts sharing the selected post's topics.
 
 Comments submitted from a post remain private until approved under
 `/admin/comments`. Likes are anonymous and toggle per browser. Moderation and
@@ -89,6 +99,10 @@ positions. Save the record after uploading.
 Other storage providers retain the single-file server upload control.
 
 The **Post images** panel includes existing Markdown images and the cover.
+Use **Copy link** beside an existing image or a completed upload to copy its
+absolute site URL. If clipboard access is blocked, a selected read-only field
+provides the same URL for manual copying. Copying a link does not change the
+image's audience or grant access to reader-only media.
 **Remove** first checks saved usages and lists every affected post. Cancel
 leaves both content and storage unchanged. Confirming **Delete file and all
 references** permanently deletes the file and immediately removes its image

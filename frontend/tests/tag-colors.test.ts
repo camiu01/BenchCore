@@ -31,6 +31,8 @@ describe('CSP-safe tag colors', () => {
 		expect(body.match(/<rect /g)).toHaveLength(8);
 		expect(body).not.toMatch(/\sstyle=/);
 		expect(body).toContain('Use #2563EB for Systems');
+		expect(body).toContain('role="group" aria-label="Preset colors"');
+		expect(body).toContain('aria-pressed="true"');
 	});
 
 	it('preserves the HEX quantifier in the rendered input validation pattern', () => {

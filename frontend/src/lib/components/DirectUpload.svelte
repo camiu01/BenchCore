@@ -1,6 +1,7 @@
 <!-- @file DirectUpload.svelte @brief Presentation-only controls for browser-direct R2 images. -->
 <script lang="ts">
 	import { imageUploadQueue, uploadImageBatch, type ImageUploadItem } from '../image-batch.js';
+	import CopyImageLink from './CopyImageLink.svelte';
 	let {
 		onuploaded,
 		onbusy,
@@ -91,6 +92,9 @@
 				{/if}
 				<span>{item.file.name}</span>
 				<span class="stamp">{item.status === 'uploaded' ? 'IN CONTENT' : item.status}</span>
+				{#if item.status === 'uploaded' && item.url}
+					<CopyImageLink url={item.url} name={item.file.name} />
+				{/if}
 				{#if item.error}<span class="error-stamp">{item.error}</span>{/if}
 			</li>
 		{/each}

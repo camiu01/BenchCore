@@ -27,13 +27,14 @@
 
 <form method="POST" action="?/color" class="tag-color-form">
 	<input type="hidden" name="id" value={id} />
-	<div class="tag-swatches" aria-label="Preset colors">
+	<div class="tag-swatches" role="group" aria-label="Preset colors">
 		{#each palette as preset (preset)}
 			<button
 				type="button"
 				class:active={color.toUpperCase() === preset}
 				class="tag-swatch"
 				aria-label="Use {preset} for {name}"
+				aria-pressed={color.toUpperCase() === preset}
 				title={preset}
 				onclick={() => (color = preset)}
 				><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">

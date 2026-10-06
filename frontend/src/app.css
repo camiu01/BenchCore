@@ -1,6 +1,8 @@
 /* @file app.css @brief Engineering-log design tokens and public layout styles. */
 @import 'tailwindcss';
 @import './lib/forms.css';
+@import './lib/usability.css';
+@import './lib/admin-workspace.css';
 
 /* Engineering-log design system. Monospace spec-sheet aesthetic with
    light / dark / oled themes switched via the data-theme attribute. */

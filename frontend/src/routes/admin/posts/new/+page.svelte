@@ -27,8 +27,8 @@
 
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: NEW"
-	title="NEW RECORD"
-	sub="Markdown with [[wikilinks]], previewed through the API render pipeline."
+	title="NEW POST"
+	sub="Write in Markdown and preview before saving. Use [[post-slug]] to link to another post."
 	{nav}
 	footerLeft="MODE: WRITE"
 	footerRight="DRAFT DEFAULT"

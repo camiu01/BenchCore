@@ -4,6 +4,7 @@
 	import DirectUpload from './DirectUpload.svelte';
 	import DateTimeField from './DateTimeField.svelte';
 	import PostImages from './PostImages.svelte';
+	import PostDeleteConfirmation from './PostDeleteConfirmation.svelte';
 	import { removeImageFromEditor } from '../image-manager.js';
 	import { insertUploadedImage } from '../image-batch.js';
 	import {
@@ -52,6 +53,7 @@
 	});
 	let uploadCursor = 0;
 	let draggingImages = $state(false);
+	let deleteConfirmation = $state(false);
 
 	/** @brief Locks the insertion position while files upload. @param busy Upload state. @return Nothing. */
 	function setUploadBusy(busy: boolean): void {
@@ -164,7 +166,7 @@
 </script>
 
 {#if errorMsg !== null}
-	<span class="error-stamp">{errorMsg}</span>
+	<p class="error-stamp" role="alert">{errorMsg}</p>
 {/if}
 
 <form
@@ -181,13 +183,30 @@
 				<input class="field-input" id="title" name="title" required value={values.title} />
 			</div>
 			<div>
-				<label class="field-label" for="slug">Slug</label>
-				<input class="field-input" id="slug" name="slug" required value={values.slug} />
+				<label class="field-label" for="slug">Post URL (slug)</label>
+				<input
+					class="field-input"
+					id="slug"
+					name="slug"
+					required
+					value={values.slug}
+					aria-describedby="slug-help"
+				/>
+				<span class="field-help" id="slug-help"
+					>Use lowercase letters, numbers and hyphens, for example my-first-post.</span
+				>
 			</div>
 		</div>
 		<div>
-			<label class="field-label" for="description">Description</label>
-			<input class="field-input" id="description" name="description" value={values.description} />
+			<label class="field-label" for="description">Short summary</label>
+			<input
+				class="field-input"
+				id="description"
+				name="description"
+				value={values.description}
+				aria-describedby="description-help"
+			/>
+			<span class="field-help" id="description-help">Shown in post lists and search previews.</span>
 		</div>
 		<div class="field-row">
 			<div>
@@ -292,19 +311,35 @@
 			</div>
 		</div>
 	</div>
-	<div class="btn-row">
+	<div class="btn-row editor-actions">
 		<button class="btn btn-accent" type="submit" formaction="?/save" disabled={editingMedia}
-			>SAVE →</button
+			>Save post →</button
 		>
 		<button class="btn" type="submit" formaction="?/preview" formnovalidate disabled={editingMedia}
 			>PREVIEW</button
 		>
 		{#if !isNew}
-			<button class="btn" type="submit" formaction="?/delete" formnovalidate disabled={editingMedia}
-				>DELETE</button
+			<button
+				class="btn danger"
+				type="button"
+				disabled={editingMedia}
+				aria-expanded={deleteConfirmation}
+				aria-controls="post-delete-confirmation"
+				onclick={() => {
+					deleteConfirmation = !deleteConfirmation;
+				}}>Delete post</button
 			>
 		{/if}
 	</div>
+	{#if deleteConfirmation}
+		<PostDeleteConfirmation
+			title={values.title}
+			disabled={editingMedia}
+			oncancel={() => {
+				deleteConfirmation = false;
+			}}
+		/>
+	{/if}
 
 	<hr />
 	<PostImages
@@ -345,7 +380,8 @@
 
 {#if previewHtml !== null}
 	<section class="tool-section">
-		<div class="section-banner">// READ MODE</div>
+		<div class="section-banner">Post preview</div>
+		<p class="field-help">This is a preview. Save the post to keep your changes.</p>
 		<!-- Preview HTML is sanitized by the API render pipeline. -->
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 		<div class="record"><div class="record-body">{@html previewHtml}</div></div>

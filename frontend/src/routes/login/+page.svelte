@@ -14,12 +14,16 @@
 	];
 </script>
 
-<Seo title="Login | BenchCore" description="Operator sign-in." canonical="{data.siteBase}/login" />
+<Seo
+	title="Login | BenchCore"
+	description="Sign in to your BenchCore account."
+	canonical="{data.siteBase}/login"
+/>
 
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: AUTH"
 	title="ACCOUNT LOGIN"
-	sub="Username or email. Session cookie, 30-day expiry."
+	sub="Sign in to read members-only posts and join the conversation."
 	{nav}
 	footerLeft="AUTH: SESSION"
 	footerRight="HTTPONLY + LAX"
@@ -31,7 +35,7 @@
 				<span class="stamp">SIGN IN</span>
 			</div>
 			{#if form?.error !== undefined}
-				<span class="error-stamp">{form.error}</span>
+				<p class="error-stamp" role="alert">{form.error}</p>
 			{/if}
 			{#if data.notice}<p class="summary" role="status">{data.notice}</p>{/if}
 			<form method="POST" action="?/login">

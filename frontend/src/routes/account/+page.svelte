@@ -6,6 +6,9 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const nav = $derived([
 		{ href: '/', label: '[01] index' },
+		{ href: '/posts', label: 'Posts' },
+		{ href: '/tags', label: 'Topics' },
+		{ href: '/graph', label: 'Connections' },
 		...(data.user.role === 'admin' ? [{ href: '/admin', label: '[02] admin' }] : [])
 	]);
 </script>

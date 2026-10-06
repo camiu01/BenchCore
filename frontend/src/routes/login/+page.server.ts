@@ -60,7 +60,10 @@ export const actions: Actions = {
 				body: JSON.stringify(input.data)
 			});
 		} catch {
-			return fail(503, { error: 'API unreachable. Start it with pnpm dev:api.', email });
+			return fail(503, {
+				error: 'Sign-in is temporarily unavailable. Please try again in a moment.',
+				email
+			});
 		}
 		if (!response.ok) {
 			const status = response.status === 429 ? 429 : response.status >= 500 ? 503 : 401;

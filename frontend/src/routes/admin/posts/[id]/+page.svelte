@@ -27,8 +27,8 @@
 
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: EDIT"
-	title="EDIT RECORD"
-	sub="Write mode plus API-rendered read mode, Obsidian style."
+	title="EDIT POST"
+	sub="Edit and preview your post, then save your changes. Changes are not saved automatically."
 	{nav}
 	footerLeft="STATUS: {data.status.toUpperCase()}"
 	footerRight="AUTOSAVE: OFF"

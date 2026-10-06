@@ -5,6 +5,7 @@
 	import Seo from '../lib/components/Seo.svelte';
 	import { authenticationLink } from '../lib/navigation.js';
 	import ReaderGate from '../lib/components/ReaderGate.svelte';
+	import { publicationDate } from '../lib/presentation.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -12,9 +13,9 @@
 		{ href: '/posts', label: '[01] records' },
 		{ href: '/tags', label: '[02] tags' },
 		{ href: '/graph', label: '[03] graph' },
-		{ href: '/account', label: '[04] account' },
+		...(data.sessionRole ? [{ href: '/account', label: '[04] account' }] : []),
 		...(data.sessionRole === 'reader' ? [] : [authenticationLink(data.sessionRole, '05')]),
-		{ href: '/register', label: '[06] register' }
+		...(data.sessionRole ? [] : [{ href: '/register', label: '[06] register' }])
 	]);
 </script>
 
@@ -30,26 +31,27 @@
 	activeHref="/"
 >
 	<main id="records">
+		<div class="btn-row browse-actions">
+			<a class="btn btn-accent" href="/posts">Browse all posts</a>
+			<a class="btn" href="/tags">Explore by topic</a>
+		</div>
 		{#if data.posts === null}
 			<article class="record">
 				<div class="record-header">
-					<span class="record-title">REC_00: UPLINK // NO CARRIER</span>
-					<span class="stamp">API OFFLINE</span>
+					<span class="record-title">Posts temporarily unavailable</span>
+					<span class="stamp">PLEASE RETRY</span>
 				</div>
-				<p class="summary">
-					The API is unreachable. Start it with <code>pnpm dev:api</code> and reload this sheet.
-				</p>
+				<p class="summary">We cannot load posts right now. Please try again in a moment.</p>
+				<a class="btn" href="/">Try again</a>
 			</article>
 		{:else if data.posts.items.length === 0}
 			<article class="record">
 				<div class="record-header">
-					<span class="record-title">REC_00: ARCHIVE // EMPTY</span>
-					<span class="stamp">NO RECORDS</span>
+					<span class="record-title">No posts yet</span>
 				</div>
-				<p class="summary">
-					No published posts yet. Create a record in <a href="/admin">the operator deck</a>, or
-					import authored files with <code>pnpm content:import</code>.
-				</p>
+				<p class="summary">New posts will appear here when they are published.</p>
+				{#if data.sessionRole === 'admin'}<a class="btn" href="/admin/posts/new">Create a post</a
+					>{/if}
 			</article>
 		{:else}
 			{#each data.posts.items as post (post.id)}
@@ -66,8 +68,12 @@
 					<table class="spec-table">
 						<tbody>
 							<tr>
-								<td class="label">FILED</td>
-								<td>{post.publishedAt ?? 'undated'}</td>
+								<td class="label">PUBLISHED</td>
+								<td
+									><time datetime={post.publishedAt ?? undefined}
+										>{publicationDate(post.publishedAt)}</time
+									></td
+								>
 							</tr>
 							{#if post.tags.length > 0}
 								<tr>

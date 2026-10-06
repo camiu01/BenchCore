@@ -1,5 +1,6 @@
 <!-- @file PostImages.svelte @brief Saved and newly uploaded image management with shared-use confirmation. -->
 <script lang="ts">
+	import CopyImageLink from './CopyImageLink.svelte';
 	import {
 		managedImageKeys,
 		inspectImage,
@@ -77,6 +78,7 @@
 				<li>
 					<img class="image-upload-thumbnail" src="/api/media/{key}" alt="Uploaded attachment" />
 					<code>{key}</code>
+					<CopyImageLink url="/api/media/{key}" name={key} />
 					<button
 						class="btn"
 						type="button"

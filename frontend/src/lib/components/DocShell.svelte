@@ -2,6 +2,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import ThemePicker from './ThemePicker.svelte';
+	import { navigationLabel } from '../presentation.js';
 
 	/**
 	 * Shared engineering-log sheet: meta bar, header, nav, footer.
@@ -38,6 +39,7 @@
 </script>
 
 <div class:wide class="wrapper">
+	<a class="skip-link" href="#main-content">Skip to content</a>
 	<div class="doc-meta-bar">
 		<span class="doc-id">{docId}</span>
 		<ThemePicker />
@@ -46,16 +48,18 @@
 	<header class="doc-header">
 		<h1 class="doc-title">{title}</h1>
 		<div class="doc-sub">{sub}</div>
-		<nav class="doc-nav">
+		<nav class="doc-nav" aria-label="Main navigation">
 			{#each nav as item (item.href)}
 				<a href={item.href} aria-current={item.href === activeHref ? 'page' : undefined}
-					>{item.label}</a
+					>{navigationLabel(item.href, item.label)}</a
 				>
 			{/each}
 		</nav>
 	</header>
 
-	{@render children()}
+	<div id="main-content" tabindex="-1">
+		{@render children()}
+	</div>
 
 	<footer class="doc-footer">
 		<span>{footerLeft}</span>

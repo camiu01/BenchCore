@@ -16,6 +16,7 @@ import {
 import { select, type Selection } from 'd3-selection';
 import { zoom, zoomIdentity } from 'd3-zoom';
 import type { GraphData } from './api.js';
+import { matchesGraphNode, relatedGraphNodes } from './graph-navigation.js';
 
 type SimNode = GraphData['nodes'][number] & SimulationNodeDatum & { degree: number };
 interface SimLink extends SimulationLinkDatum<SimNode> {
@@ -30,6 +31,7 @@ export interface GraphController {
 	filter(query: string): void;
 	select(slug: string | null): void;
 	reset(): void;
+	zoom(factor: number): void;
 	destroy(): void;
 }
 
@@ -66,14 +68,18 @@ function drawScene(svg: SVGSVGElement, nodes: SimNode[], links: SimLink[]) {
 		.attr('fill', (item) => item.tags[0]?.color ?? '#64748B')
 		.attr('tabindex', 0)
 		.attr('role', 'button')
-		.attr('aria-label', (item) => `${item.title}, ${item.degree} connections`);
+		.attr(
+			'aria-label',
+			(item) => `${item.title}, ${item.degree} ${item.degree === 1 ? 'connection' : 'connections'}`
+		);
+	node.append('title').text((item) => item.title);
 	const label = scene
 		.append('g')
 		.attr('class', 'graph-labels')
 		.selectAll<SVGTextElement, SimNode>('text')
 		.data(nodes)
 		.join('text')
-		.text((item) => item.title);
+		.text((item) => (item.title.length > 38 ? `${item.title.slice(0, 35)}…` : item.title));
 	return { root, scene, link, node, label };
 }
 
@@ -146,11 +152,7 @@ function enableNodeInteraction(
 /** @brief Creates graph search highlighting. @param node Circles. @param label Labels. @return Filter callback. */
 function createFilter(node: NodeSelection, label: LabelSelection): (query: string) => void {
 	return (query) => {
-		const needle = query.trim().toLowerCase();
-		const muted = (item: SimNode) =>
-			needle !== '' &&
-			!item.title.toLowerCase().includes(needle) &&
-			!item.tags.some((tag) => tag.name.toLowerCase().includes(needle));
+		const muted = (item: SimNode) => !matchesGraphNode(item, query);
 		node.classed('search-muted', muted);
 		label.classed('search-muted', muted);
 	};
@@ -165,10 +167,7 @@ function createSelection(
 ): (slug: string | null) => void {
 	return (slug) => {
 		const neighbors = new Set([slug]);
-		for (const edge of graph.edges) {
-			if (edge.source === slug) neighbors.add(edge.target);
-			if (edge.target === slug) neighbors.add(edge.source);
-		}
+		for (const related of relatedGraphNodes(graph, slug)) neighbors.add(related.slug);
 		node
 			.classed('selected', (item) => item.slug === slug)
 			.classed('selection-muted', (item) => slug !== null && !neighbors.has(item.slug));
@@ -176,7 +175,7 @@ function createSelection(
 		link.classed('selection-muted', (item) => {
 			const source = typeof item.source === 'string' ? item.source : item.source.slug;
 			const target = typeof item.target === 'string' ? item.target : item.target.slug;
-			return slug !== null && source !== slug && target !== slug;
+			return slug !== null && (!neighbors.has(source) || !neighbors.has(target));
 		});
 	};
 }
@@ -205,6 +204,9 @@ export function createGraphRenderer(
 		filter: createFilter(node, label),
 		select: createSelection(graph, node, label, link),
 		reset: () => root.call(zoomBehavior.transform, zoomIdentity),
+		zoom: (factor) => {
+			root.call(zoomBehavior.scaleBy, factor);
+		},
 		destroy: () => simulation.stop()
 	};
 }

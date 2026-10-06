@@ -17,15 +17,16 @@
 />
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: USERS"
-	title="USER LEDGER"
-	sub="Role or activation changes revoke all sessions. Keep at least one active administrator."
+	title="MANAGE USERS"
+	sub="Changing a role or disabling an account signs that user out everywhere. Keep at least one active administrator."
 	{nav}
 	footerLeft="USERS: {data.total}"
 	footerRight={data.online ? 'API: LINKED' : 'API: OFFLINE'}
 >
 	<main>
 		{#if form?.error}<p class="error-stamp" role="alert">{form.error}</p>{/if}
-		{#if !data.online}<p class="error-stamp">Account service unavailable.</p>{/if}
+		{#if !data.online}<p class="error-stamp" role="alert">Account service unavailable.</p>
+			<a class="btn" href="/admin/users">Try again</a>{/if}
 		{#each data.items as account (account.id)}
 			<article class="record">
 				<div class="record-header">

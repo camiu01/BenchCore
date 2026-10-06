@@ -23,6 +23,7 @@ describe('image manager', () => {
 		});
 		expect(result.body).toContain('POST IMAGES');
 		expect(result.body.match(/>REMOVE</g)).toHaveLength(1);
+		expect(result.body).toContain(`aria-label="Copy image link for ${key}"`);
 		expect(result.body).not.toContain('DELETE FILE AND ALL REFERENCES');
 	});
 

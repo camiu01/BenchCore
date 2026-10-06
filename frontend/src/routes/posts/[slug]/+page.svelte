@@ -5,6 +5,7 @@
 	import Seo from '../../../lib/components/Seo.svelte';
 	import PostEngagement from '../../../lib/components/PostEngagement.svelte';
 	import ReaderGate from '../../../lib/components/ReaderGate.svelte';
+	import { publicationDate } from '../../../lib/presentation.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -28,15 +29,14 @@
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: {data.post.slug.toUpperCase()}"
 	title={data.post.title}
-	sub={data.post.locked
-		? 'Sign in to read this record.'
-		: data.post.description || 'No summary filed.'}
+	sub={data.post.locked ? 'Sign in to read this post.' : data.post.description || ''}
 	{nav}
 	footerLeft={data.post.locked ? 'ACCESS: READERS ONLY' : `READ: ${data.post.readingMinutes} MIN`}
-	footerRight="FILED: {data.post.publishedAt ?? 'UNDATED'}"
+	footerRight="PUBLISHED: {publicationDate(data.post.publishedAt)}"
 	activeHref="/posts"
 >
 	<main>
+		<p><a href="/posts">← All posts</a></p>
 		<article class="record">
 			<div class="record-header">
 				<span class="record-title">{data.post.title}</span>
@@ -45,8 +45,12 @@
 			<table class="spec-table">
 				<tbody>
 					<tr>
-						<td class="label">FILED</td>
-						<td>{data.post.publishedAt ?? 'undated'}</td>
+						<td class="label">PUBLISHED</td>
+						<td
+							><time datetime={data.post.publishedAt ?? undefined}
+								>{publicationDate(data.post.publishedAt)}</time
+							></td
+						>
 					</tr>
 					{#if data.post.authorName !== null}
 						<tr>
@@ -83,7 +87,7 @@
 
 		{#if data.post.backlinks.length > 0}
 			<section class="tool-section">
-				<div class="section-banner">// LINKED MENTIONS</div>
+				<div class="section-banner">Posts that link here</div>
 				<table class="inventory-table">
 					<thead>
 						<tr>
@@ -97,7 +101,11 @@
 							<tr>
 								<td class="code">BK-{String(index + 1).padStart(2, '0')}</td>
 								<td class="item">{link.title}</td>
-								<td class="dim"><a href="/posts/{encodeURIComponent(link.slug)}">open →</a></td>
+								<td class="dim"
+									><a href="/posts/{encodeURIComponent(link.slug)}" aria-label="Read {link.title}"
+										>Read →</a
+									></td
+								>
 							</tr>
 						{/each}
 					</tbody>

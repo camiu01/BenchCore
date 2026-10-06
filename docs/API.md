@@ -40,7 +40,7 @@ not accept a slug for mutation even though the public route shares the prefix.
 | GET | `/api/posts/:slug/likes` | Public | Like count and current browser state |
 | POST | `/api/posts/:slug/likes` | Trusted Origin | Toggle an anonymous like |
 | GET | `/api/tags` | Public | Tags, colors and public-post counts |
-| GET | `/api/graph` | Public | Published posts and valid wikilink edges |
+| GET | `/api/graph` | Public | Published posts connected by wikilinks or shared tags |
 | GET | `/api/admin/posts` | Session | Admin list, including unpublished posts |
 | GET | `/api/admin/posts/suggestions` | Administrator session | Up to 200 recently updated post identifiers, titles and slugs |
 | GET | `/api/admin/posts/:id` | Session | Editable post, including Markdown |
@@ -67,9 +67,13 @@ internal `list()` method is not an endpoint.
 ## Graph, tags and engagement
 
 `GET /api/graph` returns only currently published posts. Nodes contain safe
-metadata and colored tags; edges are deduplicated `[[wikilink]]` references
-whose source and target are both visible. Markdown, drafts, archived posts and
-broken targets are never included.
+metadata and colored tags. Edges include valid `[[wikilink]]` references and
+connections between posts with at least one shared tag. Shared-tag connections
+appear once per pair, even when several tags match, and do not duplicate an
+existing wikilink in either direction. Both endpoints must be published.
+Tags shared by more than 24 posts use a connected hub instead of a complete
+mesh, keeping the number of generated links linear in the group size.
+Markdown, drafts, archived posts and broken targets are never included.
 
 Tag colors are uppercase `#RRGGBB` values. Deleting a tag removes its
 associations from every post through cascading foreign keys; it never deletes

@@ -1,3 +1,6 @@
+<!-- @file TODO.md -->
+<!-- @brief Completed work and versioned development roadmap for BenchCore. -->
+
 # TODO
 
 Development task management for BenchCore (research frontend + standalone API).
@@ -116,7 +119,85 @@ Cloud account configuration, real R2 browser uploads and public deployment remai
 operator gates. Offline signature tests and generated-function SQL smoke do not
 claim configured cloud resources or a published site.
 
+### Graph and usability maintenance: 2026-10-06
+
+- [x] Connect published posts through shared tags; deduplicate wikilinks and use linear-size hub links for large topic groups. #graph #perf #tests
+- [x] Add topic shortcuts, readable graph labels, related-post lists and direct reading links. #graph #ux
+- [x] Refine shared typography, navigation, topic cards, touch targets, keyboard focus and reader recovery messages. #frontend #theme #ux
+- [x] Add admin title/slug/status filters and require an explicit confirmation before post deletion. #admin #ux #tests
+- [x] Add image link copy controls to existing attachments and completed uploads, with clipboard feedback and a selectable manual fallback. #media #ux #tests
+- [x] Document the English roadmap from version 0.6.0 through 1.0.0 and add local STRIDE review context. #docs #security
+
+Validation: 160 API + 135 frontend tests, workspace/runtime typechecks, lint
+and production builds pass. Disposable browser tests exercise admin creation,
+editing, preview, deletion confirmation/cancellation and cleanup. Image link
+controls pass clipboard success/denial checks with a test double;
+the temporary upload is deleted after verification. Reader and
+admin pages have no horizontal overflow at the tested narrow viewport.
+Selected WCAG A/AA checks report no violations; SVG label contrast was checked
+from computed theme colors. Screenshots and native-pointer automation were
+unreliable in this session, so browser interactions used DOM events.
+Live PostgreSQL, hosted R2 and deployment checks were not run.
+
 ## Pending
+
+### Version 0.6.0: Media management & storage refinement
+
+Focus: optimize the file lifecycle, clean up orphaned media and refine CDN/R2 management.
+
+- [ ] Background cleanup job for orphaned media: implement a periodic task or dedicated CLI command (`api/src/cli/media.ts`) that uses `deletion-service.ts` to delete R2 files no longer referenced by Markdown posts. #media #storage #ops
+- [ ] Automatic image validation and resizing: add server-side compression (WebP/AVIF) or enforce strict payload limits for direct uploads (`direct-upload.ts`). #media #security #perf
+- [ ] Improve the PostImages UI: add immediate previews, granular upload status with percentage progress bars and visual attachment reordering. #media #ux
+- [ ] CDN cache-control support: refine HTTP `Cache-Control` headers for public and private media endpoints to maximize safe edge caching. #media #security #perf
+
+### Version 0.7.0: Social graph, bidirectional links & knowledge navigation
+
+Focus: strengthen the wiki/knowledge-base experience and connections between posts.
+
+- [ ] Advanced backlinks and link graph: extend `graph-service.ts` and `GraphView.svelte` with hover-card previews for posts connected through `[[wikilink]]` references. #content #graph #ux
+- [ ] Intelligent wikilink suggestions: improve autocomplete in `PostEditor.svelte` with fuzzy search (for example, Fuse.js or SQLite/PostgreSQL full-text search) across slugs, titles and tags. #content #search #ux
+- [ ] Hierarchical navigation and table of contents: automatically generate a table of contents (TOC) from Markdown headings in the reader frontend. #content #frontend #ux
+- [ ] Advanced post filtering: support combined multi-tag filters (AND/OR) and sorting by last update or popularity in post lists. #posts #search #ux
+
+### Version 0.8.0: Engagement, moderation & auth hardening
+
+Focus: make user interaction secure and scalable.
+
+- [ ] Comment moderation and anti-spam. #social #security
+	- [ ] Integrate per-IP/session rate limiting for comments.
+	- [ ] Support anti-spam filters, such as Akismet, a honeypot or an optional configurable CAPTCHA.
+	- [ ] Provide a comment approval workflow in the admin panel (`admin/comments`).
+- [ ] Session and authentication hardening. #auth #security
+	- [ ] Actively revoke session tokens on global logout and password changes.
+	- [ ] Support two-factor authentication (2FA/TOTP) for administrator accounts.
+- [ ] Security audit log: record critical system events, including user creation, bulk post deletion and password rotation, with an administrator-facing viewer. #security #admin
+
+### Version 0.9.0: Stabilization, performance & deployment parity
+
+Focus: prepare the release candidate, freeze breaking changes and optimize infrastructure.
+
+- [ ] Functional parity between standalone and Vercel serverless deployments. #runtime #ops #perf
+	- [ ] Standardize cold-start performance and database connection-pool management (Drizzle/PostgreSQL pooling with PgBouncer/Neon).
+	- [ ] Add dedicated E2E tests in CI for both the Node runtime and Vercel edge/serverless targets.
+- [ ] Accessibility and themes (A11y). #ux #theme
+	- [ ] Review every reader and admin view against WCAG 2.1 AA.
+	- [ ] Complete high-contrast light and dark theme tokens.
+- [ ] SEO and dynamic metadata. #seo #tests
+	- [ ] Generate dynamic Open Graph and Twitter Cards through SSR for every post and tag.
+	- [ ] Automatically validate `rss.xml` and `sitemap.xml`.
+- [ ] Backup and restore CLI tools: export/import the complete database and image archive in a portable format, such as a ZIP bundle or JSON + Markdown archive. #ops #data #dx
+
+### Version 1.0.0: Production readiness, documentation & developer experience
+
+Focus: guarantee stability, freeze API v1 and prepare for enterprise deployment.
+
+- [ ] Public API freeze (API v1): formalize OpenAPI/Swagger specifications for every endpoint exposed under `/api`. #api #docs
+- [ ] Migration guide and official documentation. #docs #ops
+	- [ ] Consolidate the guides in `docs/`, including `ARCHITECTURE.md`, `DEVELOPMENT.md` and `OPERATIONS.md`.
+	- [ ] Write a start-to-finish self-hosted deployment guide using Docker/Docker Compose.
+- [ ] First-run onboarding wizard: provide an interactive browser setup at initial boot to create the primary administrator and configure S3/R2 storage. #auth #media #dx
+- [ ] Test coverage target: exceed 85% coverage for backend unit tests (`api/tests`) and critical frontend components. #tests #quality
+- [ ] Telemetry and detailed health checks: enrich `/health` with database latency, R2 availability and memory usage metrics. #api #ops
 
 ### Deferred (do not implement yet)
 

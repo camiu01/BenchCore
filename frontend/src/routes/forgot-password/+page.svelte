@@ -31,6 +31,8 @@
 				<p class="summary" role="status">
 					If an active account uses that email, a reset link has been sent.
 				</p>
+				<p class="summary">Check your inbox and spam folder. The link expires after one hour.</p>
+				<a class="btn" href="/login">Back to sign in</a>
 			{:else}
 				<form method="POST" class="form-grid">
 					<label class="field-label" for="email">Account email</label>

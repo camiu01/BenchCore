@@ -1,0 +1,116 @@
+/* @file admin-workspace.css @brief Responsive admin post discovery and destructive-action presentation. */
+.workspace-heading,
+.admin-post-card,
+.admin-post-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+}
+
+.workspace-heading {
+	margin-bottom: 24px;
+}
+
+.workspace-heading h2 {
+	font-size: 20px;
+	margin: 0 0 8px;
+}
+
+.workspace-heading .summary {
+	margin: 0;
+	color: var(--muted);
+}
+
+.workspace-heading > .btn {
+	flex-shrink: 0;
+}
+
+.admin-post-tools {
+	padding: 24px;
+	border: 1px solid var(--border-light);
+	background: var(--card-bg);
+}
+
+.status-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 16px;
+}
+
+.filter-count {
+	margin-left: 8px;
+	font-size: 11px;
+}
+
+.admin-post-list {
+	list-style: none;
+	padding: 0;
+	margin: 16px 0 24px;
+}
+
+.admin-post-card {
+	padding: 24px;
+	margin-top: 12px;
+	border: 1px solid var(--border-light);
+	background: var(--sheet-bg);
+}
+
+.admin-post-card > div:first-child {
+	min-width: 0;
+}
+
+.admin-post-title {
+	color: var(--ink);
+	font-size: 16px;
+	font-weight: bold;
+	text-underline-offset: 4px;
+}
+
+.admin-post-actions {
+	flex-shrink: 0;
+	gap: 16px;
+}
+
+.wrapper .stamp.status-draft,
+.wrapper .stamp.status-archived {
+	color: var(--muted);
+	border-color: var(--border-light);
+}
+
+.delete-confirmation {
+	padding: 24px;
+	margin: 24px 0;
+	border: 2px solid var(--accent);
+	background: var(--accent-bg);
+}
+
+.delete-confirmation h3 {
+	margin-top: 0;
+}
+
+.wrapper .editor-actions {
+	position: sticky;
+	bottom: 0;
+	z-index: 5;
+	padding: 16px 0;
+	background: var(--sheet-bg);
+	border-top: 1px solid var(--border-light);
+}
+
+@media (max-width: 600px) {
+	.workspace-heading,
+	.admin-post-card {
+		align-items: stretch;
+		flex-direction: column;
+		gap: 16px;
+	}
+	.admin-post-tools,
+	.admin-post-card {
+		padding: 16px;
+	}
+	.admin-post-actions {
+		justify-content: space-between;
+	}
+}

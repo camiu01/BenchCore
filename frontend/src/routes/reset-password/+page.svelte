@@ -18,7 +18,7 @@
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: RESET"
 	title="RESET PASSWORD"
-	sub="Choose a new password. All existing sessions will be revoked."
+	sub="Choose a new password. You will be signed out on all devices."
 	{nav}
 	footerLeft="AUTH: RECOVERY"
 	footerRight="PASSWORD: SCRYPT"

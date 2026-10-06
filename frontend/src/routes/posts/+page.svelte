@@ -5,6 +5,7 @@
 	import Seo from '../../lib/components/Seo.svelte';
 	import { authenticationLink } from '../../lib/navigation.js';
 	import ReaderGate from '../../lib/components/ReaderGate.svelte';
+	import { publicationDate } from '../../lib/presentation.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -17,15 +18,15 @@
 </script>
 
 <Seo
-	title="Records | BenchCore"
-	description="Every published record, newest first."
+	title="Posts | BenchCore"
+	description="Browse and search published posts, newest first."
 	canonical="{data.siteBase}/posts"
 />
 
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: RECORDS"
-	title="RECORDS"
-	sub="Every published record, newest first. {data.total} filed."
+	title="POSTS"
+	sub="{data.total} posts, newest first. Search by title or content."
 	{nav}
 	footerLeft="PAGE {data.page} OF {data.totalPages}"
 	footerRight="PER PAGE: {data.perPage}"
@@ -33,7 +34,7 @@
 >
 	<main>
 		<form method="GET" action="/posts" class="form-grid">
-			<label class="field-label" for="search">Search records</label>
+			<label class="field-label" for="search">Search posts</label>
 			<input
 				class="field-input"
 				id="search"
@@ -41,27 +42,34 @@
 				type="search"
 				maxlength="200"
 				value={data.search}
+				placeholder="Enter a title or keyword"
 			/>
 			<div class="btn-row">
 				<button class="btn" type="submit">SEARCH</button>
-				{#if data.search}<a class="btn" href="/posts">CLEAR</a>{/if}
+				{#if data.search}<a class="btn" href="/posts">Clear search</a>{/if}
 			</div>
 		</form>
 		{#if !data.online}
 			<article class="record">
 				<div class="record-header">
-					<span class="record-title">UPLINK // NO CARRIER</span>
-					<span class="stamp">API OFFLINE</span>
+					<span class="record-title">Posts temporarily unavailable</span>
 				</div>
-				<p class="summary">Start the API with <code>pnpm dev:api</code>.</p>
+				<p class="summary">We cannot load posts right now. Please try again in a moment.</p>
+				<a class="btn" href="/posts?search={encodeURIComponent(data.search)}">Try again</a>
 			</article>
 		{:else if data.items.length === 0}
 			<article class="record">
 				<div class="record-header">
-					<span class="record-title">ARCHIVE // EMPTY</span>
-					<span class="stamp">NO RECORDS</span>
+					<span class="record-title"
+						>{data.search ? 'No matching posts' : 'No posts on this page'}</span
+					>
 				</div>
-				<p class="summary">Nothing filed on this page.</p>
+				<p class="summary">
+					{data.search
+						? 'Try a different keyword or clear the search to see all posts.'
+						: 'New posts will appear here when they are published.'}
+				</p>
+				{#if data.search || data.page > 1}<a class="btn" href="/posts">Show all posts</a>{/if}
 			</article>
 		{:else}
 			{#each data.items as post (post.id)}
@@ -78,8 +86,12 @@
 					<table class="spec-table">
 						<tbody>
 							<tr>
-								<td class="label">FILED</td>
-								<td>{post.publishedAt ?? 'undated'}</td>
+								<td class="label">PUBLISHED</td>
+								<td
+									><time datetime={post.publishedAt ?? undefined}
+										>{publicationDate(post.publishedAt)}</time
+									></td
+								>
 							</tr>
 							{#if post.tags.length > 0}
 								<tr>
@@ -98,10 +110,11 @@
 			{/each}
 		{/if}
 		{#if data.totalPages > 1}
-			<div class="btn-row">
+			<nav class="btn-row" aria-label="Post pages">
+				<span class="page-position">Page {data.page} of {data.totalPages}</span>
 				{#if data.page > 1}
 					<a class="btn" href="/posts?page={data.page - 1}&search={encodeURIComponent(data.search)}"
-						>← PREV</a
+						>← Previous</a
 					>
 				{/if}
 				{#if data.page < data.totalPages}
@@ -109,7 +122,7 @@
 						>NEXT →</a
 					>
 				{/if}
-			</div>
+			</nav>
 		{/if}
 	</main>
 </DocShell>

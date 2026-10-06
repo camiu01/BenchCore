@@ -17,15 +17,15 @@
 </script>
 
 <Seo
-	title="Tags | BenchCore"
-	description="Every tag in the archive with record counts."
+	title="Topics | BenchCore"
+	description="Find posts by topic."
 	canonical="{data.siteBase}/tags"
 />
 
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: TAGS"
-	title="TAGS"
-	sub="Every tag in the archive with record counts."
+	title="EXPLORE BY TOPIC"
+	sub="Choose a tag to see posts about that topic."
 	{nav}
 	footerLeft="TAGS: {data.items.length}"
 	footerRight="INDEX COMPLETE"
@@ -35,34 +35,26 @@
 		{#if !data.online}
 			<article class="record">
 				<div class="record-header">
-					<span class="record-title">UPLINK // NO CARRIER</span>
-					<span class="stamp">API OFFLINE</span>
+					<span class="record-title">Topics temporarily unavailable</span>
 				</div>
-				<p class="summary">Start the API with <code>pnpm dev:api</code>.</p>
+				<p class="summary">We cannot load topics right now. Please try again in a moment.</p>
+				<a class="btn" href="/tags">Try again</a>
 			</article>
+		{:else if data.items.length === 0}
+			<p class="summary">There are no topics yet. You can browse all published posts instead.</p>
+			<a class="btn" href="/posts">Browse posts</a>
 		{:else}
-			<table class="inventory-table">
-				<thead>
-					<tr>
-						<th>TAG</th>
-						<th>SLUG</th>
-						<th>RECORDS</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each data.items as tag (tag.slug)}
-						<tr>
-							<td class="item">
-								<a href="/tags/{encodeURIComponent(tag.name)}">
-									<TagChip label={tag.name} color={tag.color} />
-								</a>
-							</td>
-							<td class="code">{tag.slug}</td>
-							<td class="dim">{tag.count}</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
+			<ul class="topic-grid" aria-label="Topics">
+				{#each data.items as tag (tag.slug)}
+					<li>
+						<a class="topic-card" href="/tags/{encodeURIComponent(tag.name)}">
+							<TagChip label={tag.name} color={tag.color} />
+							<span class="topic-count">{tag.count} {tag.count === 1 ? 'post' : 'posts'}</span>
+							<span class="topic-open">Explore →</span>
+						</a>
+					</li>
+				{/each}
+			</ul>
 		{/if}
 	</main>
 </DocShell>

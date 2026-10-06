@@ -23,21 +23,27 @@
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: TAG-{data.tag.toUpperCase()}"
 	title="TAG // {data.tag}"
-	sub="{data.total} record(s) filed under this tag."
+	sub="{data.total} posts about this topic."
 	{nav}
 	footerLeft="PAGE {data.page} OF {data.totalPages}"
 	footerRight="TAG FILTER ACTIVE"
 	activeHref="/tags"
 >
 	<main>
+		<p><a href="/tags">← All topics</a></p>
 		{#if !data.online}
 			<article class="record">
 				<div class="record-header">
-					<span class="record-title">UPLINK // NO CARRIER</span>
-					<span class="stamp">API OFFLINE</span>
+					<span class="record-title">Posts temporarily unavailable</span>
 				</div>
-				<p class="summary">Start the API with <code>pnpm dev:api</code>.</p>
+				<p class="summary">We cannot load posts right now. Please try again in a moment.</p>
+				<a class="btn" href="/tags/{encodeURIComponent(data.tag)}">Try again</a>
 			</article>
+		{:else if data.items.length === 0}
+			<p class="summary">
+				There are no posts on this page. Choose another topic or browse all posts.
+			</p>
+			<a class="btn" href="/posts">Browse posts</a>
 		{:else}
 			{#each data.items as post (post.id)}
 				<article class="record">
@@ -54,14 +60,17 @@
 			{/each}
 		{/if}
 		{#if data.totalPages > 1}
-			<div class="btn-row">
+			<nav class="btn-row" aria-label="Topic pages">
+				<span class="page-position">Page {data.page} of {data.totalPages}</span>
 				{#if data.page > 1}
-					<a class="btn" href="/tags/{encodeURIComponent(data.tag)}?page={data.page - 1}">← PREV</a>
+					<a class="btn" href="/tags/{encodeURIComponent(data.tag)}?page={data.page - 1}"
+						>← Previous</a
+					>
 				{/if}
 				{#if data.page < data.totalPages}
 					<a class="btn" href="/tags/{encodeURIComponent(data.tag)}?page={data.page + 1}">NEXT →</a>
 				{/if}
-			</div>
+			</nav>
 		{/if}
 	</main>
 </DocShell>
