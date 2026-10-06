@@ -45,7 +45,9 @@
 				<a class="btn" href="/posts">Browse posts</a>
 			</article>
 		{:else}
-			<GraphView graph={data.graph} focus={data.focus} />
+			{#key data.graph}
+				<GraphView graph={data.graph} focus={data.focus} />
+			{/key}
 		{/if}
 	</main>
 </DocShell>

@@ -6,6 +6,8 @@
 	import PostEngagement from '../../../lib/components/PostEngagement.svelte';
 	import ReaderGate from '../../../lib/components/ReaderGate.svelte';
 	import { publicationDate } from '../../../lib/presentation.js';
+	import { postOutline } from '../../../lib/post-outline.js';
+	import PostOutline from '../../../lib/components/PostOutline.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -17,6 +19,7 @@
 	]);
 	const cover = $derived(data.cover);
 	const canonical = $derived(`${data.siteBase}/posts/${encodeURIComponent(data.post.slug)}`);
+	const outline = $derived(postOutline(data.post.locked ? '' : data.post.contentHtml));
 </script>
 
 <Seo
@@ -79,9 +82,10 @@
 						<img src={cover} alt={data.post.title} class="cover-image" />
 					</figure>
 				{/if}
+				<PostOutline headings={outline.headings} />
 				<!-- contentHtml is sanitized by the API render pipeline before storage. -->
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				<div class="record-body">{@html data.post.contentHtml}</div>
+				<div class="record-body">{@html outline.html}</div>
 			{/if}
 		</article>
 

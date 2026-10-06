@@ -4,7 +4,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import type { MediaBlobRepository } from '../db/media-repository.js';
-import { sanitizeKey, validateUpload, type StorageProvider } from './storage.js';
+import { mediaRecord, sanitizeKey, validateUpload, type StorageProvider } from './storage.js';
 
 /**
  * @brief Creates a database storage provider without depending on SQL.
@@ -13,6 +13,12 @@ import { sanitizeKey, validateUpload, type StorageProvider } from './storage.js'
  */
 export function createDatabaseStorage(repository: MediaBlobRepository): StorageProvider {
 	return {
+		/** @brief Reads metadata through the repository's lightweight projection. @param key Managed key. @return Metadata or null. */
+		async describe(key) {
+			if (!sanitizeKey(key)) return null;
+			const record = await (repository.describe ? repository.describe(key) : repository.load(key));
+			return record ? mediaRecord.parse(record) : null;
+		},
 		/**
 		 * @brief Validates and stores an upload.
 		 * @param data The file bytes.

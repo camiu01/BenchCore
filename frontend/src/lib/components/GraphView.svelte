@@ -14,12 +14,14 @@
 	let svg: SVGSVGElement;
 	let query = $state('');
 	let selection = $state<string | null | undefined>(undefined);
+	let focused = $state(false);
 	const selectedSlug = $derived(selection === undefined ? focus : selection);
 	const selected = $derived(graph.nodes.find((node) => node.slug === selectedSlug) ?? null);
 	const results = $derived(graph.nodes.filter((node) => matchesGraphNode(node, query)));
 	const related = $derived(relatedGraphNodes(graph, selectedSlug));
 	let applyFilter: (query: string) => void = () => undefined;
 	let applySelection: (slug: string | null) => void = () => undefined;
+	let applyFocus: (slug: string | null) => void = () => undefined;
 	let resetView = () => {};
 	let zoomView: (factor: number) => void = () => undefined;
 
@@ -31,6 +33,14 @@
 	function selectNode(slug: string | null): void {
 		selection = slug;
 		applySelection(slug);
+		if (slug === null) focused = false;
+		applyFocus(focused ? slug : null);
+	}
+
+	/** @brief Switches between the complete map and the selected neighborhood. @return Nothing. */
+	function toggleFocus(): void {
+		focused = !focused;
+		applyFocus(focused ? selectedSlug : null);
 	}
 
 	/** @brief Applies search from the input or a topic shortcut. @param value Search text. @return Nothing. */
@@ -46,8 +56,11 @@
 		zoomView = controller.zoom;
 		applyFilter = controller.filter;
 		applySelection = controller.select;
+		applyFocus = controller.focus;
+		focused = selected !== null;
 		applySelection(selectedSlug);
 		applyFilter(query);
+		applyFocus(focused ? selectedSlug : null);
 		return controller.destroy;
 	});
 </script>
@@ -73,7 +86,10 @@
 		<button class="btn" type="button" aria-label="Zoom out" onclick={() => zoomView(1 / 1.4)}
 			>Zoom −</button
 		>
-		<button class="btn" type="button" onclick={() => resetView()}>Reset view</button>
+		<button class="btn" type="button" onclick={() => resetView()}>Fit view</button>
+		{#if selected}<button class="btn" type="button" aria-pressed={focused} onclick={toggleFocus}
+				>{focused ? 'Show full map' : 'Focus connections'}</button
+			>{/if}
 		{#if query}<button class="btn" type="button" onclick={() => searchGraph('')}
 				>Clear search</button
 			>{/if}
@@ -82,6 +98,9 @@
 			>{/if}
 	</div>
 </div>
+{#if focused && selected}<p class="field-help" role="status">
+		Focused on {selected.title} and {related.length} connected posts.
+	</p>{/if}
 
 <div class="graph-legend" role="group" aria-label="Filter by topic">
 	<button

@@ -16,12 +16,16 @@ const proxy: RequestHandler = async ({ params, request }) => {
 		return new Response(null, { status: 404 });
 	}
 	const headers = new Headers();
+	const details = new URL(request.url).searchParams.get('details');
+	if (details !== null && details !== '1')
+		return Response.json({ error: 'validation' }, { status: 400 });
+	const suffix = details === '1' && request.method === 'GET' ? '?details=1' : '';
 	for (const name of ['cookie', 'origin', 'content-type']) {
 		const value = request.headers.get(name);
 		if (value) headers.set(name, value);
 	}
 	try {
-		const upstream = await apiFetch(`${apiBase()}/api/admin/media/${params.key}`, {
+		const upstream = await apiFetch(`${apiBase()}/api/admin/media/${params.key}${suffix}`, {
 			method: request.method,
 			headers,
 			...(request.method === 'DELETE' ? { body: await request.text() } : {}),

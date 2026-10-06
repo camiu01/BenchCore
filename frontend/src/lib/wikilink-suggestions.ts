@@ -48,6 +48,25 @@ export function wikilinkReplacementRange(
 	};
 }
 
+/** @brief Applies a cursor-validated wikilink without losing surrounding edits. @param input Live textarea. @param slug Selected post. @param opening Captured opening offset. @return Whether inserted. */
+export function insertEditorWikilink(
+	input: HTMLTextAreaElement,
+	slug: string,
+	opening: number
+): boolean {
+	const range = wikilinkReplacementRange(
+		input.value,
+		input.selectionStart,
+		input.selectionEnd,
+		opening
+	);
+	if (!range) return false;
+	input.setRangeText(`${slug}]]`, range.start, range.end, 'end');
+	input.dispatchEvent(new Event('input', { bubbles: true }));
+	input.focus();
+	return true;
+}
+
 /**
  * @brief Filters and caps suggestions by title or slug.
  * @param suggestions Available posts.

@@ -19,6 +19,12 @@ const data: ComponentProps<typeof Admin>['data'] = {
 	schedulerEnabled: false,
 	online: true,
 	total: 2,
+	page: 1,
+	perPage: 25,
+	totalPages: 1,
+	search: '',
+	status: 'all',
+	counts: { all: 2, draft: 1, published: 1, archived: 0 },
 	items: [
 		{
 			id: '11111111-1111-4111-8111-111111111111',
@@ -54,15 +60,19 @@ describe('admin usability', () => {
 		const { body } = render(Admin, { props: { data } });
 		expect(body).toContain('Find a post');
 		expect(body).toContain('aria-label="Post status"');
-		expect(body).toContain('aria-pressed="true"');
+		expect(body).toContain('aria-current="page"');
 		expect(body).toContain('6 October 2026');
 		expect(body).toContain('aria-label="Edit Alpha"');
 		expect(body).toContain('/admin/posts/new');
 	});
 
-	it('describes the scope of local filters when the archive has more posts', () => {
-		const { body } = render(Admin, { props: { data: { ...data, total: 100 } } });
-		expect(body).toContain('not all 100 posts');
+	it('searches the full archive and keeps filters when paging', () => {
+		const { body } = render(Admin, {
+			props: { data: { ...data, total: 100, totalPages: 4, search: 'Alpha', status: 'draft' } }
+		});
+		expect(body).toContain('Search covers the entire archive');
+		expect(body).toContain('search=Alpha&amp;status=draft&amp;page=2');
+		expect(body).not.toContain('loaded posts');
 	});
 
 	it('does not render a destructive submit button before confirmation', () => {

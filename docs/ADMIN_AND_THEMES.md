@@ -7,8 +7,9 @@
 
 Bootstrap an admin with `pnpm seed`, sign in at `/login`, and open `/admin`.
 The dashboard lists posts including drafts and archived records. Search titles
-or slugs and use status buttons to filter the loaded page; counts are not a
-full-archive search. Use
+or slugs across the complete archive and filter by status. Results are paginated
+at 25 posts per page; status counts cover all search matches, not just the page.
+Search and status are preserved when moving between pages. Use
 `/admin/posts/new` to create and `/admin/posts/<id>` to edit. The tags view
 assigns accessible colors and can delete a tag from every post. The comments
 view approves, rejects, reopens or deletes reader responses.
@@ -62,8 +63,12 @@ Use explicit API `null` where the documented contract supports it.
 
 Save, preview, and upload are separate actions. There is no claimed autosave,
 collaborative editing, revision diff, or automatic revision restore.
-Keep a copy of unsaved text before switching pages or submitting a separate
-upload form. Inspect the editor after an upload and save the intended content.
+The editor shows whether saved fields have changed. With JavaScript, leaving
+with unsaved changes requires confirmation; reload, close and external
+navigation use the browser's native warning. Equivalent tag/date formatting
+does not count as an edit. Preview and upload preserve dirty state; a failed
+save does not clear it. There is no draft recovery after confirmed navigation
+or a browser crash, so keep a separate copy when recovery matters.
 
 Deletion is a real database mutation. Back up first when recovery matters;
 revision-table groundwork is not a safety net for deleted posts.
@@ -79,12 +84,20 @@ wikilinks. Node colors use the first tag attached to each post. Search matches
 titles and tags in both the map and the visible post list. Select a post to see
 its connections and their shared topics, or open posts directly from the list.
 Topic shortcuts, keyboard selection, zoom buttons and dragging are available.
+The map fits automatically while its layout settles, until you pan, zoom or
+drag a node. **Fit view** restores fitting. **Focus connections** hides unrelated
+nodes and fits the selected post and all topic/wikilink peers. Post graph links
+open this focused view; **Show full map** restores the complete graph.
 Groups above 24 posts use hub links to avoid a dense quadratic mesh; the detail
 panel still lists all posts sharing the selected post's topics.
 
 Comments submitted from a post remain private until approved under
 `/admin/comments`. Likes are anonymous and toggle per browser. Moderation and
 tag deletion are permanent database mutations.
+
+Posts with at least three headings include a collapsible **On this page**
+index with stable heading anchors. It works without JavaScript and never
+includes the body or headings of a locked reader-only post.
 
 ## Images
 
@@ -99,6 +112,11 @@ positions. Save the record after uploading.
 Other storage providers retain the single-file server upload control.
 
 The **Post images** panel includes existing Markdown images and the cover.
+Select a thumbnail to open a larger preview; Escape or **Close preview** closes
+it and restores focus. Dimensions come from the decoded image; size comes from
+protected storage metadata, or the selected upload file. Missing metadata is
+reported rather than guessed. **Use as cover** changes the live cover field;
+save the post to persist that choice.
 Use **Copy link** beside an existing image or a completed upload to copy its
 absolute site URL. If clipboard access is blocked, a selected read-only field
 provides the same URL for manual copying. Copying a link does not change the

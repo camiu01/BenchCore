@@ -35,6 +35,11 @@ export function createR2Storage(env: NodeJS.ProcessEnv, client?: R2Client, signe
 
 /** @brief R2 persists opaque keys and sidecars; only completed objects are readable. */
 class R2Storage implements StorageProvider {
+	/** @brief Exposes only public record fields, never private object keys. @param key Managed key. @return Metadata or null. */
+	async describe(key: string): Promise<StoredMedia | null> {
+		const record = await this.metadata(key);
+		return record ? mediaRecord.parse(record) : null;
+	}
 	/**
 	 * @brief Retains validated configuration and a bounded S3 client.
 	 * @param settings Private configuration. @param client Bounded client.

@@ -106,6 +106,11 @@ pnpm seed
 pnpm dev:api
 ```
 
+The API development command runs
+`tsx watch --env-file-if-exists=../.env src/index.ts` from `api/`.
+The `watch` subcommand must precede Node flags; otherwise Node treats
+`watch` as a filename instead of starting the file watcher.
+
 In another terminal, with the same relevant environment:
 
 ```sh
@@ -142,6 +147,58 @@ pnpm lint
 pnpm build
 ```
 
+## How it works
+
+```mermaid
+flowchart TB
+	Browser["Browser: readers and administrators"]
+	Frontend["SvelteKit frontend"]
+	API["TypeScript HTTP API"]
+	Services["Authentication, publishing and Markdown services"]
+	Repositories["Repository contracts + Drizzle"]
+	Database[("PostgreSQL: posts, tags, users and sessions")]
+	Files["content/posts/*.md: Markdown + TOML"]
+	Import["Explicit content import"]
+	Storage["StorageProvider"]
+	Local["Local filesystem"]
+	Blobs["Database media repository"]
+	R2["Private R2 bucket"]
+
+	Browser <-->|Pages and admin forms| Frontend
+	Frontend <-->|API data and authenticated commands| API
+	Browser <-->|Same-origin media and upload endpoints| API
+	API --> Services
+	Services <--> Repositories
+	Repositories <--> Database
+	Files --> Import
+	Import --> Services
+	API --> Storage
+	Storage <--> Local
+	Storage <--> Blobs
+	Blobs <--> Database
+	Storage <--> R2
+	Browser -.->|R2 only: signed direct upload| R2
+```
+
+1. A reader opens a page. SvelteKit asks the API for visible posts, and the
+   API queries PostgreSQL through repositories. The frontend receives API data,
+   never a database connection. Drafts and archived posts remain private;
+   reader-only bodies require a reader or administrator session.
+2. An administrator signs in and edits a post. The API checks the session and
+   trusted Origin, validates metadata, sanitizes rendered Markdown and saves
+   through the repositories. Preview renders HTML without saving the post.
+3. Markdown files enter the database only through an explicit import. Import
+   parses TOML, validates fields and applies the same publishing pipeline.
+   Editing a file does not update the running site until it is imported.
+4. Images use the configured storage provider. Local and database uploads pass
+   through the API. For R2, the API authorizes an upload, the browser sends the
+   image directly to R2, and the API validates completion before accepting
+   its managed URL.
+
+The diagram shows logical boundaries. Development uses frontend port **5173**
+and API port **5181**; the production Node runtime serves pages and `/api/*`
+through one origin on port **5180**.
+
 ## Publishing engine
 
 | Layer | Responsibility |
@@ -154,13 +211,6 @@ pnpm build
 | `api/src/server.ts` | HTTP boundary and routing; services own business rules |
 | `frontend/src/lib/` | Server-only API clients, SEO URL helpers, components, theme state |
 | `frontend/src/routes/` | Public pages, authentication, guarded admin, feeds and metadata routes |
-
-```text
-content/posts/*.md
-  -> TOML + Zod -> Markdown + sanitize -> post services
-  -> repository contracts -> PostgreSQL
-  -> standalone HTTP API -> SvelteKit server -> public/admin pages
-```
 
 The database and uploaded media contain runtime state. Import is a deliberate
 upsert by slug, not a live filesystem watcher or two-way editor synchronization.

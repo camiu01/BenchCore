@@ -61,6 +61,8 @@ export interface StoredMedia {
  * @brief Pluggable media backend contract.
  */
 export interface StorageProvider {
+	/** @brief Reads one record without downloading image bytes. @param key Managed key. @return Validated metadata or null. */
+	describe?(key: string): Promise<StoredMedia | null>;
 	/** @brief Optional browser-direct upload support without server body buffering. */
 	direct?: {
 		/** @brief Signs a bounded upload for one authenticated administrator. */
@@ -108,6 +110,17 @@ export function sanitizeKey(raw: string): string | null {
 
 /** @brief Local media provider with validated JSON sidecars. */
 class LocalStorage implements StorageProvider {
+	/** @brief Reads a validated sidecar and verifies the stored byte length. @param key Managed key. @return Metadata or null. */
+	async describe(key: string): Promise<StoredMedia | null> {
+		if (!sanitizeKey(key)) return null;
+		try {
+			const [sidecar, file] = await Promise.all([
+				readFile(`${this.filePath(key)}.json`, 'utf8'), stat(this.filePath(key))
+			]);
+			const record = mediaRecord.parse(JSON.parse(sidecar));
+			return record.key === key && record.sizeBytes === file.size ? record : null;
+		} catch { return null; }
+	}
 	/**
 	 * @brief Retains the media directory.
 	 * @param dir The media directory.

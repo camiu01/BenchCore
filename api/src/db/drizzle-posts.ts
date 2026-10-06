@@ -2,7 +2,8 @@
  * @file drizzle-posts.ts
  * @brief PostgreSQL post persistence, scheduled publishing and full-text queries.
  */
-import { and, count, desc, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, inArray, isNull, lte, or, sql } from 'drizzle-orm';
+import { adminSearchPattern } from './admin-page.js';
 import type { AppDb } from './client.js';
 import type { PostCreate, PostRepository, PostWithTags, TagRepository } from './repositories.js';
 import { posts, postTags, tags, type PostRow } from './schema.js';
@@ -142,6 +143,21 @@ class DrizzlePosts implements PostRepository {
 			.orderBy(desc(posts.publishedAt), desc(posts.id)).limit(options.limit).offset(options.offset);
 		const totals = await this.db.select({ value: count() }).from(posts).where(visible);
 		return { items: await this.withTags(rows), total: totals[0]?.value ?? 0 };
+	}
+
+	/** @brief Filters and pages the protected ledger inside PostgreSQL. @param options Page and literal title/slug search. @return Page and search-wide status counts. */
+	async listAdmin(options: Parameters<PostRepository['listAdmin']>[0]) {
+		const search = options.search?.trim();
+		const pattern = adminSearchPattern(search ?? '');
+		const searched = search ? or(ilike(posts.title, pattern), ilike(posts.slug, pattern)) : undefined;
+		const visible = and(searched, options.status ? eq(posts.status, options.status) : undefined);
+		const rows = await this.db.select().from(posts).where(visible)
+			.orderBy(desc(posts.updatedAt), desc(posts.id)).limit(options.limit).offset(options.offset);
+		const buckets = await this.db.select({ status: posts.status, value: count() }).from(posts)
+			.where(searched).groupBy(posts.status);
+		const counts = { all: 0, draft: 0, published: 0, archived: 0 };
+		for (const bucket of buckets) { counts[bucket.status] = bucket.value; counts.all += bucket.value; }
+		return { items: await this.withTags(rows), total: options.status ? counts[options.status] : counts.all, counts };
 	}
 
 	/**

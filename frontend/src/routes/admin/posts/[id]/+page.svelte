@@ -41,6 +41,7 @@
 			</div>
 			<PostEditor
 				{values}
+				savedValues={data.values}
 				{previewHtml}
 				{uploadedUrl}
 				{errorMsg}

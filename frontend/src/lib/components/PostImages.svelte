@@ -1,8 +1,10 @@
 <!-- @file PostImages.svelte @brief Saved and newly uploaded image management with shared-use confirmation. -->
 <script lang="ts">
 	import CopyImageLink from './CopyImageLink.svelte';
+	import ImagePreview from './ImagePreview.svelte';
 	import {
 		managedImageKeys,
+		managedImageKey,
 		inspectImage,
 		deleteImage,
 		type ImageUsage
@@ -13,12 +15,14 @@
 		cover,
 		disabled,
 		onbusy,
+		oncover,
 		onremoved
 	}: {
 		content: string;
 		cover: string;
 		disabled: boolean;
 		onbusy: (busy: boolean) => void;
+		oncover?: (key: string) => void;
 		onremoved: (key: string) => void;
 	} = $props();
 	const keys = $derived(managedImageKeys(content, cover));
@@ -76,9 +80,16 @@
 		<ul class="image-upload-list">
 			{#each keys as key (key)}
 				<li>
-					<img class="image-upload-thumbnail" src="/api/media/{key}" alt="Uploaded attachment" />
+					<ImagePreview url="/api/media/{key}" name={key} />
 					<code>{key}</code>
 					<CopyImageLink url="/api/media/{key}" name={key} />
+					{#if oncover}<button
+							class="btn"
+							type="button"
+							disabled={disabled || pendingKey !== null || managedImageKey(cover) === key}
+							onclick={() => oncover?.(key)}
+							>{managedImageKey(cover) === key ? 'Current cover' : 'Use as cover'}</button
+						>{/if}
 					<button
 						class="btn"
 						type="button"

@@ -13,6 +13,20 @@ function event(key: string, request = new Request('http://localhost/api/admin/me
 }
 
 describe('protected media proxy', () => {
+	it('forwards only the allowlisted metadata option', async () => {
+		const fetcher = vi.fn().mockResolvedValue(Response.json({}));
+		vi.stubGlobal('fetch', fetcher);
+		const key = `${'a'.repeat(32)}.png`;
+		await GET(
+			event(key, new Request(`http://localhost/api/admin/media/${key}?details=1&other=ignored`))
+		);
+		expect(String(fetcher.mock.calls[0]?.[0])).toContain(`/api/admin/media/${key}?details=1`);
+		expect(String(fetcher.mock.calls[0]?.[0])).not.toContain('other');
+		expect(
+			(await GET(event(key, new Request(`http://localhost/api/admin/media/${key}?details=bad`))))
+				.status
+		).toBe(400);
+	});
 	it('rejects invalid keys without making upstream requests', async () => {
 		const fetcher = vi.fn();
 		vi.stubGlobal('fetch', fetcher);

@@ -11,6 +11,7 @@ import type { ApiHandler } from './types.js';
 import { getSessionUser, requireUser } from './auth.js';
 import { READER_CACHE_HEADERS } from '../posts/audience.js';
 import { MEDIA_PREFIX, readBody, sendJson } from './response.js';
+import { adminPageSchema } from '../posts/admin-query.js';
 
 const pageSchema = z.object({
 	limit: z.coerce.number().int().min(1).max(200).default(10),
@@ -137,24 +138,32 @@ export const handleAdminTags: ApiHandler = async (req, res, deps, _url, id) => {
  * @param id Optional post id.
  * @return Nothing.
  */
-export const handleAdminPosts: ApiHandler = async (req, res, deps, _url, id) => {
+export const handleAdminPosts: ApiHandler = async (req, res, deps, url, id) => {
 	if (!await requireUser(req, res, deps)) { return; }
 	if (id && !z.uuid().safeParse(id).success) { sendJson(res, 404, { error: 'not_found' }); return; }
-	const rows = id ? [await deps.posts.findById(id)] : await deps.posts.listAll();
+	const query = adminPageSchema.safeParse(Object.fromEntries(url.searchParams));
+	if (!id && !query.success) { sendJson(res, 400, { error: 'validation' }); return; }
+	const page = !id && query.success ? await deps.posts.listAdmin(query.data) : null;
+	const rows = id ? [await deps.posts.findById(id)] : page?.items ?? [];
+	const pageTags = new Map(page?.items.map((row) => [row.id, row.tags]));
+	const authors = new Map<string, string | null>();
 	const items = [];
 	for (const row of rows) {
 		if (!row) { sendJson(res, 404, { error: 'not_found' }); return; }
-		const author = row.authorId ? await deps.users.findById(row.authorId) : null;
+		if (row.authorId && !authors.has(row.authorId)) {
+			authors.set(row.authorId, (await deps.users.findById(row.authorId))?.name ?? null);
+		}
 		items.push({
 			id: row.id, slug: row.slug, title: row.title, description: row.description, status: row.status,
 			audience: row.audience,
-			tags: await deps.tags.getPostTagNames(row.id), authorName: author?.name ?? null,
+			tags: pageTags.get(row.id) ?? await deps.tags.getPostTagNames(row.id),
+			authorName: row.authorId ? authors.get(row.authorId) ?? null : null,
 			publishedAt: row.publishedAt?.toISOString() ?? null, publishAt: row.publishAt?.toISOString() ?? null,
 			updatedAt: row.updatedAt.toISOString(),
 			...(id ? { contentMarkdown: row.contentMarkdown, contentHtml: row.contentHtml, coverImage: row.coverImage } : {})
 		});
 	}
-	sendJson(res, 200, id ? items[0] : { items, total: items.length });
+	sendJson(res, 200, id ? items[0] : { items, total: page?.total ?? 0, counts: page?.counts });
 };
 
 /**

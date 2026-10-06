@@ -14,9 +14,10 @@ import {
 	type SimulationNodeDatum
 } from 'd3-force';
 import { select, type Selection } from 'd3-selection';
-import { zoom, zoomIdentity } from 'd3-zoom';
 import type { GraphData } from './api.js';
 import { matchesGraphNode, relatedGraphNodes } from './graph-navigation.js';
+import { focusedGraphSlugs } from './graph-viewport.js';
+import { GraphViewport } from './graph-zoom.js';
 
 type SimNode = GraphData['nodes'][number] & SimulationNodeDatum & { degree: number };
 interface SimLink extends SimulationLinkDatum<SimNode> {
@@ -30,6 +31,7 @@ type LabelSelection = Selection<SVGTextElement, SimNode, SVGGElement, unknown>;
 export interface GraphController {
 	filter(query: string): void;
 	select(slug: string | null): void;
+	focus(slug: string | null): void;
 	reset(): void;
 	zoom(factor: number): void;
 	destroy(): void;
@@ -121,7 +123,8 @@ function startSimulation(
 function enableNodeInteraction(
 	node: NodeSelection,
 	simulation: Simulation<SimNode, SimLink>,
-	onSelect: (slug: string) => void
+	onSelect: (slug: string) => void,
+	onInteract: () => void
 ): void {
 	node
 		.on('click', (_event, item) => onSelect(item.slug))
@@ -133,6 +136,7 @@ function enableNodeInteraction(
 	node.call(
 		drag<SVGCircleElement, SimNode>()
 			.on('start', (event: D3DragEvent<SVGCircleElement, SimNode, SimNode>, item) => {
+				onInteract();
 				if (!event.active) simulation.alphaTarget(0.25).restart();
 				item.fx = item.x;
 				item.fy = item.y;
@@ -147,6 +151,24 @@ function enableNodeInteraction(
 				item.fy = null;
 			})
 	);
+}
+
+/** @brief Hides unrelated graph primitives without leaving invisible keyboard targets. @param node Circles. @param label Labels. @param link Lines. @param visible Focus subset. @return Nothing. */
+function showNeighborhood(
+	node: NodeSelection,
+	label: LabelSelection,
+	link: LinkSelection,
+	visible: Set<string> | null
+): void {
+	node
+		.attr('display', (item) => (visible && !visible.has(item.slug) ? 'none' : null))
+		.attr('tabindex', (item) => (visible && !visible.has(item.slug) ? -1 : 0));
+	label.attr('display', (item) => (visible && !visible.has(item.slug) ? 'none' : null));
+	link.attr('display', (item) => {
+		const source = typeof item.source === 'string' ? item.source : item.source.slug;
+		const target = typeof item.target === 'string' ? item.target : item.target.slug;
+		return visible && (!visible.has(source) || !visible.has(target)) ? 'none' : null;
+	});
 }
 
 /** @brief Creates graph search highlighting. @param node Circles. @param label Labels. @return Filter callback. */
@@ -193,20 +215,25 @@ export function createGraphRenderer(
 	onSelect: (slug: string) => void
 ): GraphController {
 	const { nodes, links } = buildModel(graph);
-	const { root, scene, link, node, label } = drawScene(svg, nodes, links);
+	const { scene, link, node, label } = drawScene(svg, nodes, links);
 	const simulation = startSimulation(nodes, links, link, node, label);
-	enableNodeInteraction(node, simulation, onSelect);
-	const zoomBehavior = zoom<SVGSVGElement, unknown>()
-		.scaleExtent([0.35, 4])
-		.on('zoom', (event) => scene.attr('transform', event.transform.toString()));
-	root.call(zoomBehavior);
+	const viewport = new GraphViewport(svg, scene, nodes);
+	simulation.on('tick.viewport', () => viewport.tick());
+	simulation.on('end.viewport', () => viewport.settled());
+	enableNodeInteraction(node, simulation, onSelect, () => viewport.pause());
 	return {
 		filter: createFilter(node, label),
 		select: createSelection(graph, node, label, link),
-		reset: () => root.call(zoomBehavior.transform, zoomIdentity),
-		zoom: (factor) => {
-			root.call(zoomBehavior.scaleBy, factor);
+		focus: (slug) => {
+			const visible = focusedGraphSlugs(graph, slug);
+			showNeighborhood(node, label, link, visible);
+			viewport.focus(visible);
 		},
-		destroy: () => simulation.stop()
+		reset: () => viewport.fit(),
+		zoom: (factor) => viewport.zoom(factor),
+		destroy: () => {
+			simulation.stop();
+			viewport.destroy();
+		}
 	};
 }

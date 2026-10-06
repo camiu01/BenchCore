@@ -30,13 +30,14 @@ html .wrapper {
 }
 
 .wrapper .doc-nav a {
-	border: 1px solid transparent;
-	border-radius: 4px;
+	border: 0;
+	border-bottom: 1px solid var(--border);
+	border-radius: 0;
 }
 
 .wrapper .doc-nav a:hover,
 .wrapper .doc-nav a[aria-current='page'] {
-	background: var(--accent-bg);
+	background: none;
 	border-color: var(--accent);
 }
 
@@ -104,10 +105,8 @@ html .wrapper {
 }
 
 .wrapper .btn {
-	border-radius: 4px;
-	text-transform: none;
-	font-size: 13px;
-	letter-spacing: 0;
+	border-radius: 0;
+	padding: 6px 14px;
 }
 
 .wrapper .btn:disabled {
@@ -134,13 +133,15 @@ html .wrapper {
 	display: inline-flex;
 	align-items: center;
 	min-height: 44px;
-	padding: 8px;
-	border: 1px solid var(--border-light);
-	border-radius: 4px;
+	padding: 6px 14px;
+	border: 1px solid var(--border);
+	border-radius: 0;
 	font: inherit;
-	font-size: 12px;
+	font-size: 11px;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
 	color: var(--ink);
-	background: var(--sheet-bg);
+	background: none;
 	cursor: pointer;
 }
 

@@ -2,6 +2,7 @@
 <script lang="ts">
 	import { imageUploadQueue, uploadImageBatch, type ImageUploadItem } from '../image-batch.js';
 	import CopyImageLink from './CopyImageLink.svelte';
+	import ImagePreview from './ImagePreview.svelte';
 	let {
 		onuploaded,
 		onbusy,
@@ -88,7 +89,7 @@
 		{#each items as item, index (index)}
 			<li>
 				{#if item.url}
-					<img class="image-upload-thumbnail" src={item.url} alt={item.file.name} />
+					<ImagePreview url={item.url} name={item.file.name} sizeBytes={item.file.size} />
 				{/if}
 				<span>{item.file.name}</span>
 				<span class="stamp">{item.status === 'uploaded' ? 'IN CONTENT' : item.status}</span>

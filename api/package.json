@@ -6,7 +6,7 @@
 	"author": "Camiu (https://github.com/camiu01)",
 	"type": "module",
 	"scripts": {
-		"dev": "tsx --env-file-if-exists=../.env watch src/index.ts",
+		"dev": "tsx watch --env-file-if-exists=../.env src/index.ts",
 		"dev:vercel": "tsx scripts/dev-vercel.ts",
 		"demo": "tsx scripts/demo.ts",
 		"build": "tsc -p tsconfig.build.json",

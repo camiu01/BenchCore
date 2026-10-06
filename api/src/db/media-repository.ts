@@ -11,6 +11,8 @@ export interface MediaBlob extends StoredMedia {
 
 /** @brief Persistence seam used by the database storage provider. */
 export interface MediaBlobRepository {
+	/** @brief Finds metadata without loading binary data. @param key Managed key. @return Metadata or null. */
+	describe?(key: string): Promise<StoredMedia | null>;
 	/**
 	 * @brief Persists a blob without replacing existing keys.
 	 * @param blob The metadata and bytes.

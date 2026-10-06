@@ -200,6 +200,19 @@ class MemoryPosts implements PostRepository {
 		return Promise.all(rows.map((row) => this.withTags(row)));
 	}
 
+	/** @brief Searches the protected ledger before slicing a stable page. @param options Page and filters. @return Page, total and search-wide counts. */
+	async listAdmin(options: Parameters<PostRepository['listAdmin']>[0]) {
+		const search = options.search?.trim().toLowerCase() ?? '';
+		const matching = [...this.rows.values()].filter((row) =>
+			row.title.toLowerCase().includes(search) || row.slug.toLowerCase().includes(search));
+		const counts = { all: matching.length, draft: 0, published: 0, archived: 0 };
+		for (const row of matching) counts[row.status]++;
+		const filtered = matching.filter((row) => !options.status || row.status === options.status)
+			.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime() || b.id.localeCompare(a.id));
+		const page = filtered.slice(options.offset, options.offset + options.limit);
+		return { items: await Promise.all(page.map((row) => this.withTags(row))), total: filtered.length, counts };
+	}
+
 	/**
 	 * @brief Lists a bounded lightweight post index.
 	 * @param limit Maximum rows.

@@ -14,6 +14,13 @@ import { mediaBlobs } from './schema.js';
  */
 export function createDrizzleMedia(db: AppDb): MediaBlobRepository {
 	return {
+		/** @brief Finds one record without its binary payload. @param storageKey Managed key. @return Metadata or null. */
+		async describe(storageKey) {
+			const { key, filename, mime, sizeBytes } = mediaBlobs;
+			const rows = await db.select({ key, filename, mime, sizeBytes }).from(mediaBlobs)
+				.where(eq(key, storageKey)).limit(1);
+			return rows[0] ?? null;
+		},
 		/**
 		 * @brief Inserts a media record.
 		 * @param blob The record and payload.

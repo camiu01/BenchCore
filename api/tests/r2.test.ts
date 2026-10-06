@@ -18,6 +18,19 @@ const record = { key, filename: 'image.png', mime: 'image/png' as const, sizeByt
 const owner = randomUUID();
 
 describe('private R2 uploads', () => {
+	it('returns metadata without image bytes or private object keys', async () => {
+		const send = vi.fn(async (command: unknown) => {
+			if (!(command instanceof GetObjectCommand) || command.input.Key !== `media/${key}.json`) {
+				throw new Error('Image bytes must not be fetched for metadata');
+			}
+			return { ContentLength: 200, Body: { transformToString: async () =>
+				JSON.stringify({ ...record, objectKey: `${'c'.repeat(32)}.png` }) } };
+		});
+		const provider = createR2Storage(env, { send } as unknown as R2Client);
+		expect(await provider.describe?.(key)).toEqual(record);
+		expect(await provider.describe?.('../private')).toBeNull();
+		expect(send).toHaveBeenCalledOnce();
+	});
 	it('keeps the sidecar when object deletion fails so removal can be retried', async () => {
 		const send = vi.fn(async (command: unknown) => {
 			if (command instanceof GetObjectCommand) {

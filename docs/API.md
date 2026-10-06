@@ -41,7 +41,7 @@ not accept a slug for mutation even though the public route shares the prefix.
 | POST | `/api/posts/:slug/likes` | Trusted Origin | Toggle an anonymous like |
 | GET | `/api/tags` | Public | Tags, colors and public-post counts |
 | GET | `/api/graph` | Public | Published posts connected by wikilinks or shared tags |
-| GET | `/api/admin/posts` | Session | Admin list, including unpublished posts |
+| GET | `/api/admin/posts` | Administrator session | Bounded, searchable page including unpublished posts |
 | GET | `/api/admin/posts/suggestions` | Administrator session | Up to 200 recently updated post identifiers, titles and slugs |
 | GET | `/api/admin/posts/:id` | Session | Editable post, including Markdown |
 | GET | `/api/admin/tags` | Administrator session | Full tag registry, including draft-only names |
@@ -60,9 +60,29 @@ not accept a slug for mutation even though the public route shares the prefix.
 | POST | `/api/media` | Session + trusted Origin | Upload image |
 | GET | `/api/media/:key` | Public | Raw image bytes |
 | DELETE | `/api/media/:key` | Session + trusted Origin | Delete image |
+| GET | `/api/admin/media/:key` | Administrator session | Saved uses and deletion confirmation fingerprint |
+| GET | `/api/admin/media/:key?details=1` | Administrator session | One image's metadata, without bytes or private storage keys |
+| DELETE | `/api/admin/media/:key` | Administrator + trusted Origin | Confirmed removal of stored image and saved references |
 
 There is no promised revision API or media-list HTTP route. A provider's
 internal `list()` method is not an endpoint.
+
+## Administrator post pagination
+
+`GET /api/admin/posts` accepts `limit` (1–100, default 25), `offset`
+(0–1000000, default 0), optional `search` (up to 200 trimmed characters)
+and optional `status` (`draft`, `published`, `archived`). Invalid input
+returns HTTP 400. Search matches literal title or slug substrings without
+case sensitivity; `%` and `_` are not SQL wildcards.
+
+Responses contain `items`, the filtered `total`, and `counts` with `all`,
+`draft`, `published` and `archived`. Counts cover every search match before
+the status filter, independent of pagination. Rows are ordered by descending
+update time and UUID. Concurrent edits may shift offset-based pages.
+
+Protected image metadata is `{ key, filename, mime, sizeBytes }`.
+The `details` option accepts only `1`; missing files return 404. No image
+bytes, signed URLs or R2 object keys appear in this response.
 
 ## Graph, tags and engagement
 

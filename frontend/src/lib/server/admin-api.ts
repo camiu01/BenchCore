@@ -36,7 +36,16 @@ const detailSchema = z.object({
 	coverImage: z.string().nullable(),
 	contentMarkdown: z.string()
 });
-const listSchema = z.object({ items: z.array(rowSchema), total: z.number().int().nonnegative() });
+const listSchema = z.object({
+	items: z.array(rowSchema),
+	total: z.number().int().nonnegative(),
+	counts: z.object({
+		all: z.number().int().nonnegative(),
+		draft: z.number().int().nonnegative(),
+		published: z.number().int().nonnegative(),
+		archived: z.number().int().nonnegative()
+	})
+});
 const postSuggestionsSchema = z.object({
 	items: z.array(z.object({ id: z.uuid(), slug: z.string(), title: z.string() }))
 });
@@ -73,6 +82,7 @@ export type AdminPostRow = z.infer<typeof rowSchema>;
 /**
  * @brief Sends an authenticated API request, failing closed on network errors.
  * @param cookie The session Cookie header.
+ * @param query Bounded page and optional ledger filters.
  * @param method The HTTP method.
  * @param path The fixed API path.
  * @param body The optional JSON payload.
@@ -121,8 +131,9 @@ function messageFrom(data: unknown, fallback: string): string {
  * @param cookie The session Cookie header.
  * @return The post list or null on invalid/unreachable responses.
  */
-export async function adminListPosts(cookie: string | null) {
-	const { status, data } = await authedJson(cookie, 'GET', '/api/admin/posts');
+export async function adminListPosts(cookie: string | null, query = new URLSearchParams()) {
+	const suffix = query.size ? `?${query}` : '';
+	const { status, data } = await authedJson(cookie, 'GET', `/api/admin/posts${suffix}`);
 	const parsed = listSchema.safeParse(data);
 	return status === 200 && parsed.success ? parsed.data : null;
 }

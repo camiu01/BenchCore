@@ -5,21 +5,21 @@
 	import DateTimeField from './DateTimeField.svelte';
 	import PostImages from './PostImages.svelte';
 	import PostDeleteConfirmation from './PostDeleteConfirmation.svelte';
+	import EditorStatus from './EditorStatus.svelte';
 	import { removeImageFromEditor } from '../image-manager.js';
 	import { insertUploadedImage } from '../image-batch.js';
+	import { selectImageCover } from '../image-details.js';
 	import {
 		filterWikilinkSuggestions,
 		findWikilinkQuery,
 		wikilinkReplacementRange,
+		insertEditorWikilink,
 		type WikilinkSuggestion
 	} from '../wikilink-suggestions.js';
 
-	/**
-	 * Obsidian-style record editor: write mode plus API-rendered preview,
-	 * status stamps, tag CSV and image upload with cursor insertion.
-	 */
 	interface Props {
 		values: EditorValues;
+		savedValues?: EditorValues;
 		previewHtml: string | null;
 		uploadedUrl: string | null;
 		errorMsg: string | null;
@@ -31,6 +31,7 @@
 
 	let {
 		values,
+		savedValues = values,
 		previewHtml,
 		uploadedUrl,
 		errorMsg,
@@ -44,6 +45,7 @@
 	let imageUploader = $state<DirectUpload>();
 	let uploadingImages = $state(false);
 	let removingImages = $state(false);
+	let submitting = $state(false);
 	const editingMedia = $derived(uploadingImages || removingImages);
 	let imageContent = $state<string | null>(null);
 	let imageCover = $state<string | null>(null);
@@ -116,22 +118,9 @@
 	 * @return Nothing.
 	 */
 	function insertWikilink(slug: string): void {
-		const range = wikilinkReplacementRange(
-			contentInput.value,
-			contentInput.selectionStart,
-			contentInput.selectionEnd,
-			wikiStart
-		);
-		if (range === null) {
-			wikiMatches = [];
-			wikiStart = -1;
-			return;
-		}
-		contentInput.setRangeText(`${slug}]]`, range.start, range.end, 'end');
-		contentInput.dispatchEvent(new Event('input', { bubbles: true }));
+		insertEditorWikilink(contentInput, slug, wikiStart);
 		wikiMatches = [];
 		wikiStart = -1;
-		contentInput.focus();
 	}
 
 	/**
@@ -176,206 +165,226 @@
 		if (editingMedia) event.preventDefault();
 	}}
 >
-	<div class="form-grid">
-		<div class="field-row">
-			<div>
-				<label class="field-label" for="title">Title</label>
-				<input class="field-input" id="title" name="title" required value={values.title} />
+	<EditorStatus
+		{values}
+		{savedValues}
+		{isNew}
+		busy={editingMedia}
+		onbusy={(busy) => {
+			submitting = busy;
+		}}
+	/>
+	<fieldset class="editor-fields" disabled={submitting}>
+		<div class="form-grid">
+			<div class="field-row">
+				<div>
+					<label class="field-label" for="title">Title</label>
+					<input class="field-input" id="title" name="title" required value={values.title} />
+				</div>
+				<div>
+					<label class="field-label" for="slug">Post URL (slug)</label>
+					<input
+						class="field-input"
+						id="slug"
+						name="slug"
+						required
+						value={values.slug}
+						aria-describedby="slug-help"
+					/>
+					<span class="field-help" id="slug-help"
+						>Use lowercase letters, numbers and hyphens, for example my-first-post.</span
+					>
+				</div>
 			</div>
 			<div>
-				<label class="field-label" for="slug">Post URL (slug)</label>
+				<label class="field-label" for="description">Short summary</label>
 				<input
 					class="field-input"
-					id="slug"
-					name="slug"
-					required
-					value={values.slug}
-					aria-describedby="slug-help"
+					id="description"
+					name="description"
+					value={values.description}
+					aria-describedby="description-help"
 				/>
-				<span class="field-help" id="slug-help"
-					>Use lowercase letters, numbers and hyphens, for example my-first-post.</span
+				<span class="field-help" id="description-help"
+					>Shown in post lists and search previews.</span
 				>
 			</div>
-		</div>
-		<div>
-			<label class="field-label" for="description">Short summary</label>
-			<input
-				class="field-input"
-				id="description"
-				name="description"
-				value={values.description}
-				aria-describedby="description-help"
-			/>
-			<span class="field-help" id="description-help">Shown in post lists and search previews.</span>
-		</div>
-		<div class="field-row">
-			<div>
-				<label class="field-label" for="status">Status</label>
-				<select class="field-input" id="status" name="status">
-					{#each ['draft', 'published', 'archived'] as status (status)}
-						<option value={status} selected={values.status === status}>{status}</option>
-					{/each}
-				</select>
-				<label class="field-label" for="audience">Audience</label>
-				<select class="field-input" id="audience" name="audience">
-					<option value="public" selected={(values.audience ?? 'public') === 'public'}
-						>Public</option
-					>
-					<option value="readers" selected={values.audience === 'readers'}
-						>Readers and admins only</option
-					>
-				</select>
-			</div>
-			<div>
-				<label class="field-label" for="tags">Tags (comma separated)</label>
-				<input class="field-input" id="tags" name="tags" value={values.tags} />
-			</div>
-		</div>
-		<div class="field-row">
-			<DateTimeField
-				id="published_at_picker"
-				name="published_at"
-				label="Published at (blank = auto)"
-				value={values.publishedAt}
-			/>
-			<div>
-				<label class="field-label" for="cover_image">Cover image (URL or media key)</label>
-				<input
-					bind:this={coverInput}
-					class="field-input"
-					id="cover_image"
-					name="cover_image"
-					value={values.coverImage}
-					readonly={removingImages}
-					oninput={(event) => {
-						imageCover = event.currentTarget.value;
-					}}
-				/>
-			</div>
-		</div>
-		<div>
-			<DateTimeField
-				id="publish_at_picker"
-				name="publish_at"
-				label="Schedule publication (blank = none)"
-				value={values.publishAt}
-				readonly={!schedulerEnabled}
-			/>
-			{#if !schedulerEnabled}<p class="summary">
-					Automatic publication is temporarily disabled. Existing schedules are preserved; clear a
-					schedule before publishing manually.
-				</p>{/if}
-		</div>
-		<div>
-			<label class="field-label" for="content">Content (Markdown + [[wikilinks]])</label>
-			{#if directUploads}
-				<p class="summary">
-					Place the cursor where images should go, then select files below or drop them here. Images
-					are inserted automatically.
-				</p>
-			{/if}
-			<div class="wikilink-editor">
-				<textarea
-					bind:this={contentInput}
-					class="field-input"
-					class:dragging-images={draggingImages}
-					id="content"
-					name="content"
-					readonly={editingMedia}
-					ondragover={handleImageDrag}
-					ondragleave={() => {
-						draggingImages = false;
-					}}
-					ondrop={handleImageDrop}
-					oninput={updateWikiMatches}
-					onclick={updateWikiMatches}
-					onkeydown={handleWikiKeydown}>{values.content}</textarea
-				>
-				{#if wikiMatches.length > 0}
-					<div class="wikilink-suggestions" role="listbox" aria-label="Existing post suggestions">
-						{#each wikiMatches as post, index (post.slug)}
-							<button
-								type="button"
-								role="option"
-								aria-selected={index === wikiActive}
-								class:active={index === wikiActive}
-								onmousedown={(event) => event.preventDefault()}
-								onclick={() => insertWikilink(post.slug)}
-							>
-								<strong>{post.title}</strong>
-								<code>{post.slug}</code>
-							</button>
+			<div class="field-row">
+				<div>
+					<label class="field-label" for="status">Status</label>
+					<select class="field-input" id="status" name="status">
+						{#each ['draft', 'published', 'archived'] as status (status)}
+							<option value={status} selected={values.status === status}>{status}</option>
 						{/each}
-					</div>
+					</select>
+					<label class="field-label" for="audience">Audience</label>
+					<select class="field-input" id="audience" name="audience">
+						<option value="public" selected={(values.audience ?? 'public') === 'public'}
+							>Public</option
+						>
+						<option value="readers" selected={values.audience === 'readers'}
+							>Readers and admins only</option
+						>
+					</select>
+				</div>
+				<div>
+					<label class="field-label" for="tags">Tags (comma separated)</label>
+					<input class="field-input" id="tags" name="tags" value={values.tags} />
+				</div>
+			</div>
+			<div class="field-row">
+				<DateTimeField
+					id="published_at_picker"
+					name="published_at"
+					label="Published at (blank = auto)"
+					value={values.publishedAt}
+				/>
+				<div>
+					<label class="field-label" for="cover_image">Cover image (URL or media key)</label>
+					<input
+						bind:this={coverInput}
+						class="field-input"
+						id="cover_image"
+						name="cover_image"
+						value={values.coverImage}
+						readonly={removingImages}
+						oninput={(event) => {
+							imageCover = event.currentTarget.value;
+						}}
+					/>
+				</div>
+			</div>
+			<div>
+				<DateTimeField
+					id="publish_at_picker"
+					name="publish_at"
+					label="Schedule publication (blank = none)"
+					value={values.publishAt}
+					readonly={!schedulerEnabled}
+				/>
+				{#if !schedulerEnabled}<p class="summary">
+						Automatic publication is temporarily disabled. Existing schedules are preserved; clear a
+						schedule before publishing manually.
+					</p>{/if}
+			</div>
+			<div>
+				<label class="field-label" for="content">Content (Markdown + [[wikilinks]])</label>
+				{#if directUploads}
+					<p class="summary">
+						Place the cursor where images should go, then select files below or drop them here.
+						Images are inserted automatically.
+					</p>
 				{/if}
+				<div class="wikilink-editor">
+					<textarea
+						bind:this={contentInput}
+						class="field-input"
+						class:dragging-images={draggingImages}
+						id="content"
+						name="content"
+						readonly={editingMedia}
+						ondragover={handleImageDrag}
+						ondragleave={() => {
+							draggingImages = false;
+						}}
+						ondrop={handleImageDrop}
+						oninput={updateWikiMatches}
+						onclick={updateWikiMatches}
+						onkeydown={handleWikiKeydown}>{values.content}</textarea
+					>
+					{#if wikiMatches.length > 0}
+						<div class="wikilink-suggestions" role="listbox" aria-label="Existing post suggestions">
+							{#each wikiMatches as post, index (post.slug)}
+								<button
+									type="button"
+									role="option"
+									aria-selected={index === wikiActive}
+									class:active={index === wikiActive}
+									onmousedown={(event) => event.preventDefault()}
+									onclick={() => insertWikilink(post.slug)}
+								>
+									<strong>{post.title}</strong>
+									<code>{post.slug}</code>
+								</button>
+							{/each}
+						</div>
+					{/if}
+				</div>
 			</div>
 		</div>
-	</div>
-	<div class="btn-row editor-actions">
-		<button class="btn btn-accent" type="submit" formaction="?/save" disabled={editingMedia}
-			>Save post →</button
-		>
-		<button class="btn" type="submit" formaction="?/preview" formnovalidate disabled={editingMedia}
-			>PREVIEW</button
-		>
-		{#if !isNew}
-			<button
-				class="btn danger"
-				type="button"
-				disabled={editingMedia}
-				aria-expanded={deleteConfirmation}
-				aria-controls="post-delete-confirmation"
-				onclick={() => {
-					deleteConfirmation = !deleteConfirmation;
-				}}>Delete post</button
+		<div class="btn-row editor-actions">
+			<button class="btn btn-accent" type="submit" formaction="?/save" disabled={editingMedia}
+				>Save post →</button
 			>
+			<button
+				class="btn"
+				type="submit"
+				formaction="?/preview"
+				formnovalidate
+				disabled={editingMedia}>PREVIEW</button
+			>
+			{#if !isNew}
+				<button
+					class="btn danger"
+					type="button"
+					disabled={editingMedia}
+					aria-expanded={deleteConfirmation}
+					aria-controls="post-delete-confirmation"
+					onclick={() => {
+						deleteConfirmation = !deleteConfirmation;
+					}}>Delete post</button
+				>
+			{/if}
+		</div>
+		{#if deleteConfirmation}
+			<PostDeleteConfirmation
+				title={values.title}
+				disabled={editingMedia}
+				oncancel={() => {
+					deleteConfirmation = false;
+				}}
+			/>
 		{/if}
-	</div>
-	{#if deleteConfirmation}
-		<PostDeleteConfirmation
-			title={values.title}
-			disabled={editingMedia}
-			oncancel={() => {
-				deleteConfirmation = false;
+
+		<hr />
+		<PostImages
+			content={imageContent ?? values.content}
+			cover={imageCover ?? values.coverImage}
+			disabled={uploadingImages}
+			onbusy={(busy) => {
+				removingImages = busy;
+			}}
+			onremoved={detachImage}
+			oncover={(key) => {
+				selectImageCover(coverInput, key);
 			}}
 		/>
-	{/if}
-
-	<hr />
-	<PostImages
-		content={imageContent ?? values.content}
-		cover={imageCover ?? values.coverImage}
-		disabled={uploadingImages}
-		onbusy={(busy) => {
-			removingImages = busy;
-		}}
-		onremoved={detachImage}
-	/>
-	{#if directUploads}
-		<DirectUpload
-			bind:this={imageUploader}
-			onuploaded={attachImage}
-			onbusy={setUploadBusy}
-			disabled={removingImages}
-		/>
-	{:else}
-		<label class="field-label" for="image">Attach image (png/jpg/webp/gif, max 5 MiB)</label>
-		<input
-			class="field-input"
-			id="image"
-			name="image"
-			type="file"
-			accept="image/png,image/jpeg,image/webp,image/gif"
-		/>
-		<div class="btn-row">
-			<button class="btn" type="submit" formaction="?/upload" formnovalidate>UPLOAD →</button>
-		</div>
-	{/if}
-	{#if uploadedUrl !== null}
-		<p class="summary upload-note">
-			Filed at <code>{uploadedUrl}</code> (appended to the content above).
-		</p>
-	{/if}
+		{#if directUploads}
+			<DirectUpload
+				bind:this={imageUploader}
+				onuploaded={attachImage}
+				onbusy={setUploadBusy}
+				disabled={removingImages}
+			/>
+		{:else}
+			<label class="field-label" for="image">Attach image (png/jpg/webp/gif, max 5 MiB)</label>
+			<input
+				class="field-input"
+				id="image"
+				name="image"
+				type="file"
+				accept="image/png,image/jpeg,image/webp,image/gif"
+			/>
+			<div class="btn-row">
+				<button class="btn" type="submit" formaction="?/upload" formnovalidate>UPLOAD →</button>
+			</div>
+		{/if}
+		{#if uploadedUrl !== null}
+			<p class="summary upload-note">
+				Filed at <code>{uploadedUrl}</code> (appended to the content above).
+			</p>
+		{/if}
+	</fieldset>
 </form>
 
 {#if previewHtml !== null}
