@@ -1,6 +1,6 @@
 {
 	"name": "benchcore-api",
-	"version": "0.6.0-beta.1",
+	"version": "0.7.0",
 	"private": true,
 	"license": "AGPL-3.0-or-later",
 	"author": "Camiu (https://github.com/camiu01)",
@@ -9,6 +9,7 @@
 		"dev": "tsx watch --env-file-if-exists=../.env src/index.ts",
 		"dev:vercel": "tsx scripts/dev-vercel.ts",
 		"demo": "tsx scripts/demo.ts",
+		"media:cleanup": "tsx --env-file-if-exists=../.env src/cli/media.ts cleanup",
 		"build": "tsc -p tsconfig.build.json",
 		"build:vercel": "tsc -p tsconfig.build.json --noEmit && node scripts/build-vercel.mjs",
 		"start": "node dist/index.js",

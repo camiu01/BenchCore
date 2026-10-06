@@ -6,7 +6,7 @@ import { and, count, desc, eq, ilike, inArray, isNull, lte, or, sql } from 'driz
 import { adminSearchPattern } from './admin-page.js';
 import type { AppDb } from './client.js';
 import type { PostCreate, PostRepository, PostWithTags, TagRepository } from './repositories.js';
-import { posts, postTags, tags, type PostRow } from './schema.js';
+import { posts, postTags, tags, likes, type PostRow } from './schema.js';
 
 /**
  * @brief Builds the shared public-post visibility predicate.
@@ -34,7 +34,7 @@ class DrizzlePosts implements PostRepository {
 	 * @param rows The post rows.
 	 * @return Rows with sorted tag names.
 	 */
-	private async withTags(rows: PostRow[]): Promise<PostWithTags[]> {
+	private async withTags(rows: (PostRow & { likesCount?: number })[]): Promise<PostWithTags[]> {
 		const ids = rows.map((row) => row.id);
 		const links = ids.length === 0 ? [] : await this.db
 			.select({ postId: postTags.postId, name: tags.name }).from(postTags)
@@ -132,17 +132,23 @@ class DrizzlePosts implements PostRepository {
 	 */
 	async listPublished(options: Parameters<PostRepository['listPublished']>[0]) {
 		const search = options.search?.trim();
-		const tagFilter = options.tag === undefined ? undefined : inArray(posts.id,
+		const selected = [...new Set([...(options.tags ?? []), ...(options.tag ? [options.tag] : [])])];
+		const tagFilter = selected.length === 0 ? undefined : inArray(posts.id,
 			this.db.select({ postId: postTags.postId }).from(postTags)
-				.innerJoin(tags, eq(postTags.tagId, tags.id)).where(eq(tags.name, options.tag)));
+				.innerJoin(tags, eq(postTags.tagId, tags.id)).where(inArray(tags.name, selected))
+				.groupBy(postTags.postId).having(options.tagMode === 'or' ? undefined : sql`count(distinct ${tags.name}) = ${selected.length}`));
 		const vector = options.includeReaderContent ? posts.searchVector
 			: sql`case when ${posts.audience} = 'readers' then to_tsvector('simple', ${posts.title}) else ${posts.searchVector} end`;
 		const visible = and(publicPostFilter(options.now), tagFilter,
 			search ? sql`${vector} @@ websearch_to_tsquery('simple', ${search})` : undefined);
-		const rows = await this.db.select().from(posts).where(visible)
-			.orderBy(desc(posts.publishedAt), desc(posts.id)).limit(options.limit).offset(options.offset);
+		const actualLikes = sql<number>`(select count(*)::integer from ${likes} where ${likes.postId} = ${posts.id})`;
+		const likesCount = (options.includeReaderContent ? actualLikes
+			: sql<number>`case when ${posts.audience} = 'readers' then 0 else ${actualLikes} end`).mapWith(Number);
+		const order = options.sort === 'popular' ? likesCount : options.sort === 'updated' ? posts.updatedAt : posts.publishedAt;
+		const rows = await this.db.select({ post: posts, likesCount }).from(posts).where(visible)
+			.orderBy(desc(order), desc(posts.publishedAt), desc(posts.id)).limit(options.limit).offset(options.offset);
 		const totals = await this.db.select({ value: count() }).from(posts).where(visible);
-		return { items: await this.withTags(rows), total: totals[0]?.value ?? 0 };
+		return { items: await this.withTags(rows.map(({ post, likesCount }) => ({ ...post, likesCount }))), total: totals[0]?.value ?? 0 };
 	}
 
 	/** @brief Filters and pages the protected ledger inside PostgreSQL. @param options Page and literal title/slug search. @return Page and search-wide status counts. */
@@ -225,11 +231,17 @@ class DrizzlePosts implements PostRepository {
 	 * @return Suggestion fields only.
 	 */
 	async listSuggestions(limit: number) {
-		return this.db
+		const rows = await this.db
 			.select({ id: posts.id, slug: posts.slug, title: posts.title })
 			.from(posts)
 			.orderBy(desc(posts.updatedAt), desc(posts.id))
 			.limit(limit);
+		if (!rows.length) return [];
+		const links = await this.db.select({ postId: postTags.postId, name: tags.name }).from(postTags)
+			.innerJoin(tags, eq(postTags.tagId, tags.id)).where(inArray(postTags.postId, rows.map((row) => row.id)));
+		const names = new Map<string, string[]>();
+		for (const link of links) names.set(link.postId, [...(names.get(link.postId) ?? []), link.name]);
+		return rows.map((row) => ({ ...row, tags: (names.get(row.id) ?? []).sort() }));
 	}
 }
 

@@ -1,8 +1,10 @@
 /**
  * @file media.ts
- * @brief Authenticated media mutation and immutable public reads.
+ * @brief Authenticated media mutations and audience-revalidated browser reads.
  */
 import { z } from 'zod';
+import { createHash } from 'node:crypto';
+import type { IncomingMessage } from 'node:http';
 import type { ServerResponse } from 'node:http';
 import { flattenIssues } from '../markdown/schema.js';
 import { sanitizeKey } from '../media/storage.js';
@@ -19,7 +21,7 @@ const uploadSchema = z.object({
 	contentBase64: z.string().min(1).max(7_500_000)
 		.regex(/^[A-Za-z0-9+/]*={0,2}$/)
 		.refine((value) => value.length % 4 === 0, 'invalid base64 length')
-});
+}).strict();
 
 /**
  * @brief Validates and saves an administrator upload.
@@ -52,6 +54,7 @@ export const handleUploadMedia: ApiHandler = async (req, res, deps) => {
  * @return Nothing.
  */
 export const handleMedia: ApiHandler = async (req, res, deps, _url, key) => {
+	for (const name of ['cdn-cache-control', 'vercel-cdn-cache-control', 'cloudflare-cdn-cache-control']) res.setHeader(name, 'no-store');
 	if (req.method === 'DELETE' && !await requireUser(req, res, deps)) { return; }
 	if (!sanitizeKey(key)) { sendJson(res, 404, { error: 'not_found' }); return; }
 	if (req.method === 'DELETE') {
@@ -67,27 +70,37 @@ export const handleMedia: ApiHandler = async (req, res, deps, _url, key) => {
 		sendJson(res, 404, { error: 'not_found' }, READER_CACHE_HEADERS); return;
 	}
 	res.setHeader('vary', 'Cookie');
-	await sendMedia(res, deps, key);
+	await sendMedia(req, res, deps, key, restricted);
 };
 
 /**
  * @brief Streams authorized bytes or returns a short-lived storage read redirect.
  * @param res Response stream.
+ * @param req Request including conditional cache headers.
  * @param deps Configured storage.
  * @param key Authorized managed key.
+ * @param restricted Whether only authenticated readers may access this image.
  * @return Completion.
  */
-async function sendMedia(res: ServerResponse, deps: ApiDeps, key: string): Promise<void> {
+async function sendMedia(req: IncomingMessage, res: ServerResponse, deps: ApiDeps, key: string, restricted: boolean): Promise<void> {
 	if (deps.media.readUrl) {
 		const location = await deps.media.readUrl(key);
 		if (!location) { sendJson(res, 404, { error: 'not_found' }); return; }
-		res.writeHead(307, { location, 'cache-control': 'no-store' }); res.end(); return;
+		res.writeHead(307, { location, 'cache-control': 'private, no-store' }); res.end(); return;
 	}
 	const file = await deps.media.load(key);
 	if (!file) { sendJson(res, 404, { error: 'not_found' }); return; }
+	if (!restricted) {
+		const etag = `"sha256-${createHash('sha256').update(file.data).digest('hex')}"`;
+		res.setHeader('etag', etag);
+		res.setHeader('cache-control', 'private, no-cache, must-revalidate');
+		if (req.headers['if-none-match']?.split(',').some((value) => value.trim().replace(/^W\//, '') === etag || value.trim() === '*')) {
+			res.writeHead(304); res.end(); return;
+		}
+	}
 	res.writeHead(200, {
 		'content-type': file.mime, 'content-length': file.data.length,
-		'cache-control': 'private, no-store'
+		'cache-control': restricted ? 'private, no-store' : 'private, no-cache, must-revalidate'
 	});
 	res.end(file.data);
 }

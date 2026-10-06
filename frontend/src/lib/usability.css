@@ -1,4 +1,21 @@
 /* @file usability.css @brief Readable content, keyboard access and touch-friendly shared controls. */
+.archive-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+}
+.archive-tags label {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 0 8px;
+}
+.archive-tags input {
+	width: 20px;
+	height: 20px;
+	accent-color: var(--accent);
+}
 html body {
 	font-size: 14px;
 }

@@ -87,7 +87,7 @@ class R2Storage implements StorageProvider {
 		const objectKey = `${randomUUID().replace(/-/g, '')}.${record.key.split('.').at(-1)}`;
 		await this.client.send(new CopyObjectCommand({ Bucket: this.settings.bucket, Key: `objects/${objectKey}`,
 			CopySource: `${this.settings.bucket}/staging/${record.key}`, CopySourceIfMatch: head.ETag,
-			MetadataDirective: 'REPLACE', ContentType: record.mime }));
+			MetadataDirective: 'REPLACE', ContentType: record.mime, CacheControl: 'private, no-store' }));
 		try {
 			await this.client.send(new PutObjectCommand({ Bucket: this.settings.bucket, Key: `media/${record.key}.json`,
 				IfNoneMatch: '*', ContentType: 'application/json', Body: JSON.stringify({ ...record, objectKey }) }));
@@ -110,7 +110,7 @@ class R2Storage implements StorageProvider {
 	async save(data: Buffer, filename: string, mime: string): Promise<StoredMedia> {
 		const extension = validateUpload(data, mime);
 		const record = mediaRecord.parse({ key: `${randomUUID().replace(/-/g, '')}.${extension}`, filename, mime, sizeBytes: data.length });
-		await this.client.send(new PutObjectCommand({ Bucket: this.settings.bucket, Key: `objects/${record.key}`, ContentType: mime, Body: data }));
+		await this.client.send(new PutObjectCommand({ Bucket: this.settings.bucket, Key: `objects/${record.key}`, ContentType: mime, CacheControl: 'private, no-store', Body: data }));
 		await this.client.send(new PutObjectCommand({ Bucket: this.settings.bucket, Key: `media/${record.key}.json`,
 			IfNoneMatch: '*', ContentType: 'application/json', Body: JSON.stringify({ ...record, objectKey: record.key }) }));
 		return record;
@@ -140,7 +140,8 @@ class R2Storage implements StorageProvider {
 		const record = await this.metadata(key);
 		if (!record) { return null; }
 		return this.signer(this.client as S3Client, new GetObjectCommand({ Bucket: this.settings.bucket,
-			Key: `objects/${record.objectKey}`, ResponseContentType: record.mime }), { expiresIn: 60 });
+			Key: `objects/${record.objectKey}`, ResponseContentType: record.mime,
+			ResponseCacheControl: 'private, no-store' }), { expiresIn: 60 });
 	}
 
 	/**

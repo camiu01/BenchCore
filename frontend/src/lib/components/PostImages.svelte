@@ -2,6 +2,7 @@
 <script lang="ts">
 	import CopyImageLink from './CopyImageLink.svelte';
 	import ImagePreview from './ImagePreview.svelte';
+	import { reorderableImageKeys } from '../image-order.js';
 	import {
 		managedImageKeys,
 		managedImageKey,
@@ -16,6 +17,7 @@
 		disabled,
 		onbusy,
 		oncover,
+		onmove,
 		onremoved
 	}: {
 		content: string;
@@ -23,9 +25,13 @@
 		disabled: boolean;
 		onbusy: (busy: boolean) => void;
 		oncover?: (key: string) => void;
+		onmove?: (key: string, direction: -1 | 1) => void;
 		onremoved: (key: string) => void;
 	} = $props();
-	const keys = $derived(managedImageKeys(content, cover));
+	const keys = $derived([
+		...new Set([...managedImageKeys(content, ''), ...managedImageKeys('', cover)])
+	]);
+	const movable = $derived(reorderableImageKeys(content));
 	let pendingKey = $state<string | null>(null);
 	let usage = $state<ImageUsage | null>(null);
 	let deleting = $state(false);
@@ -77,12 +83,34 @@
 			Includes existing images and the cover. Removing an image also deletes the stored file
 			permanently, after confirmation.
 		</p>
+		<p class="field-help">
+			Move buttons reorder stand-alone Markdown images. Captions, code and other text stay
+			unchanged. Save the post to keep the new order.
+		</p>
 		<ul class="image-upload-list">
 			{#each keys as key (key)}
 				<li>
 					<ImagePreview url="/api/media/{key}" name={key} />
 					<code>{key}</code>
 					<CopyImageLink url="/api/media/{key}" name={key} />
+					{#if onmove && movable.includes(key)}
+						<button
+							class="btn"
+							type="button"
+							aria-label="Move image {key} earlier"
+							disabled={disabled || pendingKey !== null || movable.indexOf(key) === 0}
+							onclick={() => onmove?.(key, -1)}>Move up</button
+						>
+						<button
+							class="btn"
+							type="button"
+							aria-label="Move image {key} later"
+							disabled={disabled ||
+								pendingKey !== null ||
+								movable.indexOf(key) === movable.length - 1}
+							onclick={() => onmove?.(key, 1)}>Move down</button
+						>
+					{/if}
 					{#if oncover}<button
 							class="btn"
 							type="button"

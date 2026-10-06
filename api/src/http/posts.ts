@@ -12,13 +12,8 @@ import { getSessionUser, requireUser } from './auth.js';
 import { READER_CACHE_HEADERS } from '../posts/audience.js';
 import { MEDIA_PREFIX, readBody, sendJson } from './response.js';
 import { adminPageSchema } from '../posts/admin-query.js';
+import { parsePublishedQuery } from '../posts/list-query.js';
 
-const pageSchema = z.object({
-	limit: z.coerce.number().int().min(1).max(200).default(10),
-	offset: z.coerce.number().int().min(0).max(1_000_000).default(0),
-	tag: z.string().min(1).max(60).optional(),
-	search: z.string().trim().max(200).optional()
-});
 const previewSchema = z.object({ markdown: z.string().max(200_000) });
 const tagColorSchema = z.object({
 	color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).transform((color) => color.toUpperCase())
@@ -33,7 +28,7 @@ const tagColorSchema = z.object({
  * @return Nothing.
  */
 export const handleListPosts: ApiHandler = async (req, res, deps, url) => {
-	const parsed = pageSchema.safeParse(Object.fromEntries(url.searchParams));
+	const parsed = parsePublishedQuery(url.searchParams);
 	if (!parsed.success) {
 		sendJson(res, 400, { error: 'validation', issues: flattenIssues(parsed.error) }); return;
 	}

@@ -45,13 +45,14 @@ export function createTestRepos(): TestRepos {
 	const links = new Map<string, Set<string>>();
 	const users = createMemoryUsers();
 	const tags = createMemoryTags(links);
+	const likes = createMemoryLikes();
 	return {
 		users,
 		sessions: createMemorySessions(users),
-		posts: createMemoryPosts(tags, links),
+		posts: createMemoryPosts(tags, links, likes),
 		tags,
 		comments: createMemoryComments(),
-		likes: createMemoryLikes(),
+		likes,
 		media: createLocalStorage(mkdtempSync(join(tmpdir(), 'blog-media-')))
 	};
 }

@@ -7,6 +7,7 @@
  */
 import { z } from 'zod';
 import { apiFetch } from './server/transport.js';
+import type { ArchiveQuery } from './posts-query.js';
 
 /**
  * @brief A public post list item DTO.
@@ -20,7 +21,9 @@ export const postListItemSchema = z.object({
 	locked: z.boolean().default(false),
 	tags: z.array(z.string()),
 	authorName: z.string().nullable(),
-	publishedAt: z.iso.datetime({ offset: true }).nullable()
+	publishedAt: z.iso.datetime({ offset: true }).nullable(),
+	updatedAt: z.iso.datetime({ offset: true }).nullable().default(null),
+	likesCount: z.number().int().nonnegative().default(0)
 });
 
 /**
@@ -193,17 +196,24 @@ export function getRecentPosts(limit = 5, cookie: string | null = null): Promise
  * @param offset The page offset.
  * @param search The optional search text.
  * @param cookie Optional viewer session.
+ * @param filters Selected tags, combination and ordering.
  * @returns The page DTO or null when the API is unreachable.
  */
 export function getPostsPage(
 	limit: number,
 	offset: number,
 	search = '',
-	cookie: string | null = null
+	cookie: string | null = null,
+	filters?: Pick<ArchiveQuery, 'tags' | 'tagMode' | 'sort'>
 ): Promise<PostsPage | null> {
 	const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
 	if (search !== '') {
 		query.set('search', search);
+	}
+	if (filters) {
+		for (const tag of filters.tags) query.append('tag', tag);
+		query.set('tagMode', filters.tagMode);
+		query.set('sort', filters.sort);
 	}
 	return getDto(postsPageSchema, `/api/posts?${query}`, cookie);
 }

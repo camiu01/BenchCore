@@ -14,17 +14,17 @@ admin editor. PostgreSQL is the runtime source of truth; the frontend never
 reads the database or the authoring directory.
 
 License: **AGPL-3.0-or-later** · Runtime: **Node.js 24** · Package manager:
-**pnpm 10.15.0** · Release target: **0.6.0-beta.1**
+**pnpm 10.15.0** · Release target: **0.7.0**
 
-## Beta, one origin
+## One origin
 
-The production beta combines frontend and backend into one Node service.
+The production runtime combines frontend and backend into one Node service.
 Pages and `/api/*` share the same domain and port. Run `pnpm build`, configure
 the database and trusted origin, then run `pnpm start` on port **5180**.
 `/register` creates readers only; `/account` changes passwords; `/admin/users`
 manages accounts and protects the final active administrator.
 
-[Beta deployment](docs/BETA_DEPLOYMENT.md) covers the unified Node artifact,
+[Node deployment](docs/BETA_DEPLOYMENT.md) covers the unified Node artifact,
 GitHub CI/CD, HTTPS hosting, explicit migrations, backups and release limits.
 No GHCR/container images are required. **GitHub Pages cannot run the backend.**
 
@@ -38,11 +38,14 @@ is temporarily disabled on that target; the persistent Node runtime remains avai
 - **Markdown + TOML** — `+++` frontmatter, validated metadata, sanitized HTML,
   tables, code blocks, images, excerpts, and reading-time estimates.
 - **Wikilinks & backlinks** — `[[slug]]` and `[[slug|label]]` link notes;
-  backlinks show only publicly visible source posts.
+  backlinks show only visible source posts. Hover or focus a wikilink or graph
+  node for a session-aware preview. The reader includes a heading index.
 - **Public publishing** — home, paginated posts, post detail, tags, and tag
   archives. Draft, archived, and not-yet-public content stays out of public data.
 - **Search** — `GET /api/posts?search=...`; PostgreSQL generated `tsvector`
-  with the `simple` configuration and a GIN index in the 0.5.0 milestone.
+  with the `simple` configuration and a GIN index. Combine tags with AND/OR and
+  sort by publication, updates or existing likes. Editor suggestions match
+  fuzzy titles, slugs and tags.
 - **Admin workbench** — session-protected deck, create/edit/delete posts,
   write/preview modes, comma-separated tags, and image uploads.
 - **Publishing lifecycle** — draft, published, archived; publication timestamps
@@ -50,6 +53,9 @@ is temporarily disabled on that target; the persistent Node runtime remains avai
   publication job runs approximately once per minute.
 - **Media storage seam** — `StorageProvider` isolates callers from the backend;
   `MEDIA_STORAGE=local|database|r2` selects filesystem images, database blobs or private R2.
+  R2 batches have immediate previews, measured upload progress and attachment
+  reordering. `pnpm media:cleanup` reports orphan counts without deleting;
+  apply mode requires an explicit maintenance acknowledgement.
 - **Authentication** — scrypt password hashes, random session tokens, hashed
   tokens at rest, HttpOnly cookies, SameSite=Lax, and Secure production cookies.
 - **Database accounts** — username/email login; provision an administrator through
@@ -67,12 +73,17 @@ is temporarily disabled on that target; the persistent Node runtime remains avai
 - **No application telemetry** — no built-in analytics, tracking SDKs, or
   third-party trackers. Hosts and reverse proxies can still log requests.
 
-**Scope:** 0.6.0-beta.1 is prepared locally, not a published package or a
+**Scope:** 0.7.0 is prepared locally, not a published package or a
 promise of a hosted service. Revision storage is groundwork only: no automatic
 revision capture, history browser, diff, or restore workflow is claimed.
-Comments, reactions, newsletter delivery, multi-user collaboration, and other
-deferred roadmap features are not shipped merely because a schema exists.
+Basic moderated comments and anonymous likes are implemented. Advanced anti-spam,
+MFA, revision workflows and other deferred features are not claimed.
 See [TODO.md](TODO.md) for milestone status.
+
+For release checks and the remaining operator gates, see
+[0.7.0 release preparation](docs/RELEASE_0.7.0.md). `pnpm release:check`
+validates workspace versions; `pnpm release:package` builds the versioned Node
+bundle after `pnpm build`. Neither command tags, publishes or deploys.
 
 ## Run it
 

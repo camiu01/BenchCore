@@ -4,6 +4,7 @@
  */
 import { apiBase } from '../../../../lib/api.js';
 import { apiFetch } from '../../../../lib/server/transport.js';
+import { mediaCacheHeaders } from '../../../../lib/server/media-cache.js';
 import type { RequestHandler } from './$types';
 
 /**
@@ -18,7 +19,7 @@ function storageRedirect(upstream: Response): Response {
 	}
 	return new Response(null, {
 		status: 307,
-		headers: { location, 'cache-control': 'private, no-store', vary: 'Cookie' }
+		headers: { location, ...mediaCacheHeaders(new Headers()) }
 	});
 }
 
@@ -33,12 +34,18 @@ export const GET: RequestHandler = async ({ params, request }) => {
 	}
 	try {
 		const cookie = request.headers.get('cookie');
+		const headers: Record<string, string> = {};
+		if (cookie) headers.cookie = cookie;
+		const conditional = request.headers.get('if-none-match');
+		if (conditional) headers['if-none-match'] = conditional;
 		const upstream = await apiFetch(`${apiBase()}/api/media/${params.key}`, {
-			headers: cookie ? { cookie } : {},
+			headers,
 			redirect: 'manual',
 			signal: AbortSignal.timeout(10000)
 		});
 		if (upstream.status === 307) return storageRedirect(upstream);
+		if (upstream.status === 304)
+			return new Response(null, { status: 304, headers: mediaCacheHeaders(upstream.headers) });
 		if (!upstream.ok) {
 			await upstream.body?.cancel();
 			return new Response('Not found', { status: upstream.status === 404 ? 404 : 502 });
@@ -52,8 +59,7 @@ export const GET: RequestHandler = async ({ params, request }) => {
 			headers: {
 				'content-type': mime,
 				'x-content-type-options': 'nosniff',
-				'cache-control': 'private, no-store',
-				vary: 'Cookie'
+				...mediaCacheHeaders(upstream.headers)
 			}
 		});
 	} catch {

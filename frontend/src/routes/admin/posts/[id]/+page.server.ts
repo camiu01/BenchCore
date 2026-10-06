@@ -49,7 +49,7 @@ export const load: PageServerLoad = async ({ params, request }) => {
 		status: post.status,
 		wikilinkSuggestions: (suggestions ?? [])
 			.filter((item) => item.id !== post.id)
-			.map(({ slug, title }) => ({ slug, title }))
+			.map(({ slug, title, tags }) => ({ slug, title, tags }))
 	};
 };
 

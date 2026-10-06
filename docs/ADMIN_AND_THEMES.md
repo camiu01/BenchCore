@@ -24,7 +24,8 @@ available when their deployment settings are configured.
 1. Give the post a title, unique lowercase/dash slug, and description.
 2. Enter tags as comma-separated names; blank segments are ignored.
 3. Write Markdown in the content area. Typing `[[` opens a keyboard-accessible
-   list of existing posts; choosing one inserts its slug and closes the wikilink.
+   list ranked by fuzzy title, slug and tag matches; choosing one inserts its slug
+   and closes the wikilink. Accents, abbreviations and small spelling errors are tolerated.
 4. Preview to see API-rendered sanitized HTML.
 5. Save deliberately; preview alone is not persistence.
 6. Choose draft/published/archived and verify public visibility.
@@ -91,6 +92,18 @@ open this focused view; **Show full map** restores the complete graph.
 Groups above 24 posts use hub links to avoid a dense quadratic mesh; the detail
 panel still lists all posts sharing the selected post's topics.
 
+Hover or focus a graph dot or reader wikilink for a lightweight post preview.
+Keep the pointer or focus inside the card to read it. Escape or **Close** dismisses
+it and returns focus to its trigger. Links still navigate normally without
+JavaScript. Preview requests are cancelled when the target changes or the card
+closes; private summaries/covers are withheld from guests. External cover images
+are not requested merely because a link is hovered.
+
+The `/posts` archive combines selected tags with AND/OR and preserves them during
+pagination. Choose publication, last update or existing like count for ordering.
+Popularity adds no page-view tracking and does not expose reader-only engagement
+to guests.
+
 Comments submitted from a post remain private until approved under
 `/admin/comments`. Likes are anonymous and toggle per browser. Moderation and
 tag deletion are permanent database mutations.
@@ -107,6 +120,9 @@ editor to start uploading. Successful uploads are inserted at the current
 cursor automatically, with editable filename-based descriptions. The first
 successful image fills the cover field only when it is empty.
 Progress and errors are shown per file; retrying skips successful uploads.
+Local previews appear as soon as files are selected. The percentage bar reserves
+the final portion for server verification; 100% means completion, not just a
+finished PUT. **Move up/down** changes queued insertion order before a batch starts.
 The editor and save controls are locked during a batch to preserve insertion
 positions. Save the record after uploading.
 Other storage providers retain the single-file server upload control.
@@ -128,6 +144,11 @@ references and cover from saved posts, including other posts using it.
 Unsaved references in the current editor and upload previews are also removed.
 Code examples and external image URLs are not treated as managed uploads.
 
+**Move up/down** in the attachment panel swaps unique stand-alone Markdown image
+paragraphs. Nested, inline, repeated and HTML images are not rewritten.
+Reference definitions, captions, intervening prose and code remain intact.
+This is an unsaved editor change; Save persists the new order.
+
 If saved usages change before confirmation, inspect them again before retrying.
 Storage deletion follows the atomic update of saved references; these are not
 one cross-system transaction. A storage failure can leave an unreferenced file,
@@ -145,6 +166,12 @@ key against a new reference added after reference cleanup.
 
 For same-origin relative media URLs, a production proxy must route `/api/media`
 to the API. A frontend-only host without that routing will return broken images.
+
+Public local/database images support private browser revalidation with content
+ETags. Every request rechecks current audience before returning bytes or 304.
+Reader-only images, signed R2 reads and redirects remain no-store. Shared CDN
+media caching is disabled because a post's audience can change. See
+[release preparation](RELEASE_0.7.0.md#orphan-cleanup) before running orphan cleanup.
 
 ## Theme system
 

@@ -1,8 +1,14 @@
 <!-- @file DirectUpload.svelte @brief Presentation-only controls for browser-direct R2 images. -->
 <script lang="ts">
-	import { imageUploadQueue, uploadImageBatch, type ImageUploadItem } from '../image-batch.js';
+	import {
+		imageUploadQueue,
+		uploadImageBatch,
+		moveQueuedImage,
+		type ImageUploadItem
+	} from '../image-batch.js';
 	import CopyImageLink from './CopyImageLink.svelte';
 	import ImagePreview from './ImagePreview.svelte';
+	import QueuedImagePreview from './QueuedImagePreview.svelte';
 	let {
 		onuploaded,
 		onbusy,
@@ -90,9 +96,39 @@
 			<li>
 				{#if item.url}
 					<ImagePreview url={item.url} name={item.file.name} sizeBytes={item.file.size} />
+				{:else}
+					<QueuedImagePreview file={item.file} />
 				{/if}
 				<span>{item.file.name}</span>
 				<span class="stamp">{item.status === 'uploaded' ? 'IN CONTENT' : item.status}</span>
+				<progress max="100" value={item.progress} aria-label="Upload progress for {item.file.name}"
+					>{item.progress}%</progress
+				>
+				<span class="field-help"
+					>{item.progress}%{item.progress === 95 && item.status === 'uploading'
+						? ' · Verifying upload'
+						: ''}</span
+				>
+				{#if !completed}
+					<button
+						class="btn"
+						type="button"
+						disabled={busy || disabled || index === 0}
+						aria-label="Move {item.file.name} earlier"
+						onclick={() => {
+							items = moveQueuedImage(items, index, -1);
+						}}>Move up</button
+					>
+					<button
+						class="btn"
+						type="button"
+						disabled={busy || disabled || index === items.length - 1}
+						aria-label="Move {item.file.name} later"
+						onclick={() => {
+							items = moveQueuedImage(items, index, 1);
+						}}>Move down</button
+					>
+				{/if}
 				{#if item.status === 'uploaded' && item.url}
 					<CopyImageLink url={item.url} name={item.file.name} />
 				{/if}

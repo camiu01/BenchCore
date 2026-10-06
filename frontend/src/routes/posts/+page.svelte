@@ -6,6 +6,7 @@
 	import { authenticationLink } from '../../lib/navigation.js';
 	import ReaderGate from '../../lib/components/ReaderGate.svelte';
 	import { publicationDate } from '../../lib/presentation.js';
+	import { archiveHref, archiveSortLabel } from '../../lib/posts-query.js';
 
 	let { data }: { data: PageData } = $props();
 
@@ -19,14 +20,14 @@
 
 <Seo
 	title="Posts | BenchCore"
-	description="Browse and search published posts, newest first."
+	description="Browse published posts by keyword, tags, publication date, updates or likes."
 	canonical="{data.siteBase}/posts"
 />
 
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: RECORDS"
 	title="POSTS"
-	sub="{data.total} posts, newest first. Search by title or content."
+	sub="{data.total} posts, {archiveSortLabel(data.sort)}. Search and combine topics."
 	{nav}
 	footerLeft="PAGE {data.page} OF {data.totalPages}"
 	footerRight="PER PAGE: {data.perPage}"
@@ -44,9 +45,42 @@
 				value={data.search}
 				placeholder="Enter a title or keyword"
 			/>
+			<fieldset>
+				<legend class="field-label">Filter by tags</legend>
+				<div class="archive-tags">
+					{#each [...new Set( [...data.availableTags.map((tag) => tag.name), ...data.tags] )] as tag (tag)}
+						<label
+							><input type="checkbox" name="tag" value={tag} checked={data.tags.includes(tag)} />
+							{tag}</label
+						>
+					{/each}
+				</div>
+				<p class="field-help">Select up to 20 tags. Tags combine with the search text.</p>
+			</fieldset>
+			<div class="field-row">
+				<div>
+					<label class="field-label" for="tag-mode">Combine selected tags</label>
+					<select class="field-input" id="tag-mode" name="tagMode">
+						<option value="and" selected={data.tagMode === 'and'}>All selected tags (AND)</option>
+						<option value="or" selected={data.tagMode === 'or'}>Any selected tag (OR)</option>
+					</select>
+				</div>
+				<div>
+					<label class="field-label" for="sort">Sort posts</label>
+					<select class="field-input" id="sort" name="sort">
+						<option value="published" selected={data.sort === 'published'}>Publication date</option>
+						<option value="updated" selected={data.sort === 'updated'}>Recently updated</option>
+						<option value="popular" selected={data.sort === 'popular'}>Most liked</option>
+					</select>
+				</div>
+			</div>
+			<p class="field-help">Popularity uses existing likes only. No page-view tracking is added.</p>
 			<div class="btn-row">
-				<button class="btn" type="submit">SEARCH</button>
-				{#if data.search}<a class="btn" href="/posts">Clear search</a>{/if}
+				<button class="btn" type="submit">APPLY FILTERS</button>
+				{#if data.search || data.tags.length || data.sort !== 'published'}<a
+						class="btn"
+						href="/posts">Clear filters</a
+					>{/if}
 			</div>
 		</form>
 		{#if !data.online}
@@ -55,7 +89,7 @@
 					<span class="record-title">Posts temporarily unavailable</span>
 				</div>
 				<p class="summary">We cannot load posts right now. Please try again in a moment.</p>
-				<a class="btn" href="/posts?search={encodeURIComponent(data.search)}">Try again</a>
+				<a class="btn" href={archiveHref(data)}>Try again</a>
 			</article>
 		{:else if data.items.length === 0}
 			<article class="record">
@@ -93,6 +127,14 @@
 									></td
 								>
 							</tr>
+							{#if data.sort === 'updated' && post.updatedAt}<tr
+									><td class="label">UPDATED</td><td
+										><time datetime={post.updatedAt}>{publicationDate(post.updatedAt)}</time></td
+									></tr
+								>{/if}
+							{#if data.sort === 'popular' && !post.locked}<tr
+									><td class="label">LIKES</td><td>{post.likesCount}</td></tr
+								>{/if}
 							{#if post.tags.length > 0}
 								<tr>
 									<td class="label">TAGS</td>
@@ -113,14 +155,10 @@
 			<nav class="btn-row" aria-label="Post pages">
 				<span class="page-position">Page {data.page} of {data.totalPages}</span>
 				{#if data.page > 1}
-					<a class="btn" href="/posts?page={data.page - 1}&search={encodeURIComponent(data.search)}"
-						>← Previous</a
-					>
+					<a class="btn" href={archiveHref(data, data.page - 1)}>← Previous</a>
 				{/if}
 				{#if data.page < data.totalPages}
-					<a class="btn" href="/posts?page={data.page + 1}&search={encodeURIComponent(data.search)}"
-						>NEXT →</a
-					>
+					<a class="btn" href={archiveHref(data, data.page + 1)}>NEXT →</a>
 				{/if}
 			</nav>
 		{/if}

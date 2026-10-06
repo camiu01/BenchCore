@@ -20,6 +20,7 @@ import {
 } from './http/accounts.js';
 import { handlePrepareUpload, handleCompleteUpload } from './http/direct-media.js';
 import { handleGraph } from './http/graph.js';
+import { handlePostPreview } from './http/post-preview.js';
 import {
 	handleAdminComment,
 	handleAdminComments,
@@ -50,6 +51,7 @@ const routes: { path: RegExp; handlers: Record<string, ApiHandler> }[] = [
 	{ path: /^\/api\/posts\/([^/]+)$/, handlers: { GET: handleGetPost, PUT: handleWritePost, DELETE: handleWritePost } },
 	{ path: /^\/api\/posts\/([^/]+)\/comments$/, handlers: { GET: handleComments, POST: handleComments } },
 	{ path: /^\/api\/posts\/([^/]+)\/likes$/, handlers: { GET: handleLikes, POST: handleLikes } },
+	{ path: /^\/api\/posts\/([^/]+)\/preview$/, handlers: { GET: handlePostPreview } },
 	{ path: /^\/api\/tags$/, handlers: { GET: handleListTags } },
 	{ path: /^\/api\/graph$/, handlers: { GET: handleGraph } },
 	{ path: /^\/api\/admin\/posts\/suggestions$/, handlers: { GET: handleAdminPostSuggestions } },

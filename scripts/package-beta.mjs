@@ -8,6 +8,8 @@ import { execFileSync } from 'node:child_process';
 import { basename, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createPackageStaging, createBundleDirectory, createDependencyWorkspace, deploymentArguments } from './package-layout.mjs';
+import { readReleaseVersion } from './release-version.mjs';
+import { pnpmInvocation } from './pnpm-invocation.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 
@@ -18,9 +20,8 @@ const root = fileURLToPath(new URL('..', import.meta.url));
  * @return {void} Completion.
  */
 function pnpm(args, workspace) {
-	const executable = process.env['npm_execpath'];
-	if (!executable || !executable.includes('pnpm')) { throw new Error('Run with pnpm beta:package'); }
-	execFileSync(process.execPath, [executable, ...args], { cwd: workspace, stdio: 'inherit' });
+	const invocation = pnpmInvocation(process.env['npm_execpath'], args);
+	execFileSync(invocation.command, invocation.args, { cwd: workspace, stdio: 'inherit' });
 }
 
 /**
@@ -94,7 +95,7 @@ async function main() {
 		if (!existsSync(join(root, relative))) { throw new Error('Run pnpm build first'); }
 	}
 	const manifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
-	if (!/^\d+\.\d+\.\d+-beta\.\d+$/.test(manifest.version)) { throw new Error('A beta semver is required'); }
+	await readReleaseVersion(root);
 	const artifacts = join(root, 'artifacts');
 	await mkdir(artifacts, { recursive: true });
 	const destination = join(artifacts, `benchcore-${manifest.version}`);
@@ -109,14 +110,15 @@ async function main() {
 			start: 'node --env-file-if-exists=.env runtime/server.mjs',
 			'db:migrate': 'node --env-file-if-exists=.env api/dist/cli/migrate.js',
 			'user:create': 'node --env-file-if-exists=.env api/dist/cli/account.js create',
-			'user:password': 'node --env-file-if-exists=.env api/dist/cli/account.js password'
+			'user:password': 'node --env-file-if-exists=.env api/dist/cli/account.js password',
+			'media:cleanup': 'node --env-file-if-exists=.env api/dist/cli/media.js cleanup'
 		};
 		await writeFile(join(bundle, 'package.json'), JSON.stringify({
 			name: manifest.name, version: manifest.version, private: true,
 			license: manifest.license, type: 'module', engines: { node: '>=24 <25' }, scripts
 		}, null, '\t') + '\n');
 		if (bundle !== destination) { await rename(bundle, destination); }
-		process.stdout.write(`BenchCore beta bundle: artifacts/benchcore-${manifest.version}\n`);
+		process.stdout.write(`BenchCore release bundle: artifacts/benchcore-${manifest.version}\n`);
 	} catch (error) {
 		if (bundle === destination) { await rm(bundle, { recursive: true, force: true }); }
 		throw error;

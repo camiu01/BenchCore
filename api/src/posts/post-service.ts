@@ -4,7 +4,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import type { PostRepository, PostWithTags, TagRepository, UserRepository } from '../db/repositories.js';
+import type { LikeRepository, PostRepository, PostWithTags, TagRepository, UserRepository } from '../db/repositories.js';
 import type { PostRow, PostStatus } from '../db/schema.js';
 import { renderMarkdown } from '../markdown/render.js';
 import { flattenIssues, slugField } from '../markdown/schema.js';
@@ -36,6 +36,7 @@ export interface PostServiceDeps {
 	tags: TagRepository;
 	users: UserRepository;
 	viewerRole?: ViewerRole;
+	likes?: LikeRepository;
 }
 
 /**
@@ -75,6 +76,8 @@ export interface PostListItem {
 	tags: string[];
 	authorName: string | null;
 	publishedAt: string | null;
+	updatedAt: string;
+	likesCount: number;
 	audience: PostAudience;
 	locked: boolean;
 }
@@ -154,7 +157,9 @@ async function toListItem(deps: PostServiceDeps, row: PostWithTags): Promise<Pos
 		locked: !canReadPost(row.audience, deps.viewerRole),
 		tags: row.tags,
 		authorName: await resolveAuthorName(deps.users, row.authorId),
-		publishedAt: row.publishedAt?.toISOString() ?? null
+		publishedAt: row.publishedAt?.toISOString() ?? null,
+		updatedAt: row.updatedAt.toISOString(),
+		likesCount: canReadPost(row.audience, deps.viewerRole) ? row.likesCount ?? await deps.likes?.count(row.id) ?? 0 : 0
 	};
 }
 
@@ -167,13 +172,14 @@ async function toListItem(deps: PostServiceDeps, row: PostWithTags): Promise<Pos
 export async function listPublishedPosts(
 	deps: PostServiceDeps,
 	options: { limit?: number | undefined; offset?: number | undefined; tag?: string | undefined;
+		tags?: string[] | undefined; tagMode?: 'and' | 'or' | undefined; sort?: 'published' | 'updated' | 'popular' | undefined;
 		search?: string | undefined; now?: Date | undefined } = {}
 ): Promise<{ items: PostListItem[]; total: number }> {
 	const limit = Math.min(Math.max(options.limit ?? 10, 1), 200);
 	const offset = Math.max(options.offset ?? 0, 0);
 	const now = options.now ?? new Date();
 	const page = await deps.posts.listPublished({
-		limit, offset, tag: options.tag, search: options.search, now,
+		limit, offset, tag: options.tag, tags: options.tags, tagMode: options.tagMode, sort: options.sort, search: options.search, now,
 		includeReaderContent: deps.viewerRole === 'reader' || deps.viewerRole === 'admin'
 	});
 	const items: PostListItem[] = [];

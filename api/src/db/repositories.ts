@@ -98,6 +98,7 @@ export interface SessionRepository {
  */
 export interface PostWithTags extends PostRow {
 	tags: string[];
+	likesCount?: number;
 }
 
 /** @brief Optimistically checked image-reference replacement. */
@@ -114,6 +115,7 @@ export interface PostSuggestion {
 	id: string;
 	slug: string;
 	title: string;
+	tags: string[];
 }
 
 /**
@@ -174,6 +176,9 @@ export interface PostRepository {
 		limit: number;
 		offset: number;
 		tag?: string | undefined;
+		tags?: string[] | undefined;
+		tagMode?: 'and' | 'or' | undefined;
+		sort?: 'published' | 'updated' | 'popular' | undefined;
 		search?: string | undefined;
 		includeReaderContent?: boolean | undefined;
 		now: Date;

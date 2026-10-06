@@ -5,7 +5,7 @@
 
 ## Base URLs and conventions
 
-The **0.6.0-beta.1 unified runtime** exposes `/api/*` on the same origin as
+The **0.7.0 unified runtime** exposes `/api/*` on the same origin as
 the site (default `http://localhost:5180`). Its SSR backend is private and
 the production `SITE_URL` is the single trusted mutation origin.
 
@@ -35,6 +35,7 @@ not accept a slug for mutation even though the public route shares the prefix.
 | GET | `/api/auth/me` | Session | Current user |
 | GET | `/api/posts` | Public | Published-only page |
 | GET | `/api/posts/:slug` | Public | Published detail and backlinks |
+| GET | `/api/posts/:slug/preview` | Viewer session when required | Published preview metadata, no body |
 | GET | `/api/posts/:slug/comments` | Public | Approved comments |
 | POST | `/api/posts/:slug/comments` | Trusted Origin | Submit a pending comment |
 | GET | `/api/posts/:slug/likes` | Public | Like count and current browser state |
@@ -42,7 +43,7 @@ not accept a slug for mutation even though the public route shares the prefix.
 | GET | `/api/tags` | Public | Tags, colors and public-post counts |
 | GET | `/api/graph` | Public | Published posts connected by wikilinks or shared tags |
 | GET | `/api/admin/posts` | Administrator session | Bounded, searchable page including unpublished posts |
-| GET | `/api/admin/posts/suggestions` | Administrator session | Up to 200 recently updated post identifiers, titles and slugs |
+| GET | `/api/admin/posts/suggestions` | Administrator session | Up to 200 recently updated identifiers, titles, slugs and tags |
 | GET | `/api/admin/posts/:id` | Session | Editable post, including Markdown |
 | GET | `/api/admin/tags` | Administrator session | Full tag registry, including draft-only names |
 | PATCH | `/api/admin/tags/:id` | Administrator + trusted Origin | Change a tag HEX color |
@@ -66,6 +67,28 @@ not accept a slug for mutation even though the public route shares the prefix.
 
 There is no promised revision API or media-list HTTP route. A provider's
 internal `list()` method is not an endpoint.
+
+## Published archive filters and previews
+
+`GET /api/posts` accepts `limit` (1–200, default 10), `offset` (0–1000000)
+and trimmed `search` (up to 200 characters). Repeat `tag` or `tags` to combine
+up to 20 names; duplicate names count once after validation. The legacy single
+`tag` remains supported. `tagMode=and` (default) requires all selected tags;
+`tagMode=or` accepts any. Search combines with the tag predicate.
+
+`sort=published` (default), `updated` or `popular` orders descending. Popularity
+uses the existing like count, not views. Ties use publication time and UUID.
+Counts use the same filters before pagination. List items add `updatedAt` and
+`likesCount`; guests receive zero for reader-only engagement, and restricted
+likes do not influence their popularity ranking. Draft, archived, future and
+pending-schedule visibility rules are unchanged.
+
+`GET /api/posts/:slug/preview` returns only `slug`, `title`, `description`,
+`tags`, `publishedAt`, `coverImage` and `locked`. Unpublished/missing targets
+return the same 404. Reader-only targets return empty description and null cover
+unless the session may read them. Responses are private/no-store and vary by
+Cookie. The standalone frontend's `/api/previews/:slug` proxy forwards cookies
+only to the configured API and projects that same allowlist.
 
 ## Administrator post pagination
 
@@ -223,6 +246,8 @@ GET /api/posts?limit=10&offset=0
 GET /api/posts?tag=engineering&limit=10&offset=0
 GET /api/posts?search=postgresql&limit=10&offset=0
 GET /api/posts?tag=engineering&search=publishing
+GET /api/posts?tag=engineering&tag=security&tagMode=and&sort=updated
+GET /api/posts?tag=engineering&tag=security&tagMode=or&sort=popular
 ```
 
 The page shape is `{ "items": [...], "total": 42 }`; total refers to eligible
@@ -314,8 +339,12 @@ Upload returns 201 with stored `key`, `filename`, `mime`, `sizeBytes`, and
 `url`. Use the returned URL. Keys are generated identifiers, not filenames;
 path separators and traversal strings are rejected.
 
-Image reads are public and can use long-lived immutable cache headers.
-Removing a key does not revoke copies already held by browsers or caches.
+Images used exclusively by reader-only posts require a valid reader/admin session.
+Other managed image reads remain public by key. Public local/database bytes use
+`private, no-cache, must-revalidate` and content ETags; the current audience is
+checked before returning 304. Reader-only bytes, R2 redirects and signed object
+reads use `private, no-store`. Shared CDN caching is explicitly disabled.
+Removing a key cannot revoke downloaded bytes or already issued short-lived URLs.
 Deleting a post does not imply automatic cleanup of its referenced images.
 
 Adapter-node must use `BODY_SIZE_LIMIT=8M` to allow these multipart uploads

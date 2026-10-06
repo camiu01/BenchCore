@@ -1,10 +1,12 @@
 <!-- @file GraphView.svelte @brief Post connections with searchable lists and accessible graph controls. -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import type { GraphData } from '../api.js';
 	import { createGraphRenderer } from '../graph-renderer.js';
 	import { matchesGraphNode, relatedGraphNodes } from '../graph-navigation.js';
 	import TagChip from './TagChip.svelte';
+	import { createPreviewController, type PreviewTarget } from '../linked-previews.js';
+	import PostPreviewCard from './PostPreviewCard.svelte';
 
 	interface Props {
 		graph: GraphData;
@@ -15,6 +17,11 @@
 	let query = $state('');
 	let selection = $state<string | null | undefined>(undefined);
 	let focused = $state(false);
+	let previewTarget = $state<PreviewTarget | null>(null);
+	const previews = createPreviewController((target) => {
+		previewTarget = target;
+	});
+	onDestroy(() => previews.destroy());
 	const selectedSlug = $derived(selection === undefined ? focus : selection);
 	const selected = $derived(graph.nodes.find((node) => node.slug === selectedSlug) ?? null);
 	const results = $derived(graph.nodes.filter((node) => matchesGraphNode(node, query)));
@@ -51,7 +58,7 @@
 	}
 
 	onMount(() => {
-		const controller = createGraphRenderer(svg, graph, selectNode);
+		const controller = createGraphRenderer(svg, graph, selectNode, previews);
 		resetView = controller.reset;
 		zoomView = controller.zoom;
 		applyFilter = controller.filter;
@@ -188,6 +195,7 @@
 		{/each}
 	</ul>
 </section>
+{#if previewTarget}<PostPreviewCard target={previewTarget} controller={previews} />{/if}
 
 <style>
 	.graph-controls {

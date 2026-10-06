@@ -2,7 +2,7 @@
  * @file memory-posts.ts
  * @brief In-memory post repository for database-independent service tests.
  */
-import type { PostCreate, PostRepository, PostWithTags, TagRepository } from './repositories.js';
+import type { LikeRepository, PostCreate, PostRepository, PostWithTags, TagRepository } from './repositories.js';
 import type { PostRow } from './schema.js';
 import { matchesSearch } from './search.js';
 
@@ -37,7 +37,8 @@ class MemoryPosts implements PostRepository {
 	 * @param tags The tag repository.
 	 * @param links Shared post-tag links.
 	 */
-	constructor(private readonly tags: TagRepository, private readonly links: Map<string, Set<string>>) {}
+	constructor(private readonly tags: TagRepository, private readonly links: Map<string, Set<string>>,
+		private readonly likes?: LikeRepository) {}
 
 	/**
 	 * @brief Attaches tag names to a row.
@@ -130,13 +131,20 @@ class MemoryPosts implements PostRepository {
 				row.audience === 'readers' && !options.includeReaderContent
 					? { ...row, description: '', contentMarkdown: '', searchVector: row.title } : row,
 				options.search)));
-		const filtered: PostRow[] = [];
+		const selected = [...new Set([...(options.tags ?? []), ...(options.tag ? [options.tag] : [])])];
+		const filtered: PostWithTags[] = [];
 		for (const row of visible) {
-			const names = options.tag === undefined ? [] : await this.tags.getPostTagNames(row.id);
-			if (options.tag === undefined || names.includes(options.tag)) { filtered.push(row); }
+			const names = await this.tags.getPostTagNames(row.id);
+			const matches = !selected.length || (options.tagMode === 'or'
+				? selected.some((name) => names.includes(name)) : selected.every((name) => names.includes(name)));
+			if (matches) filtered.push({ ...row, tags: names,
+				likesCount: row.audience === 'readers' && !options.includeReaderContent ? 0 : await this.likes?.count(row.id) ?? 0 });
 		}
+		filtered.sort((a, b) => (options.sort === 'popular' ? (b.likesCount ?? 0) - (a.likesCount ?? 0)
+			: options.sort === 'updated' ? b.updatedAt.getTime() - a.updatedAt.getTime() : 0)
+			|| (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0) || b.id.localeCompare(a.id));
 		const page = filtered.slice(options.offset, options.offset + options.limit);
-		return { items: await Promise.all(page.map((row) => this.withTags(row))), total: filtered.length };
+		return { items: page, total: filtered.length };
 	}
 
 	/**
@@ -219,10 +227,11 @@ class MemoryPosts implements PostRepository {
 	 * @return Suggestion fields only.
 	 */
 	async listSuggestions(limit: number) {
-		return [...this.rows.values()]
+		const rows = [...this.rows.values()]
 			.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime() || b.id.localeCompare(a.id))
 			.slice(0, limit)
 			.map(({ id, slug, title }) => ({ id, slug, title }));
+		return Promise.all(rows.map(async (row) => ({ ...row, tags: await this.tags.getPostTagNames(row.id) })));
 	}
 }
 
@@ -230,8 +239,9 @@ class MemoryPosts implements PostRepository {
  * @brief Creates the in-memory post repository.
  * @param tags The tag repository.
  * @param links Shared post-tag links.
+ * @param likes Optional shared like counters.
  * @return The post repository.
  */
-export function createMemoryPosts(tags: TagRepository, links: Map<string, Set<string>>): PostRepository {
-	return new MemoryPosts(tags, links);
+export function createMemoryPosts(tags: TagRepository, links: Map<string, Set<string>>, likes?: LikeRepository): PostRepository {
+	return new MemoryPosts(tags, links, likes);
 }

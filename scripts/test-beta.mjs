@@ -64,7 +64,7 @@ async function checkBundle() {
  */
 function cli(entry, args, input) {
 	const result = spawnSync(process.execPath, [join(app, entry), ...args], {
-		cwd: app, env: { ...process.env, NODE_ENV: 'production' }, input, encoding: 'utf8', timeout: 30_000
+		cwd: app, env: { ...process.env, NODE_ENV: 'production', MEDIA_STORAGE: 'database' }, input, encoding: 'utf8', timeout: 30_000
 	});
 	assert.equal(result.status, 0, 'Built account/migration CLI failed (details withheld)');
 }
@@ -108,6 +108,7 @@ async function scenarios(base, admin, password) {
 	const adminLogin = await request('/api/auth/login', 'POST', { username: admin, password });
 	const adminCookie = adminLogin.headers.getSetCookie()[0]?.split(';')[0];
 	assert(adminCookie);
+	await knowledgeScenarios(base, adminCookie);
 	const users = await request('/api/admin/users', 'GET', undefined, adminCookie);
 	assert.equal(users.status, 200);
 	const disabled = await request(`/api/admin/users/${registered.user.id}`, 'PATCH', { isActive: false }, adminCookie);
@@ -118,6 +119,46 @@ async function scenarios(base, admin, password) {
 		await concurrentAdminChanges(base, adminCookie, admin, password);
 	}
 	await browserPasswordChange(base, reader.username, password);
+}
+
+/** @brief Tests SQL tag grouping, ranking and lightweight preview privacy through the built runtime. @param {string} base Origin. @param {string} cookie Admin session. @return {Promise<void>} Completion. */
+async function knowledgeScenarios(base, cookie) {
+	const suffix = randomUUID().replaceAll('-', '').slice(0, 12);
+	const tag = `sql-${suffix}`;
+	const headers = { origin: base, 'content-type': 'application/json', cookie };
+	for (const [index, audience] of ['public', 'public', 'readers'].entries()) {
+		const response = await fetch(base + '/api/posts', { method: 'POST', headers,
+			body: JSON.stringify({ title: `Knowledge ${index}`, slug: `k${suffix}-${index}`, status: 'published', audience,
+				tags: index === 0 ? [tag, `${tag}-extra`] : [tag], contentMarkdown: 'privatefixturebody',
+				description: 'privatefixturesummary', publishedAt: `202${index}-01-01T00:00:00Z` }) });
+		assert.equal(response.status, 201);
+	}
+	const query = `/api/posts?tag=${tag}&tag=${tag}-extra`;
+	assert.equal((await (await fetch(base + query)).json()).total, 1);
+	assert.equal((await (await fetch(base + query + '&tagMode=or&limit=1&offset=1')).json()).total, 3);
+	for (const index of [0, 2, 2]) {
+		assert.equal((await fetch(`${base}/api/posts/k${suffix}-${index}/likes`, { method: 'POST', headers })).status, 200);
+	}
+	/** @type {{items: {slug: string; likesCount: number}[]}} */
+	const popular = await (await fetch(`${base}/api/posts?tag=${tag}&sort=popular`)).json();
+	assert.equal(popular.items[0]?.slug, `k${suffix}-0`);
+	assert.equal(popular.items.find((item) => item.slug === `k${suffix}-2`)?.likesCount, 0);
+	/** @type {{total: number; items: {updatedAt: string}[]}} */
+	const updated = await (await fetch(`${base}/api/posts?tag=${tag}&sort=updated`)).json();
+	assert.equal(updated.total, 3);
+	assert(updated.items.every((item) => typeof item.updatedAt === 'string'));
+	const path = `${base}/api/posts/k${suffix}-2/preview`;
+	const locked = await (await fetch(path)).json();
+	assert.equal(locked.locked, true); assert.equal(locked.description, ''); assert.equal(locked.coverImage, null);
+	const visible = await (await fetch(path, { headers: { cookie } })).json();
+	assert.equal(visible.description, 'privatefixturesummary');
+	assert(!JSON.stringify(visible).includes('privatefixturebody'));
+	assert.equal((await fetch(`${base}/api/posts/missing-${suffix}/preview`)).status, 404);
+	const archiveResponse = await fetch(`${base}/posts?tag=${tag}&tagMode=or&sort=popular`);
+	assert.equal(archiveResponse.status, 200, 'Archive SSR failed');
+	const archive = await archiveResponse.text();
+	assert(archive.includes('Most liked'), 'Archive sort control missing');
+	assert(archive.includes('Knowledge 0'), `Archive SQL fixture missing; offline=${archive.includes('Posts temporarily unavailable')}`);
 }
 
 /**
@@ -189,6 +230,7 @@ async function main() {
 	const admin = `a${randomUUID().replaceAll('-', '').slice(0, 12)}`;
 	const password = `fixture-${randomUUID()}`;
 	cli('api/dist/cli/account.js', ['create'], JSON.stringify({ username: admin, password }));
+	cli('api/dist/cli/media.js', ['cleanup', '--dry-run']);
 	const port = await availablePort();
 	const base = `http://127.0.0.1:${port}`;
 	const child = spawn(process.execPath, [join(app, 'runtime/server.mjs')], {

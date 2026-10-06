@@ -3,6 +3,7 @@
  * @brief Browser-direct private R2 upload flow with validated DTOs and no credential forwarding.
  */
 import { z } from 'zod';
+import { uploadWithProgress } from './upload-progress.js';
 
 const preparedSchema = z.object({
 	uploadUrl: z
@@ -28,11 +29,13 @@ const completedSchema = z.object({
  * @brief Uploads bytes directly to a bounded presigned R2 URL, then completes metadata.
  * @param file Selected image.
  * @param fetcher Browser fetch or an offline test double.
+ * @param progress Overall upload workflow percentage.
  * @return Validated same-origin media URL.
  */
 export async function directImageUpload(
 	file: File,
-	fetcher: typeof fetch = fetch
+	fetcher: typeof fetch = fetch,
+	progress: (percent: number) => void = () => undefined
 ): Promise<string> {
 	if (
 		!file.size ||
@@ -42,6 +45,7 @@ export async function directImageUpload(
 	) {
 		throw new Error('Select a png/jpg/webp/gif image up to 5 MiB.');
 	}
+	progress(0);
 	const prepared = await fetcher('/api/media/upload', {
 		method: 'POST',
 		credentials: 'same-origin',
@@ -53,17 +57,15 @@ export async function directImageUpload(
 		throw new Error('Upload authorization failed. Check your session and R2 configuration.');
 	}
 	const { uploadUrl, ticket } = preparedSchema.parse(await prepared.json());
-	const uploaded = await fetcher(uploadUrl, {
-		method: 'PUT',
-		body: file,
-		headers: { 'content-type': file.type },
-		credentials: 'omit',
-		redirect: 'error',
-		signal: AbortSignal.timeout(90_000)
-	});
-	if (!uploaded.ok) {
-		throw new Error('R2 upload failed. Check the bucket CORS policy.');
-	}
+	await transferImage(file, uploadUrl, fetcher, progress);
+	progress(95);
+	const url = await completeUpload(ticket, fetcher);
+	progress(100);
+	return url;
+}
+
+/** @brief Verifies staged metadata before exposing a managed image URL. @param ticket Owner-bound ticket. @param fetcher API transport. @return Validated URL. */
+async function completeUpload(ticket: string, fetcher: typeof fetch): Promise<string> {
 	const completed = await fetcher('/api/media/complete', {
 		method: 'POST',
 		credentials: 'same-origin',
@@ -75,6 +77,29 @@ export async function directImageUpload(
 		throw new Error('Upload verification failed. Retry the upload.');
 	}
 	return completedSchema.parse(await completed.json()).url;
+}
+
+/** @brief Selects measurable browser transfer, retaining an offline fetch seam. @param file Image. @param url Validated signed URL. @param fetcher Fetch seam. @param progress Overall workflow percentage. @return Completion. */
+async function transferImage(
+	file: File,
+	url: string,
+	fetcher: typeof fetch,
+	progress: (percent: number) => void
+): Promise<void> {
+	if (typeof XMLHttpRequest !== 'undefined' && fetcher === fetch) {
+		await uploadWithProgress(file, url, (percent) => progress(Math.round(percent * 0.9)));
+		return;
+	}
+	const response = await fetcher(url, {
+		method: 'PUT',
+		body: file,
+		headers: { 'content-type': file.type },
+		credentials: 'omit',
+		redirect: 'error',
+		signal: AbortSignal.timeout(90_000)
+	});
+	if (!response.ok) throw new Error('R2 upload failed. Check the bucket CORS policy.');
+	progress(90);
 }
 
 /**

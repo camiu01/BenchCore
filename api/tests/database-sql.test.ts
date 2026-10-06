@@ -115,8 +115,27 @@ describe('PostgreSQL groundwork statements', () => {
 			expect(query.params).toContain('published');
 			expect(query.params).toContain('database');
 		}
-		const predicate = (text: string) => text.slice(text.indexOf(' where ')).split(' order by ')[0];
+		const predicate = (text: string) => text.slice(text.indexOf(' from "posts" where ') + ' from "posts"'.length).split(' order by ')[0];
 		expect(predicate(queries[0]!.sql)).toBe(predicate(queries[1]!.sql));
+	});
+
+	it('groups AND tags, parameterizes names and redacts guest popularity before ordering', async () => {
+		const fixture = database([[], [[0]]]);
+		const name = 'tag"; DROP TABLE posts; --';
+		await createDrizzlePosts(fixture.db, createDrizzleTags(fixture.db)).listPublished({
+			limit: 10, offset: 0, now: new Date(), tags: [name, 'other', name], tagMode: 'and', sort: 'popular'
+		});
+		expect(fixture.queries[0]?.sql).toContain('having count(distinct "tags"."name")');
+		expect(fixture.queries[0]?.params).toContain(2);
+		expect(fixture.queries[0]?.params).toContain(name);
+		expect(fixture.queries[0]?.sql).not.toContain(name);
+		expect(fixture.queries[0]?.sql).toContain('then 0 else (select count(*)::integer from "likes"');
+		const either = database([[], [[0]]]);
+		await createDrizzlePosts(either.db, createDrizzleTags(either.db)).listPublished({
+			limit: 10, offset: 0, now: new Date(), tags: [name, 'other'], tagMode: 'or', sort: 'updated'
+		});
+		expect(either.queries[0]?.sql).not.toContain('having');
+		expect(either.queries[0]?.sql).toContain('order by "posts"."updated_at" desc');
 	});
 
 	it('publishes schedules in a single conditional update with the scheduled publication date', async () => {

@@ -139,25 +139,29 @@ from computed theme colors. Screenshots and native-pointer automation were
 unreliable in this session, so browser interactions used DOM events.
 Live PostgreSQL, hosted R2 and deployment checks were not run.
 
-## Pending
-
 ### Version 0.6.0: Media management & storage refinement
 
 Focus: optimize the file lifecycle, clean up orphaned media and refine CDN/R2 management.
 
-- [ ] Background cleanup job for orphaned media: implement a periodic task or dedicated CLI command (`api/src/cli/media.ts`) that uses `deletion-service.ts` to delete R2 files no longer referenced by Markdown posts. #media #storage #ops
-- [ ] Automatic image validation and resizing: add server-side compression (WebP/AVIF) or enforce strict payload limits for direct uploads (`direct-upload.ts`). #media #security #perf
-- [ ] Improve the PostImages UI: add immediate previews, granular upload status with percentage progress bars and visual attachment reordering. #media #ux
-- [ ] CDN cache-control support: refine HTTP `Cache-Control` headers for public and private media endpoints to maximize safe edge caching. #media #security #perf
+- [x] Dedicated orphan cleanup CLI (`api/src/cli/media.ts`) using `deletion-service.ts`: dry-run default, bounded batches, saved-use rechecks and explicit maintenance-only apply. All saved statuses and audiences are protected. No automatic job is started. #media #storage #ops
+- [x] Select the strict direct-upload limits alternative: allowlisted MIME, 5 MiB cap, exact signed length/type and owner-bound completion. Compression/resizing and byte-level decoding are not implemented. #media #security #perf
+- [x] Immediate local previews, measured percentage upload progress, queued-file reordering and safe stand-alone Markdown attachment reordering. #media #ux
+- [x] Audience-safe cache controls: private public-image browser revalidation, no-store reader-only/R2 reads and explicit shared-CDN exclusion. Mutable audiences prevent safe long-lived public edge caching. #media #security #perf
 
 ### Version 0.7.0: Social graph, bidirectional links & knowledge navigation
 
 Focus: strengthen the wiki/knowledge-base experience and connections between posts.
 
-- [ ] Advanced backlinks and link graph: extend `graph-service.ts` and `GraphView.svelte` with hover-card previews for posts connected through `[[wikilink]]` references. #content #graph #ux
-- [ ] Intelligent wikilink suggestions: improve autocomplete in `PostEditor.svelte` with fuzzy search (for example, Fuse.js or SQLite/PostgreSQL full-text search) across slugs, titles and tags. #content #search #ux
-- [ ] Hierarchical navigation and table of contents: automatically generate a table of contents (TOC) from Markdown headings in the reader frontend. #content #frontend #ux
-- [ ] Advanced post filtering: support combined multi-tag filters (AND/OR) and sorting by last update or popularity in post lists. #posts #search #ux
+- [x] Hover/focus previews for wikilinks and graph nodes through lightweight session-aware endpoints. Escape/close dismissal, cancellation, locked-record redaction and no persistent client preview cache. #content #graph #ux
+- [x] Bounded accent-insensitive fuzzy editor suggestions across slugs, titles and tags, without new dependencies. #content #search #ux
+- [x] Collapsible reader TOC from sanitized Markdown headings with stable anchors and no locked-content leakage. #content #frontend #ux
+- [x] Repeated multi-tag filters (AND/OR), update/popularity sorting and filter-preserving pagination in PostgreSQL and memory repositories. Existing likes only; protected engagement counts/rank are hidden from guests. #posts #search #ux
+- [x] Stable 0.7.0 workspace metadata and packaging with exact-tag validation and separate stable/beta approval environments. Publication/deployment remain separate operator actions. #release #cd
+
+Local verification and remaining hosting gates are recorded in
+[`docs/RELEASE_0.7.0.md`](docs/RELEASE_0.7.0.md).
+
+## Pending
 
 ### Version 0.8.0: Engagement, moderation & auth hardening
 
@@ -201,8 +205,6 @@ Focus: guarantee stability, freeze API v1 and prepare for enterprise deployment.
 
 ### Deferred (do not implement yet)
 
-- [ ] Comments #social
-- [ ] Likes #social
 - [ ] Categories #taxonomy
 - [ ] Analytics #data
 - [ ] Newsletters #data

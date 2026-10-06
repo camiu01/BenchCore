@@ -2,9 +2,11 @@
  * @file wikilink-suggestions.ts
  * @brief Cursor-aware helpers for post wikilink autocomplete.
  */
+import { fuzzyScore } from './fuzzy-match.js';
 export interface WikilinkSuggestion {
 	slug: string;
 	title: string;
+	tags?: string[];
 }
 
 export interface WikilinkQuery {
@@ -68,7 +70,7 @@ export function insertEditorWikilink(
 }
 
 /**
- * @brief Filters and caps suggestions by title or slug.
+ * @brief Ranks and caps fuzzy suggestions by title, slug and tags.
  * @param suggestions Available posts.
  * @param query Current text after the opening brackets.
  * @return At most eight matching posts.
@@ -77,11 +79,18 @@ export function filterWikilinkSuggestions(
 	suggestions: WikilinkSuggestion[],
 	query: string
 ): WikilinkSuggestion[] {
-	const needle = query.trim().toLowerCase();
 	return suggestions
-		.filter(
-			(post) =>
-				post.slug.toLowerCase().includes(needle) || post.title.toLowerCase().includes(needle)
-		)
-		.slice(0, 8);
+		.map((post, index) => ({
+			post,
+			index,
+			score: Math.min(
+				fuzzyScore(post.title, query),
+				fuzzyScore(post.slug, query) + 0.1,
+				...(post.tags ?? []).slice(0, 20).map((tag) => fuzzyScore(tag, query) + 0.2)
+			)
+		}))
+		.filter((entry) => Number.isFinite(entry.score))
+		.sort((a, b) => a.score - b.score || a.index - b.index)
+		.slice(0, 8)
+		.map((entry) => entry.post);
 }

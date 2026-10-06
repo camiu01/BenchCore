@@ -18,6 +18,7 @@ import type { GraphData } from './api.js';
 import { matchesGraphNode, relatedGraphNodes } from './graph-navigation.js';
 import { focusedGraphSlugs } from './graph-viewport.js';
 import { GraphViewport } from './graph-zoom.js';
+import type { PreviewController } from './linked-previews.js';
 
 type SimNode = GraphData['nodes'][number] & SimulationNodeDatum & { degree: number };
 interface SimLink extends SimulationLinkDatum<SimNode> {
@@ -119,16 +120,29 @@ function startSimulation(
 	return simulation;
 }
 
-/** @brief Enables pointer, keyboard and drag interaction. @param node Circles. @param simulation Simulation. @param onSelect Selection callback. @return Nothing. */
+/** @brief Enables pointer, keyboard, previews and drag interaction. @param node Circles. @param simulation Simulation. @param onSelect Selection callback. @param onInteract Interaction callback. @param previews Preview coordinator. @return Nothing. */
 function enableNodeInteraction(
 	node: NodeSelection,
 	simulation: Simulation<SimNode, SimLink>,
 	onSelect: (slug: string) => void,
-	onInteract: () => void
+	onInteract: () => void,
+	previews?: PreviewController
 ): void {
 	node
 		.on('click', (_event, item) => onSelect(item.slug))
+		.on('pointerenter', function (_event, item) {
+			previews?.open(item.slug, this);
+		})
+		.on('pointerleave', () => previews?.close())
+		.on('focus', function (_event, item) {
+			previews?.open(item.slug, this);
+		})
+		.on('blur', () => previews?.close())
 		.on('keydown', (event, item) => {
+			if (event.key === 'Escape') {
+				previews?.dismiss();
+				return;
+			}
 			if (event.key !== 'Enter' && event.key !== ' ') return;
 			event.preventDefault();
 			onSelect(item.slug);
@@ -207,12 +221,14 @@ function createSelection(
  * @param svg SVG root.
  * @param graph Public graph.
  * @param onSelect Selection callback.
+ * @param previews Optional delayed preview coordinator.
  * @return Graph controls and cleanup.
  */
 export function createGraphRenderer(
 	svg: SVGSVGElement,
 	graph: GraphData,
-	onSelect: (slug: string) => void
+	onSelect: (slug: string) => void,
+	previews?: PreviewController
 ): GraphController {
 	const { nodes, links } = buildModel(graph);
 	const { scene, link, node, label } = drawScene(svg, nodes, links);
@@ -220,7 +236,7 @@ export function createGraphRenderer(
 	const viewport = new GraphViewport(svg, scene, nodes);
 	simulation.on('tick.viewport', () => viewport.tick());
 	simulation.on('end.viewport', () => viewport.settled());
-	enableNodeInteraction(node, simulation, onSelect, () => viewport.pause());
+	enableNodeInteraction(node, simulation, onSelect, () => viewport.pause(), previews);
 	return {
 		filter: createFilter(node, label),
 		select: createSelection(graph, node, label, link),

@@ -47,7 +47,7 @@ describe('multiple image uploads', () => {
 		]);
 		const retry = vi.fn().mockResolvedValue('/api/media/two.png');
 		await uploadImageBatch(queue, inserted, () => undefined, retry);
-		expect(retry).toHaveBeenCalledExactlyOnceWith(files[1]);
+		expect(retry).toHaveBeenCalledExactlyOnceWith(files[1], expect.any(Function));
 		expect(queue.every((item) => item.status === 'uploaded')).toBe(true);
 	});
 

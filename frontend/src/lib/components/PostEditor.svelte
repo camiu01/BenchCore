@@ -6,9 +6,11 @@
 	import PostImages from './PostImages.svelte';
 	import PostDeleteConfirmation from './PostDeleteConfirmation.svelte';
 	import EditorStatus from './EditorStatus.svelte';
+	import WikilinkOptions from './WikilinkOptions.svelte';
 	import { removeImageFromEditor } from '../image-manager.js';
 	import { insertUploadedImage } from '../image-batch.js';
 	import { selectImageCover } from '../image-details.js';
+	import { moveEditorImage } from '../image-order.js';
 	import {
 		filterWikilinkSuggestions,
 		findWikilinkQuery,
@@ -90,7 +92,7 @@
 		if (editingMedia) return;
 		void imageUploader?.queueFiles(Array.from(event.dataTransfer.files), true);
 	}
-	let wikiMatches = $state<{ slug: string; title: string }[]>([]);
+	let wikiMatches = $state<WikilinkSuggestion[]>([]);
 	let wikiStart = $state(-1);
 	let wikiActive = $state(0);
 
@@ -292,23 +294,7 @@
 						onclick={updateWikiMatches}
 						onkeydown={handleWikiKeydown}>{values.content}</textarea
 					>
-					{#if wikiMatches.length > 0}
-						<div class="wikilink-suggestions" role="listbox" aria-label="Existing post suggestions">
-							{#each wikiMatches as post, index (post.slug)}
-								<button
-									type="button"
-									role="option"
-									aria-selected={index === wikiActive}
-									class:active={index === wikiActive}
-									onmousedown={(event) => event.preventDefault()}
-									onclick={() => insertWikilink(post.slug)}
-								>
-									<strong>{post.title}</strong>
-									<code>{post.slug}</code>
-								</button>
-							{/each}
-						</div>
-					{/if}
+					<WikilinkOptions matches={wikiMatches} active={wikiActive} onselect={insertWikilink} />
 				</div>
 			</div>
 		</div>
@@ -355,6 +341,9 @@
 				removingImages = busy;
 			}}
 			onremoved={detachImage}
+			onmove={(key, direction) => {
+				moveEditorImage(contentInput, key, direction);
+			}}
 			oncover={(key) => {
 				selectImageCover(coverInput, key);
 			}}

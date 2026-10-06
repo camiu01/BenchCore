@@ -9,6 +9,7 @@ export interface ImageUploadItem {
 	status: 'queued' | 'uploading' | 'uploaded' | 'failed';
 	error: string | null;
 	url: string | null;
+	progress: number;
 }
 
 /**
@@ -21,7 +22,8 @@ export function imageUploadQueue(files: File[]): ImageUploadItem[] {
 		file,
 		status: 'queued',
 		error: null,
-		url: null
+		url: null,
+		progress: 0
 	}));
 }
 
@@ -37,17 +39,26 @@ export async function uploadImageBatch(
 	items: ImageUploadItem[],
 	onUploaded: (url: string, file: File) => void,
 	onProgress: () => void,
-	upload: (file: File) => Promise<string> = directImageUpload
+	upload: (file: File, progress: (percent: number) => void) => Promise<string> = (file, progress) =>
+		directImageUpload(file, fetch, progress)
 ): Promise<void> {
 	for (const item of items) {
 		if (item.status === 'uploaded') continue;
 		item.status = 'uploading';
 		item.error = null;
+		item.progress = 0;
 		onProgress();
 		try {
-			const url = await upload(item.file);
+			const url = await upload(item.file, (percent) => {
+				item.progress = Math.max(
+					item.progress,
+					Math.min(100, Math.max(0, Number.isFinite(percent) ? Math.round(percent) : 0))
+				);
+				onProgress();
+			});
 			item.url = url;
 			item.status = 'uploaded';
+			item.progress = 100;
 			onUploaded(url, item.file);
 		} catch (cause) {
 			item.status = 'failed';
@@ -55,6 +66,28 @@ export async function uploadImageBatch(
 		}
 		onProgress();
 	}
+}
+
+/** @brief Reorders a queued batch without mutating successes or running transfers. @param items Queue. @param index Selected position. @param direction Previous or next. @return Reordered queue. */
+export function moveQueuedImage(
+	items: ImageUploadItem[],
+	index: number,
+	direction: -1 | 1
+): ImageUploadItem[] {
+	const target = index + direction;
+	if (
+		index < 0 ||
+		target < 0 ||
+		target >= items.length ||
+		items.some((item) => item.status === 'uploading' || item.status === 'uploaded')
+	)
+		return items;
+	const reordered = [...items];
+	const selected = reordered[index];
+	if (!selected) return items;
+	reordered.splice(index, 1);
+	reordered.splice(target, 0, selected);
+	return reordered;
 }
 
 /**

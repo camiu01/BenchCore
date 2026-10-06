@@ -8,11 +8,13 @@ import { execFileSync } from 'node:child_process';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pnpmInvocation } from './pnpm-invocation.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const pnpm = process.env['npm_execpath'] ?? '';
 assert(pnpm.includes('pnpm'), 'Run this check with pnpm test:vercel-api');
-const store = execFileSync(process.execPath, [pnpm, 'store', 'path', '--silent'],
+const storeInvocation = pnpmInvocation(pnpm, ['store', 'path', '--silent']);
+const store = execFileSync(storeInvocation.command, storeInvocation.args,
 	{ cwd: root, encoding: 'utf8' }).trim();
 assert(isAbsolute(store), 'The original pnpm store must have an absolute path');
 
@@ -45,12 +47,13 @@ async function createFixture(fixture) {
 	for (const name of ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml']) {
 		await cp(join(root, name), join(fixture, name));
 	}
-	const fixtureStore = execFileSync(process.execPath,
-		[pnpm, 'store', 'path', '--silent', '--store-dir', store],
+	const storeCommand = pnpmInvocation(pnpm, ['store', 'path', '--silent', '--store-dir', store]);
+	const fixtureStore = execFileSync(storeCommand.command, storeCommand.args,
 		{ cwd: fixture, encoding: 'utf8' }).trim();
 	assert.equal(fixtureStore, store, 'Environment isolation must not change the offline package store');
-	execFileSync(process.execPath, [pnpm, 'install', '--offline', '--frozen-lockfile', '--ignore-scripts',
-		'--prod=false', '--store-dir', store],
+	const install = pnpmInvocation(pnpm, ['install', '--offline', '--frozen-lockfile', '--ignore-scripts',
+		'--prod=false', '--store-dir', store]);
+	execFileSync(install.command, install.args,
 		{ cwd: fixture, env: { ...process.env, CI: '1' }, stdio: 'inherit' });
 	return api;
 }

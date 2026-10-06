@@ -76,7 +76,7 @@ describe('in-process serverless API', () => {
 		const response = await request(`/api/media/${'a'.repeat(32)}.png`);
 		expect(response.status).toBe(307);
 		expect(response.headers.get('location')).toBe('https://r2.example.test/signed-image');
-		expect(response.headers.get('cache-control')).toBe('no-store');
+		expect(response.headers.get('cache-control')).toBe('private, no-store');
 	});
 	it('uses only the hosting peer, not forged forwarding headers', async () => {
 		handler = createHandler({ ...createTestDeps(repos), rateLimit: { requests: 1, loginRequests: 1, windowMs: 60000 } });

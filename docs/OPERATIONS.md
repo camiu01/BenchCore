@@ -3,8 +3,8 @@
 
 # Operations
 
-For **0.6.0-beta.1 single-origin Node deployment**, use
-[Beta deployment](BETA_DEPLOYMENT.md). The supported deployment is the
+For **0.7.0 single-origin Node deployment**, use
+[Node deployment](BETA_DEPLOYMENT.md). The supported deployment is the
 production-only Node artifact, with a separately managed PostgreSQL database.
 For full-app serverless hosting, use [Vercel and private R2](VERCEL_DEPLOYMENT.md);
 its scheduler is temporarily disabled.

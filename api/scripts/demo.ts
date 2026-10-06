@@ -25,13 +25,14 @@ import { createHandler, parsePort, startServer } from '../src/server.js';
 const links = new Map<string, Set<string>>();
 const users = createMemoryUsers();
 const tags = createMemoryTags(links);
+const likes = createMemoryLikes();
 const repos = {
 	users,
 	tags,
-	posts: createMemoryPosts(tags, links),
+	posts: createMemoryPosts(tags, links, likes),
 	sessions: createMemorySessions(users),
 	comments: createMemoryComments(),
-	likes: createMemoryLikes()
+	likes
 };
 const adminUsername = process.env['ADMIN_USERNAME'];
 const adminPassword = process.env['ADMIN_PASSWORD'];

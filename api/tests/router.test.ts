@@ -286,7 +286,7 @@ describe('admin and render endpoints', () => {
 		expect(result.items.length).toBeGreaterThan(0);
 		expect(result.items.length).toBeLessThanOrEqual(200);
 		for (const row of result.items) {
-			expect(Object.keys(row).sort()).toEqual(['id', 'slug', 'title']);
+			expect(Object.keys(row).sort()).toEqual(['id', 'slug', 'tags', 'title']);
 		}
 	});
 	it('serves drafts by id behind auth and renders previews', async () => {

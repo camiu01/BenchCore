@@ -8,8 +8,20 @@
 	import { publicationDate } from '../../../lib/presentation.js';
 	import { postOutline } from '../../../lib/post-outline.js';
 	import PostOutline from '../../../lib/components/PostOutline.svelte';
+	import { onDestroy } from 'svelte';
+	import {
+		createPreviewController,
+		linkedPostPreviews,
+		type PreviewTarget
+	} from '../../../lib/linked-previews.js';
+	import PostPreviewCard from '../../../lib/components/PostPreviewCard.svelte';
 
 	let { data }: { data: PageData } = $props();
+	let previewTarget = $state<PreviewTarget | null>(null);
+	const previews = createPreviewController((target) => {
+		previewTarget = target;
+	});
+	onDestroy(() => previews.destroy());
 
 	const nav = $derived([
 		{ href: '/', label: '[01] index' },
@@ -85,7 +97,7 @@
 				<PostOutline headings={outline.headings} />
 				<!-- contentHtml is sanitized by the API render pipeline before storage. -->
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				<div class="record-body">{@html outline.html}</div>
+				<div class="record-body" use:linkedPostPreviews={previews}>{@html outline.html}</div>
 			{/if}
 		</article>
 
@@ -121,3 +133,4 @@
 			{/key}{/if}
 	</main>
 </DocShell>
+{#if previewTarget}<PostPreviewCard target={previewTarget} controller={previews} />{/if}

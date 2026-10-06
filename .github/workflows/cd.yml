@@ -1,18 +1,18 @@
 # @file cd.yml
-# @brief Deliver a unified BenchCore Node beta artifact and tag-gated prereleases.
+# @brief Deliver verified Node archives and separately gated stable/beta releases.
 name: CD
 
 on:
   push:
     branches: [main]
-    tags: ["v*-beta.*"]
+    tags: ["v*.*.*"]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: beta-delivery-${{ github.ref }}
+  group: release-delivery-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -38,6 +38,8 @@ jobs:
       BETA_PG_CONCURRENCY: "1"
     outputs:
       version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+      environment: ${{ steps.version.outputs.environment }}
       artifact_name: benchcore-${{ steps.version.outputs.version }}-linux-x64-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Checkout
@@ -57,17 +59,9 @@ jobs:
         id: version
         env:
           RELEASE_REF: ${{ github.ref }}
-        run: |
-          VERSION="$(node -p "require('./package.json').version")"
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$ ]]; then
-            echo "The delivery version must be a beta semver"; exit 1
-          fi
-          if [[ "$RELEASE_REF" == refs/tags/* && "$RELEASE_REF" != "refs/tags/v$VERSION" ]]; then
-            echo "Tag and manifest version do not match"; exit 1
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        run: node scripts/check-release.mjs
       - name: Build and assemble production-only Node bundle
-        run: pnpm build && pnpm beta:package
+        run: pnpm build && pnpm release:package
       - name: Test the actual packaged application
         env:
           BETA_BUNDLE: artifacts/benchcore-${{ steps.version.outputs.version }}
@@ -96,17 +90,17 @@ jobs:
           ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
         run: |
           {
-            printf '## BenchCore beta %s\n\n' "$VERSION"
+            printf '## BenchCore %s\n\n' "$VERSION"
             printf '[Download BenchCore frontend + API artifact](%s)\n\n' "$ARTIFACT_URL"
             printf 'Includes the Linux x64 archive and SHA256SUMS. Retention: 30 days.\n'
             printf 'Requires Node.js 24 and PostgreSQL. No production secrets or content are bundled.\n'
           } >> "$GITHUB_STEP_SUMMARY"
-  prerelease:
+  publish:
     if: startsWith(github.ref, 'refs/tags/')
     needs: bundle
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    environment: beta-release
+    environment: ${{ needs.bundle.outputs.environment }}
     permissions:
       contents: write
     steps:
@@ -115,12 +109,15 @@ jobs:
         with:
           name: ${{ needs.bundle.outputs.artifact_name }}
           path: artifacts
-      - name: Publish tagged beta prerelease
+      - name: Publish the verified matching tag
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.ref_name }}
+          IS_PRERELEASE: ${{ needs.bundle.outputs.prerelease }}
         run: |
           cd artifacts
           sha256sum --check SHA256SUMS
-          gh release create "$RELEASE_TAG" --verify-tag --prerelease --generate-notes *.tar.gz SHA256SUMS
+          FLAGS=()
+          if [[ "$IS_PRERELEASE" == "true" ]]; then FLAGS+=(--prerelease); fi
+          gh release create "$RELEASE_TAG" --verify-tag --generate-notes "${FLAGS[@]}" *.tar.gz SHA256SUMS

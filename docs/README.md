@@ -11,7 +11,7 @@ static-site generator.
 
 | Goal | Read |
 |---|---|
-| Deliver the online beta | [Beta deployment and CI/CD](BETA_DEPLOYMENT.md) |
+| Deliver a Node release | [Node deployment and CI/CD](BETA_DEPLOYMENT.md), [0.7.0 preparation](RELEASE_0.7.0.md) |
 | Run the project | [Development](DEVELOPMENT.md), [Troubleshooting](TROUBLESHOOTING.md) |
 | Write and publish | [Authoring](AUTHORING.md), [Admin & themes](ADMIN_AND_THEMES.md) |
 | Build an API client | [API](API.md), [Threat model](THREAT_MODEL.md) |
@@ -21,11 +21,10 @@ static-site generator.
 
 ## Version and scope
 
-Documentation targets **0.6.0-beta.1**, adding a unified single-origin Node runtime,
-public reader registration, protected user management and password rotation
-to the **0.5.0 milestone**: Origin enforcement, bounded
-rate limits, response headers/CSP, full-text search, scheduled publishing,
-database media storage, and CI. Version bumps do not publish packages, tags,
+Documentation targets **0.7.0**, with linked-post previews, fuzzy editor completion,
+multi-tag archive filters, safe media maintenance and stable release gates.
+The unified Node runtime and Vercel/private-R2 target retain their documented
+operational differences. Version bumps do not publish packages, tags,
 releases, or a hosted service automatically.
 
 Revision tables are groundwork, not a revision product. Public moderated comments

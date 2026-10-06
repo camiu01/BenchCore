@@ -47,7 +47,16 @@ const listSchema = z.object({
 	})
 });
 const postSuggestionsSchema = z.object({
-	items: z.array(z.object({ id: z.uuid(), slug: z.string(), title: z.string() }))
+	items: z
+		.array(
+			z.object({
+				id: z.uuid(),
+				slug: z.string(),
+				title: z.string(),
+				tags: z.array(z.string().max(60)).max(20).default([])
+			})
+		)
+		.max(200)
 });
 const errorSchema = z.object({ message: z.string() });
 const previewSchema = z.object({ html: z.string() });

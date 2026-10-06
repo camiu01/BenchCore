@@ -30,6 +30,10 @@ const posts = {
 	totalPages: 1,
 	perPage: 20,
 	search: 'missing',
+	tags: [],
+	availableTags: [],
+	tagMode: 'and' as const,
+	sort: 'published' as const,
 	online: true
 };
 

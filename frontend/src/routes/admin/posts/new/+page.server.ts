@@ -25,7 +25,7 @@ export const load: PageServerLoad = async ({ request }) => {
 		values: blankValues(),
 		previewHtml: null,
 		uploadedUrl: null,
-		wikilinkSuggestions: posts?.map(({ slug, title }) => ({ slug, title })) ?? []
+		wikilinkSuggestions: posts?.map(({ slug, title, tags }) => ({ slug, title, tags })) ?? []
 	};
 };
 

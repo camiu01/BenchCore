@@ -1,17 +1,17 @@
 <!-- @file BETA_DEPLOYMENT.md -->
-<!-- @brief Single-origin Node beta delivery, installation, account safety and recovery. -->
-# BenchCore beta deployment
+<!-- @brief Single-origin Node delivery, installation, account safety and recovery. -->
+# BenchCore Node deployment
 
 **Bench-testing, Embedded Networks, & Circuit Hacks: Centralized Open-source Research Engine**
 
-Version **0.6.0-beta.1** delivers the frontend and API as one Node.js service.
+Version **0.7.0** delivers the frontend and API as one Node.js service.
 Public pages and `/api/*` share one origin and port, **5180** by default.
 Only a random loopback port is used internally for SSR calls. No second public
 API port, container registry or container image is needed.
 
 **GitHub Pages cannot run this application.** The delivery artifact requires
 a Node.js 24 Linux x64 host and PostgreSQL 17. GitHub stores source, CI results,
-artifacts and optional beta prereleases, not the running PostgreSQL application.
+artifacts and optional tagged releases, not the running PostgreSQL application.
 
 ## GitHub delivery
 
@@ -21,10 +21,11 @@ artifacts and optional beta prereleases, not the running PostgreSQL application.
 - `cd.yml`: pushes to `main` and manual runs reuse CI, build both packages,
   assemble production-only dependencies, test the actual bundle, then upload
   a Linux x64 `.tar.gz` and `SHA256SUMS` as an Actions artifact (30-day retention).
-- A matching tag such as `v0.6.0-beta.1` additionally publishes a **prerelease**
-  after the `beta-release` environment gate. Configure required reviewers in
-  repository settings before tagging. Publishing permission exists only in
-  that job; PR jobs cannot publish.
+- A matching stable tag such as `v0.7.0` publishes a release after the
+  `stable-release` environment gate. Numbered beta tags instead use `beta-release`
+  and publish prereleases. Configure required reviewers and tag restrictions for
+  both environments before tagging; an environment name alone does not protect
+  publication. Publishing permission exists only in that job.
 - There is no automatic server deployment, GHCR upload, database migration on
   the real host or generated production secret. Configure those separately
   when hosting is selected. Merely adding these files does not run them.
@@ -34,12 +35,12 @@ artifacts and optional beta prereleases, not the running PostgreSQL application.
 After the workflow files are committed and pushed, open **Actions → CD → Run
 workflow** on `main`, or let a push to `main` start delivery automatically.
 When the run succeeds, use the download link in the bundle job's summary or
-the run's **Artifacts** section. The artifact name includes the beta version,
+the run's **Artifacts** section. The artifact name includes the release version,
 `linux-x64`, run ID and attempt, so reruns do not collide or replace earlier
 artifacts. It contains `benchcore-<version>-linux-x64.tar.gz` and `SHA256SUMS`.
 GitHub wraps the artifact download in a ZIP: unzip that wrapper first, then
 verify the checksum and extract the inner archive. Downloads require access
-to the repository and are retained for 30 days; tagged prerelease assets are
+to the repository and are retained for 30 days; tagged release assets are
 the longer-lived delivery path.
 
 Review the complete working tree before pushing. Tags and hosted releases
@@ -53,10 +54,11 @@ pnpm check
 pnpm test
 pnpm lint
 pnpm build
-pnpm beta:package
+pnpm release:check
+pnpm release:package
 ```
 
-The directory `artifacts/benchcore-0.6.0-beta.1` is allowlisted: compiled API,
+The directory `artifacts/benchcore-0.7.0` is allowlisted: compiled API,
 frontend build, runtime, migrations, production dependencies, license,
 changelog and this guide. It excludes `.env`, authoring content, uploaded media,
 preview accounts, screenshots, `.git`, tests and development dependencies.
@@ -113,7 +115,7 @@ Apply network-layer connection limits at the host/proxy as well.
 
 ```ini
 [Unit]
-Description=Personal publishing beta
+Description=BenchCore publishing
 After=network-online.target
 Wants=network-online.target
 
@@ -160,11 +162,11 @@ with a 15-second deadline.
   passwords in shell arguments, committed files, workflow inputs or logs.
 
 Existing development passwords are **not** rotated automatically. Sign in and
-change them before exposing the beta. The account migration preserves existing
+change them before exposing the site. The account migration preserves existing
 roles and valid pre-migration sessions; it rejects duplicate case-folded emails
 instead of merging identities. Resolve collisions before retrying migrations.
 
-This beta has **no email verification, CAPTCHA, MFA or account deletion
+This release has **no email verification, CAPTCHA, MFA or account deletion
 workflow**. Password-reset delivery is available when Zoho Mail is configured.
 Email remains a login identifier, not proof of
 mailbox ownership. Add perimeter abuse protection if public registration attracts
@@ -176,7 +178,7 @@ spam. Never rely on in-memory quotas as distributed multi-instance enforcement.
 - `/health/ready`: connectivity and migrated runtime columns, 503 on failure;
   coalesced checks with a two-second cache, no secret/error details.
 - Monitor readiness externally; use PostgreSQL and persistent-media backups.
-  Test a restore before treating the beta as a production-critical archive.
+  Test a restore before treating the site as a production-critical archive.
 - Back up before migrations. Keep the previous release directory and its
   checksum. Code rollback uses the old directory; schema downgrade is **not**
   automatic. Restore a verified backup if a migration is incompatible.
@@ -188,5 +190,9 @@ spam. Never rely on in-memory quotas as distributed multi-instance enforcement.
 - [ ] HTTPS domain, trusted proxy and database TLS configured.
 - [ ] Every development administrator password rotated.
 - [ ] Persistent storage, backup/restore and monitoring verified on the host.
-- [ ] `beta-release` reviewers and main-branch protection configured in GitHub.
-- [ ] Registration abuse controls and documented beta limitations accepted.
+- [ ] `stable-release`/`beta-release` reviewers, tag restrictions and branch protection configured.
+- [ ] Registration abuse controls and documented release limitations accepted.
+
+The legacy `beta:*` command names and this guide's filename remain compatible.
+See [0.7.0 preparation](RELEASE_0.7.0.md) for maintenance safety and local versus
+remote validation evidence.

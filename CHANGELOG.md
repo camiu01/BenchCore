@@ -1,9 +1,58 @@
 # Changelog
 
 Changes follow [Conventional Commits](https://www.conventionalcommits.org/).
-Version 0.6.0-beta.1 is prepared locally. No tag, hosted release or deployment is created.
+Version 0.7.0 is prepared locally. No tag, hosted release or deployment is created.
 
 ## Unreleased
+
+No additional changes.
+
+## 0.7.0 — 2026-10-06
+
+### Knowledge navigation
+
+- Preview linked posts by hovering or focusing wikilinks and graph nodes.
+  Lightweight preview endpoints mask unpublished records and redact reader-only
+  descriptions and covers. No persistent client preview cache is created.
+- Rank editor suggestions with accent-insensitive fuzzy title, slug and tag matches.
+- Add a collapsible heading index, automatically fitted graph views and focused
+  neighborhoods.
+- Combine up to 20 tags using AND/OR and preserve filters across archive pages.
+  Sort by publication, last update or existing likes without new tracking.
+  Restricted engagement counts and popularity rank are hidden from guests.
+
+### Media and editing
+
+- Add an operator-only orphan cleanup CLI, dry-run by default, with bounded
+  batches and saved-reference rechecks. Applying requires stopped writers and an
+  explicit maintenance acknowledgement; no cleanup runs automatically.
+- Enforce the existing 5 MiB direct-upload limit, exact signed MIME/length,
+  owner-bound completion and conditional publication. No image resizing or
+  byte-level decoder is claimed.
+- Show immediate bounded local image previews, measured upload progress and
+  per-file verification/failure states. Reorder queued uploads and stand-alone
+  Markdown attachments without rewriting code, captions or prose.
+- Add private browser revalidation for public local/database images. Audience
+  checks precede 304 responses; reader-only media and R2 URLs remain no-store.
+  Shared CDN caching is disabled because saved audiences can change.
+- Protect unsaved edits, add server-side admin pagination/status counts and
+  enlarge image previews with metadata and quick cover selection.
+- Connect shared-tag graph groups and retain keyboard/mobile targets with the
+  original square monospace buttons.
+- Correct `tsx watch` argument ordering and add an architecture/workflow diagram.
+
+### Delivery
+
+- Set all workspace versions to 0.7.0. Validate stable/beta semver and exact tag
+  matches before packaging or publication.
+- Keep branch builds artifact-only. Stable tags use the `stable-release`
+  approval environment; beta tags retain `beta-release`.
+- Ship the maintenance CLI in the allowlisted Node bundle. Existing `beta:*`
+  commands remain compatible aliases.
+- Support both native Windows and JavaScript pnpm launchers during packaging
+  and Vercel build checks, without invoking a shell.
+
+### Changes since 0.6.0-beta.1
 
 - Relicense BenchCore under AGPL-3.0-or-later: replace `LICENSE` with the
   official GNU Affero text, update manifest `license` fields, expose `license`

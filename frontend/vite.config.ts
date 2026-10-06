@@ -41,7 +41,7 @@ export default defineConfig({
 					'script-src-attr': ['none'],
 					'style-src': ['self'],
 					'style-src-attr': ['none'],
-					'img-src': ['self', 'https:', 'http:'],
+					'img-src': ['self', 'https:', 'http:', 'blob:'],
 					'connect-src': [
 						'self',
 						...(r2Account ? [`https://${r2Account}.r2.cloudflarestorage.com` as const] : [])

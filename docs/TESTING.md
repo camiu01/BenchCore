@@ -13,11 +13,12 @@ pnpm check
 pnpm test
 pnpm lint
 pnpm build
+pnpm release:check
 ```
 
 Use Node.js 24 and pnpm 10.15.0. CI should install with
 `pnpm install --frozen-lockfile` and run API/frontend typechecks, tests,
-frontend lint, and both production builds. A local 0.5.0 version bump does not
+frontend lint, and both production builds. A local 0.7.0 version bump does not
 publish anything.
 
 `pnpm check` covers both packages. The explicit API TypeScript command is
@@ -51,6 +52,12 @@ Use temporary, isolated storage for filesystem tests.
 | Search | Matching semantics, pagination/tag combination, no private results |
 | Scheduling | Not due stays private, due processing, clearing schedule, repeat ticks |
 | Media | MIME/size/key validation; save/load/remove parity across providers |
+| Media maintenance | Dry-run never deletes, bounded apply, every saved status/audience protected, concurrent-use rechecks |
+| Media caching | Current audience checked before 304; reader-only/R2 no-store, no shared CDN caching |
+| Upload UI | Immediate preview cleanup, measured progress, retry skips successes, safe queue/Markdown reordering |
+| Knowledge navigation | Locked/draft preview redaction, target validation, cancellation, fuzzy title/slug/tag ranking |
+| Archive | Multi-tag AND/OR, identical count filters, stable update/like sorting, guest engagement redaction |
+| Release | Workspace versions match, exact tag, separate stable/beta approval gates, allowlisted artifact |
 | Frontend | DTO validation, admin guard, server-only cookie forwarding |
 | Headers/CSP | Expected headers and working scripts/styles/media in production |
 | Themes | Persistence, invalid stored preference, three-theme presentation |
@@ -67,7 +74,7 @@ database:
 
 1. Apply all committed migrations to an empty database.
 2. Seed/import representative drafts, published and archived posts.
-3. Exercise real search and combined tag filters.
+3. Exercise real search, multi-tag AND/OR and update/popularity sorting with guest redaction.
 4. Update searchable content and confirm the generated vector changes.
 5. Process due schedules and confirm public eligibility.
 6. Upload/load/delete in database media mode.
