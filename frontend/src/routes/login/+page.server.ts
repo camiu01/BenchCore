@@ -11,6 +11,7 @@ import { apiBase } from '../../lib/api.js';
 import { apiFetch } from '../../lib/server/transport.js';
 import { sessionSchema } from '../../lib/server/session.js';
 import { postReturnPath } from '../../lib/server/return-path.js';
+import { serverT } from '../../lib/server/server-t.js';
 
 /**
  * @brief Redirects authenticated visitors to the dashboard.
@@ -23,11 +24,11 @@ export const load: PageServerLoad = ({ locals, url }) => {
 		throw redirect(303, next ?? (locals.user.role === 'admin' ? '/admin' : '/account'));
 	}
 	const notice = url.searchParams.has('passwordReset')
-		? 'Password reset. You can now sign in.'
+		? serverT('auth.login.notice.passwordReset')
 		: url.searchParams.has('passwordChanged')
-			? 'Password changed. Sign in again.'
+			? serverT('auth.login.notice.passwordChanged')
 			: url.searchParams.has('registered')
-				? 'Account created. You can now sign in.'
+				? serverT('auth.login.notice.registered')
 				: null;
 	return { notice, next };
 };
@@ -49,7 +50,7 @@ export const actions: Actions = {
 			})
 			.safeParse({ email, password });
 		if (!input.success) {
-			return fail(400, { error: 'Enter a valid username or email and password.', email });
+			return fail(400, { error: serverT('auth.login.error.invalidInput'), email });
 		}
 		let response: Response;
 		try {
@@ -61,7 +62,7 @@ export const actions: Actions = {
 			});
 		} catch {
 			return fail(503, {
-				error: 'Sign-in is temporarily unavailable. Please try again in a moment.',
+				error: serverT('auth.login.error.signInUnavailable'),
 				email
 			});
 		}
@@ -69,10 +70,10 @@ export const actions: Actions = {
 			const status = response.status === 429 ? 429 : response.status >= 500 ? 503 : 401;
 			const error =
 				status === 429
-					? 'Too many attempts. Please retry later.'
+					? serverT('auth.error.rateLimited')
 					: status === 503
-						? 'API unavailable. Please retry.'
-						: 'Invalid credentials.';
+						? serverT('auth.login.error.apiUnavailable')
+						: serverT('auth.login.error.invalidCredentials');
 			return fail(status, { error, email });
 		}
 		const result = sessionSchema.safeParse(await response.json().catch(() => null));
@@ -81,7 +82,7 @@ export const actions: Actions = {
 			!result.data.user ||
 			!applySessionCookie(cookies, response.headers.getSetCookie())
 		) {
-			return fail(502, { error: 'Invalid API session response.', email });
+			return fail(502, { error: serverT('auth.login.error.invalidSession'), email });
 		}
 		throw redirect(
 			303,

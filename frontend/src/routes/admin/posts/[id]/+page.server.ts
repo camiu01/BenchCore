@@ -15,6 +15,7 @@ import {
 	valuesFromForm,
 	type EditorValues
 } from '../../../../lib/server/admin-api.js';
+import { serverT } from '../../../../lib/server/server-t.js';
 
 /**
  * @brief Loads the post into editor values.
@@ -28,7 +29,7 @@ export const load: PageServerLoad = async ({ params, request }) => {
 		adminListPostSuggestions(cookie)
 	]);
 	if (post === null) {
-		throw error(404, 'record not found');
+		throw error(404, serverT('admin.error.recordNotFound'));
 	}
 	const values: EditorValues = {
 		title: post.title,
@@ -75,7 +76,12 @@ export const actions: Actions = {
 	preview: async ({ request }) => {
 		const values = valuesFromForm(await request.formData());
 		const html = await adminRenderPreview(request.headers.get('cookie'), values.content);
-		return { values, previewHtml: html ?? '(render failed)', uploadedUrl: null, error: null };
+		return {
+			values,
+			previewHtml: html ?? serverT('admin.preview.renderFailed'),
+			uploadedUrl: null,
+			error: null
+		};
 	},
 	/**
 	 * @brief Deletes the post through the API.
@@ -86,7 +92,12 @@ export const actions: Actions = {
 		const ok = await adminDeletePost(request.headers.get('cookie'), params.id);
 		if (!ok) {
 			const values = valuesFromForm(await request.formData());
-			return fail(400, { values, previewHtml: null, uploadedUrl: null, error: 'Delete failed.' });
+			return fail(400, {
+				values,
+				previewHtml: null,
+				uploadedUrl: null,
+				error: serverT('admin.error.deleteFailed')
+			});
 		}
 		throw redirect(303, '/admin');
 	},
@@ -104,7 +115,7 @@ export const actions: Actions = {
 				values,
 				previewHtml: null,
 				uploadedUrl: null,
-				error: 'No file selected.'
+				error: serverT('admin.error.noFile')
 			});
 		}
 		const result = await adminUploadMedia(request.headers.get('cookie'), file);

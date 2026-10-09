@@ -1,6 +1,7 @@
 <!-- @file DateTimeField.svelte @brief Local-time date picker that submits canonical UTC ISO values. -->
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '../i18n/t.svelte.js';
 
 	interface Props {
 		id: string;
@@ -13,7 +14,8 @@
 	let { id, name, label, value, readonly = false }: Props = $props();
 	let localValue = $state('');
 	let isoValue = $state(initialIso());
-	let timezone = $state('local time');
+	let timezone = $state<string | null>(null);
+	const zoneLabel = $derived(timezone ?? t('editor.date.localTime'));
 
 	/** @brief Captures the initial canonical value for SSR form submission. @return Initial timestamp. */
 	function initialIso(): string {
@@ -50,7 +52,7 @@
 	onMount(() => {
 		localValue = toLocalInput(value);
 		isoValue = value;
-		timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'local time';
+		timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
 	});
 </script>
 
@@ -68,8 +70,8 @@
 		/>
 		<input type="hidden" {name} value={isoValue} />
 		{#if isoValue}
-			<button class="btn" type="button" onclick={clear}>CLEAR</button>
+			<button class="btn" type="button" onclick={clear}>{t('editor.date.clear')}</button>
 		{/if}
 	</div>
-	<small class="field-help">{timezone}; stored as UTC.</small>
+	<small class="field-help">{t('editor.date.storedUtc', { timezone: zoneLabel })}</small>
 </div>

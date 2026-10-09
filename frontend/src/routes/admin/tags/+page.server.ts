@@ -9,6 +9,7 @@ import {
 	adminListTags,
 	adminUpdateTagColor
 } from '../../../lib/server/admin-api.js';
+import { serverT } from '../../../lib/server/server-t.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /**
@@ -22,9 +23,9 @@ export const load: PageServerLoad = async ({ request, url }) => {
 		items: result?.items ?? [],
 		online: result !== null,
 		notice: url.searchParams.has('deleted')
-			? 'Tag deleted from every post.'
+			? serverT('admin.tags.deleted')
 			: url.searchParams.has('updated')
-				? 'Tag color updated.'
+				? serverT('admin.tags.updated')
 				: null
 	};
 };
@@ -42,7 +43,7 @@ export const actions: Actions = {
 		const id = idSchema.safeParse(form.get('id'));
 		const color = colorSchema.safeParse(form.get('color'));
 		if (!id.success || !color.success) {
-			return fail(400, { error: 'Choose a valid tag color.' });
+			return fail(400, { error: serverT('admin.error.invalidTagColor') });
 		}
 		const result = await adminUpdateTagColor(request.headers.get('cookie'), id.data, color.data);
 		if (!result.ok) {
@@ -55,7 +56,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const id = idSchema.safeParse(form.get('id'));
 		if (!id.success) {
-			return fail(400, { error: 'Invalid tag.' });
+			return fail(400, { error: serverT('admin.error.invalidTag') });
 		}
 		const result = await adminDeleteTag(request.headers.get('cookie'), id.data);
 		if (!result.ok) {

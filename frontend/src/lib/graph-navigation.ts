@@ -3,6 +3,8 @@
  * @brief Search and related-post projections for accessible graph navigation.
  */
 import type { GraphData } from './api.js';
+import { DEFAULT_LOCALE } from './i18n/locale.js';
+import { translator } from './i18n/translate.js';
 
 /** @brief Matches a post title or tag. @param node Graph post. @param query Search text. @return Whether the post matches. */
 export function matchesGraphNode(node: GraphData['nodes'][number], query: string): boolean {
@@ -13,8 +15,12 @@ export function matchesGraphNode(node: GraphData['nodes'][number], query: string
 	);
 }
 
-/** @brief Finds connected posts and explains shared topics. @param graph Public graph. @param slug Selected slug. @return Connected posts with connection labels. */
-export function relatedGraphNodes(graph: GraphData, slug: string | null) {
+/** @brief Finds connected posts and explains shared topics. @param graph Public graph. @param slug Selected slug. @param tr Message translator. @return Connected posts with connection labels. */
+export function relatedGraphNodes(
+	graph: GraphData,
+	slug: string | null,
+	tr: ReturnType<typeof translator> = translator(DEFAULT_LOCALE)
+) {
 	const selected = graph.nodes.find((node) => node.slug === slug);
 	if (!selected) return [];
 	const neighbors = new Set<string>();
@@ -36,8 +42,8 @@ export function relatedGraphNodes(graph: GraphData, slug: string | null) {
 			return {
 				...node,
 				reason: shared.length
-					? `Shared topics: ${shared.map((tag) => tag.name).join(', ')}`
-					: 'Linked in a post'
+					? tr('public.graph.reasonShared', { topics: shared.map((tag) => tag.name).join(', ') })
+					: tr('public.graph.reasonLinked')
 			};
 		});
 }

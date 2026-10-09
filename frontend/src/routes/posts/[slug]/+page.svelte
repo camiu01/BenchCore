@@ -6,6 +6,7 @@
 	import PostEngagement from '../../../lib/components/PostEngagement.svelte';
 	import ReaderGate from '../../../lib/components/ReaderGate.svelte';
 	import { publicationDate } from '../../../lib/presentation.js';
+	import { currentLocale, t } from '../../../lib/i18n/t.svelte.js';
 	import { postOutline } from '../../../lib/post-outline.js';
 	import PostOutline from '../../../lib/components/PostOutline.svelte';
 	import { onDestroy } from 'svelte';
@@ -24,14 +25,17 @@
 	onDestroy(() => previews.destroy());
 
 	const nav = $derived([
-		{ href: '/', label: '[01] index' },
-		{ href: '/posts', label: '[02] records' },
-		{ href: '/tags', label: '[03] tags' },
-		{ href: `/graph?focus=${encodeURIComponent(data.post.slug)}`, label: '[04] graph' }
+		{ href: '/', label: `[01] ${t('public.nav.index')}` },
+		{ href: '/posts', label: `[02] ${t('public.nav.records')}` },
+		{ href: '/tags', label: `[03] ${t('public.nav.tags')}` },
+		{
+			href: `/graph?focus=${encodeURIComponent(data.post.slug)}`,
+			label: `[04] ${t('public.nav.graph')}`
+		}
 	]);
 	const cover = $derived(data.cover);
 	const canonical = $derived(`${data.siteBase}/posts/${encodeURIComponent(data.post.slug)}`);
-	const outline = $derived(postOutline(data.post.locked ? '' : data.post.contentHtml));
+	const outline = $derived(postOutline(data.post.locked ? '' : data.post.contentHtml, t));
 </script>
 
 <Seo
@@ -42,40 +46,52 @@
 />
 
 <DocShell
-	docId="FORM: BENCHCORE-2026 // REF: {data.post.slug.toUpperCase()}"
+	docId={t('public.docId', { ref: data.post.slug.toUpperCase() })}
 	title={data.post.title}
-	sub={data.post.locked ? 'Sign in to read this post.' : data.post.description || ''}
+	sub={data.post.locked ? t('public.post.signInToRead') : data.post.description || ''}
 	{nav}
-	footerLeft={data.post.locked ? 'ACCESS: READERS ONLY' : `READ: ${data.post.readingMinutes} MIN`}
-	footerRight="PUBLISHED: {publicationDate(data.post.publishedAt)}"
+	footerLeft={data.post.locked
+		? t('public.post.footerLocked')
+		: t('public.post.footerRead', { n: data.post.readingMinutes })}
+	footerRight={t('public.post.footerPublished', {
+		date: publicationDate(data.post.publishedAt, currentLocale())
+	})}
 	activeHref="/posts"
 >
 	<main>
-		<p><a href="/posts">← All posts</a></p>
+		<nav class="breadcrumb" aria-label={t('public.post.breadcrumb')}>
+			<a href="/">{t('public.post.breadcrumbIndex')}</a><span aria-hidden="true">/</span><a
+				href="/posts">{t('public.post.breadcrumbPosts')}</a
+			><span aria-hidden="true">/</span><span aria-current="page">{data.post.slug}</span>
+		</nav>
 		<article class="record">
 			<div class="record-header">
-				<span class="record-title">{data.post.title}</span>
-				<span class="stamp">{data.post.audience === 'readers' ? 'READERS ONLY' : 'PUBLISHED'}</span>
+				<span class="record-title">{t('public.post.record', { slug: data.post.slug })}</span>
+				<span class="stamp"
+					>{data.post.audience === 'readers'
+						? t('public.readersOnly')
+						: t('public.published')}</span
+				>
 			</div>
 			<table class="spec-table">
 				<tbody>
 					<tr>
-						<td class="label">PUBLISHED</td>
+						<td class="label">{t('public.published')}</td>
 						<td
 							><time datetime={data.post.publishedAt ?? undefined}
-								>{publicationDate(data.post.publishedAt)}</time
+								>{publicationDate(data.post.publishedAt, currentLocale())}</time
 							></td
 						>
 					</tr>
 					{#if data.post.authorName !== null}
 						<tr>
-							<td class="label">AUTHOR</td>
+							<td class="label">{t('public.field.author')}</td>
 							<td>{data.post.authorName}</td>
 						</tr>
 					{/if}
 					{#if data.post.tags.length > 0}
 						<tr>
-							<td class="label">TAGS</td>
+							<td class="label">{t('public.field.tags')}</td>
 							<td>
 								{#each data.post.tags as tag, index (tag)}<a href="/tags/{encodeURIComponent(tag)}"
 										>{tag}</a
@@ -103,13 +119,13 @@
 
 		{#if data.post.backlinks.length > 0}
 			<section class="tool-section">
-				<div class="section-banner">Posts that link here</div>
+				<div class="section-banner">{t('public.post.backlinks')}</div>
 				<table class="inventory-table">
 					<thead>
 						<tr>
-							<th>REF</th>
-							<th>RECORD</th>
-							<th>LINK</th>
+							<th>{t('public.post.colRef')}</th>
+							<th>{t('public.post.colRecord')}</th>
+							<th>{t('public.post.colLink')}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -118,8 +134,9 @@
 								<td class="code">BK-{String(index + 1).padStart(2, '0')}</td>
 								<td class="item">{link.title}</td>
 								<td class="dim"
-									><a href="/posts/{encodeURIComponent(link.slug)}" aria-label="Read {link.title}"
-										>Read →</a
+									><a
+										href="/posts/{encodeURIComponent(link.slug)}"
+										aria-label={t('public.readAria', { title: link.title })}>{t('public.read')}</a
 									></td
 								>
 							</tr>

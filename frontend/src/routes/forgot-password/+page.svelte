@@ -2,6 +2,7 @@
 <script lang="ts">
 	import DocShell from '../../lib/components/DocShell.svelte';
 	import Seo from '../../lib/components/Seo.svelte';
+	import { t } from '../../lib/i18n/t.svelte.js';
 	import type { ActionData, PageData } from './$types';
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const nav = [
@@ -11,31 +12,31 @@
 </script>
 
 <Seo
-	title="Recover password | BenchCore"
-	description="Request a password reset link."
+	title={t('auth.forgot.seoTitle')}
+	description={t('auth.forgot.seoDescription')}
 	canonical="{data.siteBase}/forgot-password"
 />
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: RECOVERY"
-	title="RECOVER PASSWORD"
-	sub="Request a single-use link. It expires after one hour."
+	title={t('auth.forgot.title')}
+	sub={t('auth.forgot.sub')}
 	{nav}
-	footerLeft="AUTH: RECOVERY"
-	footerRight="TOKEN: SINGLE USE"
+	footerLeft={t('auth.forgot.footerLeft')}
+	footerRight={t('auth.forgot.footerRight')}
 >
 	<main>
 		<article class="record">
-			<div class="record-header"><span class="record-title">EMAIL ADDRESS</span></div>
+			<div class="record-header"><span class="record-title">{t('auth.forgot.heading')}</span></div>
 			{#if form?.error}<p class="error-stamp" role="alert">{form.error}</p>{/if}
 			{#if form?.success}
 				<p class="summary" role="status">
-					If an active account uses that email, a reset link has been sent.
+					{t('auth.forgot.sent')}
 				</p>
-				<p class="summary">Check your inbox and spam folder. The link expires after one hour.</p>
-				<a class="btn" href="/login">Back to sign in</a>
+				<p class="summary">{t('auth.forgot.sentHelp')}</p>
+				<a class="btn" href="/login">{t('auth.forgot.back')}</a>
 			{:else}
 				<form method="POST" class="form-grid">
-					<label class="field-label" for="email">Account email</label>
+					<label class="field-label" for="email">{t('auth.forgot.email')}</label>
 					<input
 						class="field-input"
 						id="email"
@@ -47,7 +48,7 @@
 						value={form?.email ?? ''}
 					/>
 					<div class="btn-row">
-						<button class="btn btn-accent" type="submit">SEND RESET LINK</button>
+						<button class="btn btn-accent" type="submit">{t('auth.forgot.submit')}</button>
 					</div>
 				</form>
 			{/if}

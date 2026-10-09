@@ -40,7 +40,7 @@
 
 .admin-post-tools {
 	padding: 24px;
-	border: 1px solid var(--border-light);
+	border: 2px solid var(--border);
 	background: var(--card-bg);
 }
 
@@ -64,9 +64,10 @@
 
 .admin-post-card {
 	padding: 24px;
-	margin-top: 12px;
-	border: 1px solid var(--border-light);
+	margin-top: 16px;
+	border: 2px solid var(--border);
 	background: var(--sheet-bg);
+	box-shadow: 4px 4px 0 var(--shadow-ink);
 }
 
 .admin-post-card > div:first-child {
@@ -108,7 +109,7 @@
 	z-index: 5;
 	padding: 16px 0;
 	background: var(--sheet-bg);
-	border-top: 1px solid var(--border-light);
+	border-top: 3px solid var(--border);
 }
 
 @media (max-width: 600px) {

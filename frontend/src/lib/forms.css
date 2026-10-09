@@ -112,9 +112,9 @@ textarea.field-input {
 	right: 0;
 	max-height: 230px;
 	overflow-y: auto;
-	border: 1px solid var(--border);
+	border: 2px solid var(--border);
 	background: var(--sheet-bg);
-	box-shadow: 4px 4px 0 rgb(0 0 0 / 15%);
+	box-shadow: 4px 4px 0 var(--shadow-ink);
 }
 
 .wikilink-suggestions button {

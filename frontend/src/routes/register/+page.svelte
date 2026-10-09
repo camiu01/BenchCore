@@ -2,6 +2,7 @@
 <script lang="ts">
 	import DocShell from '../../lib/components/DocShell.svelte';
 	import Seo from '../../lib/components/Seo.svelte';
+	import { t } from '../../lib/i18n/t.svelte.js';
 	import type { ActionData, PageData } from './$types';
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const nav = [
@@ -11,23 +12,23 @@
 </script>
 
 <Seo
-	title="Register | BenchCore"
-	description="Create a reader account."
+	title={t('auth.register.seoTitle')}
+	description={t('auth.register.seoDescription')}
 	canonical="{data.siteBase}/register"
 />
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: REGISTER"
-	title="CREATE AN ACCOUNT"
-	sub="Read members-only posts and join the conversation."
+	title={t('auth.register.title')}
+	sub={t('auth.register.sub')}
 	{nav}
-	footerLeft="ACCESS: READER"
-	footerRight="8+ CHARACTER PASSWORD"
+	footerLeft={t('auth.register.footerLeft')}
+	footerRight={t('auth.register.footerRight')}
 >
 	<main>
 		<article class="record">
 			{#if form?.error}<p class="error-stamp" role="alert">{form.error}</p>{/if}
 			<form method="POST" action="?/register" class="form-grid">
-				<label class="field-label" for="name">Display name</label>
+				<label class="field-label" for="name">{t('auth.register.name')}</label>
 				<input
 					class="field-input"
 					id="name"
@@ -37,7 +38,7 @@
 					autocomplete="name"
 					value={form?.name ?? ''}
 				/>
-				<label class="field-label" for="username">Username</label>
+				<label class="field-label" for="username">{t('auth.register.username')}</label>
 				<input
 					class="field-input"
 					id="username"
@@ -51,9 +52,9 @@
 					value={form?.username ?? ''}
 				/>
 				<p class="field-help" id="username-help">
-					Use 3–32 letters, numbers, underscores or hyphens. Start with a letter.
+					{t('auth.register.usernameHelp')}
 				</p>
-				<label class="field-label" for="email">Email</label>
+				<label class="field-label" for="email">{t('auth.register.email')}</label>
 				<input
 					class="field-input"
 					id="email"
@@ -64,7 +65,7 @@
 					autocomplete="email"
 					value={form?.email ?? ''}
 				/>
-				<label class="field-label" for="password">Password</label>
+				<label class="field-label" for="password">{t('auth.register.password')}</label>
 				<input
 					class="field-input"
 					id="password"
@@ -77,9 +78,9 @@
 					aria-describedby="password-help"
 				/>
 				<p class="field-help" id="password-help">
-					Use at least 8 characters. Choose a password you do not use elsewhere.
+					{t('auth.register.passwordHelp')}
 				</p>
-				<label class="field-label" for="confirmation">Confirm password</label>
+				<label class="field-label" for="confirmation">{t('auth.register.confirmation')}</label>
 				<input
 					class="field-input"
 					id="confirmation"
@@ -91,8 +92,8 @@
 					autocomplete="new-password"
 				/>
 				<div class="btn-row">
-					<button class="btn btn-accent" type="submit">Create account →</button>
-					<a class="btn" href="/login">Already have an account? Sign in</a>
+					<button class="btn btn-accent" type="submit">{t('auth.register.submit')}</button>
+					<a class="btn" href="/login">{t('auth.register.signIn')}</a>
 				</div>
 			</form>
 		</article>

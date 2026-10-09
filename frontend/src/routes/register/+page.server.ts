@@ -5,6 +5,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { accountError, accountRequest } from '../../lib/server/account-api.js';
+import { serverT } from '../../lib/server/server-t.js';
 import type { Actions } from './$types';
 
 export const actions: Actions = {
@@ -30,7 +31,7 @@ export const actions: Actions = {
 			.safeParse({ ...fields, password });
 		if (!parsed.success || password !== form.get('confirmation')) {
 			return fail(400, {
-				error: 'Check your details and matching 8+ character passwords.',
+				error: serverT('auth.register.error.invalid'),
 				...fields
 			});
 		}

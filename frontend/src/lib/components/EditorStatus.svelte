@@ -4,6 +4,7 @@
 	import { beforeNavigate } from '$app/navigation';
 	import { enhance } from '$app/forms';
 	import type { EditorValues } from '../server/editor-values.js';
+	import { t } from '../i18n/t.svelte.js';
 	import { editorSnapshot, liveEditorSnapshot } from '../editor-state.js';
 
 	let {
@@ -44,8 +45,7 @@
 		const from = navigation.from?.url;
 		const to = navigation.to?.url;
 		if (from && to && from.pathname === to.pathname && from.search === to.search) return;
-		if (!window.confirm('You have unsaved changes. Leave this page and discard them?'))
-			navigation.cancel();
+		if (!window.confirm(t('editor.state.leaveConfirm'))) navigation.cancel();
 	});
 
 	/** @brief Requests the browser's native warning on reload, close or external navigation. @param event Unload event. @return Nothing. */
@@ -92,11 +92,11 @@
 
 <p bind:this={element} class="editor-status field-help" role="status" aria-live="polite">
 	{submitting
-		? 'Submitting…'
+		? t('editor.state.submitting')
 		: dirty
-			? 'Unsaved changes'
+			? t('editor.state.unsaved')
 			: isNew
-				? 'Not saved yet'
-				: 'No unsaved changes'}
-	<span> · Autosave is off.</span>
+				? t('editor.state.notSaved')
+				: t('editor.state.saved')}
+	<span> · {t('editor.state.autosaveOff')}</span>
 </p>

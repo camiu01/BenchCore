@@ -8,6 +8,7 @@ declare global {
 		// interface Error {}
 		interface Locals {
 			user: { id: string; email: string; name: string; role: string } | null;
+			locale: import('./lib/i18n/locale.js').Locale;
 		}
 		// interface PageData {}
 		// interface PageState {}

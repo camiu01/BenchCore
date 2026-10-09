@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { MAX_MEDIA_BYTES } from '../media/storage.js';
 import { requireUser } from './auth.js';
 import { readBody, sendJson, MEDIA_PREFIX } from './response.js';
+import { apiMessage } from '../i18n/index.js';
 import type { ApiHandler } from './types.js';
 
 const prepareSchema = z.object({ filename: z.string().min(1).max(200),
@@ -27,7 +28,7 @@ export const handlePrepareUpload: ApiHandler = async (req, res, deps) => {
 	const parsed = prepareSchema.safeParse(body.data);
 	if (!parsed.success) { sendJson(res, 400, { error: 'validation' }); return; }
 	try { sendJson(res, 200, await deps.media.direct.prepare(parsed.data, user.id)); }
-	catch { sendJson(res, 503, { error: 'internal', message: 'Upload service unavailable' }); }
+	catch { sendJson(res, 503, { error: 'internal', message: apiMessage(req, 'upload.unavailable') }); }
 };
 
 /**
@@ -46,5 +47,5 @@ export const handleCompleteUpload: ApiHandler = async (req, res, deps) => {
 	try {
 		const record = await deps.media.direct.complete(parsed.data.ticket, user.id);
 		sendJson(res, 201, { ...record, url: `${MEDIA_PREFIX}/${record.key}` });
-	} catch { sendJson(res, 400, { error: 'validation', message: 'Upload completion rejected' }); }
+	} catch { sendJson(res, 400, { error: 'validation', message: apiMessage(req, 'upload.rejected') }); }
 };

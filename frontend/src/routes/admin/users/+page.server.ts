@@ -5,12 +5,13 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { accountError, accountRequest, listAccounts } from '../../../lib/server/account-api.js';
+import { serverT } from '../../../lib/server/server-t.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /** @brief Loads a bounded user ledger. @param event Session and query. @return Page. */
 export const load: PageServerLoad = async ({ request, url, locals }) => {
 	if (locals.user?.role !== 'admin') {
-		throw error(403, 'Administrator access required');
+		throw error(403, serverT('admin.error.adminRequired'));
 	}
 	const offset = z.coerce
 		.number()
@@ -19,7 +20,7 @@ export const load: PageServerLoad = async ({ request, url, locals }) => {
 		.max(100_000)
 		.safeParse(url.searchParams.get('offset') ?? 0);
 	if (!offset.success) {
-		throw error(400, 'Invalid page');
+		throw error(400, serverT('admin.error.invalidPage'));
 	}
 	const page = await listAccounts(request.headers.get('cookie'), offset.data);
 	return {
@@ -34,7 +35,7 @@ export const actions: Actions = {
 	/** @brief Creates an explicit managed identity. @param event Form and administrator. @return Feedback or redirect. */
 	create: async ({ request, locals }) => {
 		if (locals.user?.role !== 'admin') {
-			throw error(403, 'Administrator access required');
+			throw error(403, serverT('admin.error.adminRequired'));
 		}
 		const form = await request.formData();
 		const parsed = z
@@ -54,7 +55,7 @@ export const actions: Actions = {
 				)
 			);
 		if (!parsed.success) {
-			return fail(400, { error: 'Valid identity and an 8+ character password are required.' });
+			return fail(400, { error: serverT('admin.error.invalidIdentity') });
 		}
 		const result = await accountRequest(
 			request.headers.get('cookie'),
@@ -70,7 +71,7 @@ export const actions: Actions = {
 	/** @brief Changes role/activation without allowing password resets or last-admin removal. @param event Form. @return Feedback or redirect. */
 	update: async ({ request, locals }) => {
 		if (locals.user?.role !== 'admin') {
-			throw error(403, 'Administrator access required');
+			throw error(403, serverT('admin.error.adminRequired'));
 		}
 		const form = await request.formData();
 		const parsed = z
@@ -81,7 +82,7 @@ export const actions: Actions = {
 			})
 			.safeParse({ id: form.get('id'), role: form.get('role'), isActive: form.get('isActive') });
 		if (!parsed.success) {
-			return fail(400, { error: 'Select a valid account state.' });
+			return fail(400, { error: serverT('admin.error.invalidAccountState') });
 		}
 		const result = await accountRequest(
 			request.headers.get('cookie'),

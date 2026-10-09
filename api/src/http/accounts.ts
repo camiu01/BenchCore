@@ -11,6 +11,7 @@ import {
 	passwordResetSchema
 } from '../auth/password-reset.js';
 import { clearSessionCookieHeader } from '../auth/session.js';
+import { apiMessage } from '../i18n/index.js';
 import type { ApiHandler } from './types.js';
 import { getSessionUser, requireUser, userDto } from './auth.js';
 import { readBody, sendJson } from './response.js';
@@ -24,9 +25,9 @@ export const handleRegister: ApiHandler = async (req, res, deps) => {
 	const body = await readBody(req, res);
 	if (!body) { return; }
 	const parsed = registrationSchema.safeParse(body.data);
-	if (!parsed.success) { sendJson(res, 400, { error: 'validation', message: 'Valid identity and an 8+ character password are required' }); return; }
+	if (!parsed.success) { sendJson(res, 400, { error: 'validation', message: apiMessage(req, 'account.register_invalid') }); return; }
 	const user = await registerUser(deps.users, parsed.data);
-	sendJson(res, user ? 201 : 409, user ? { user: userDto(user) } : { error: 'conflict', message: 'Account details unavailable' });
+	sendJson(res, user ? 201 : 409, user ? { user: userDto(user) } : { error: 'conflict', message: apiMessage(req, 'account.unavailable') });
 };
 
 /**
@@ -40,8 +41,8 @@ export const handleChangePassword: ApiHandler = async (req, res, deps) => {
 	const body = await readBody(req, res);
 	if (!body) { return; }
 	const parsed = passwordChangeSchema.safeParse(body.data);
-	if (!parsed.success) { sendJson(res, 400, { error: 'validation', message: 'Use a different 8+ character password' }); return; }
-	if (!await changeOwnPassword(deps.users, user, parsed.data)) { sendJson(res, 400, { error: 'validation', message: 'Current password is incorrect or account changed' }); return; }
+	if (!parsed.success) { sendJson(res, 400, { error: 'validation', message: apiMessage(req, 'account.password_invalid') }); return; }
+	if (!await changeOwnPassword(deps.users, user, parsed.data)) { sendJson(res, 400, { error: 'validation', message: apiMessage(req, 'account.password_wrong') }); return; }
 	sendJson(res, 200, { ok: true }, { 'set-cookie': clearSessionCookieHeader() });
 };
 
@@ -77,7 +78,7 @@ export const handlePasswordReset: ApiHandler = async (req, res, deps) => {
 	const changed = await consumePasswordReset(deps.users, parsed.data.token, parsed.data.newPassword);
 	sendJson(res, changed ? 200 : 400, changed
 		? { ok: true }
-		: { error: 'validation', message: 'Reset link is invalid or expired' });
+		: { error: 'validation', message: apiMessage(req, 'account.reset_invalid') });
 };
 
 /**
@@ -109,6 +110,6 @@ export const handleUsers: ApiHandler = async (req, res, deps, url, key) => {
 		...(parsed.data.isActive === undefined ? {} : { isActive: parsed.data.isActive }) };
 	const result = await deps.users.manage(actor.id, key, patch);
 	if (result === 'forbidden') { sendJson(res, 403, { error: 'forbidden' }); return; }
-	if (result === 'last_admin') { sendJson(res, 409, { error: 'conflict', message: 'Keep at least one active administrator' }); return; }
+	if (result === 'last_admin') { sendJson(res, 409, { error: 'conflict', message: apiMessage(req, 'account.last_admin') }); return; }
 	sendJson(res, result ? 200 : 404, result ? { user: userDto(result) } : { error: 'not_found' });
 };

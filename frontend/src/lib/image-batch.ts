@@ -3,6 +3,8 @@
  * @brief Bounded sequential image uploads and safe editor insertion.
  */
 import { directImageUpload } from './direct-upload.js';
+import { DEFAULT_LOCALE } from './i18n/locale.js';
+import { translate, type MessageKey, type MessageParams } from './i18n/translate.js';
 
 export interface ImageUploadItem {
 	file: File;
@@ -33,15 +35,21 @@ export function imageUploadQueue(files: File[]): ImageUploadItem[] {
  * @param onUploaded Successful upload callback.
  * @param onProgress Queue update callback.
  * @param upload Single-image upload implementation.
+ * @param tr Message translator for user-facing errors.
  * @return Completion.
  */
 export async function uploadImageBatch(
 	items: ImageUploadItem[],
 	onUploaded: (url: string, file: File) => void,
 	onProgress: () => void,
-	upload: (file: File, progress: (percent: number) => void) => Promise<string> = (file, progress) =>
-		directImageUpload(file, fetch, progress)
+	upload?: (file: File, progress: (percent: number) => void) => Promise<string>,
+	tr: (key: MessageKey, params?: MessageParams) => string = (key, params) =>
+		translate(DEFAULT_LOCALE, key, params)
 ): Promise<void> {
+	const send =
+		upload ??
+		((file: File, progress: (percent: number) => void) =>
+			directImageUpload(file, fetch, progress, tr));
 	for (const item of items) {
 		if (item.status === 'uploaded') continue;
 		item.status = 'uploading';
@@ -49,7 +57,7 @@ export async function uploadImageBatch(
 		item.progress = 0;
 		onProgress();
 		try {
-			const url = await upload(item.file, (percent) => {
+			const url = await send(item.file, (percent) => {
 				item.progress = Math.max(
 					item.progress,
 					Math.min(100, Math.max(0, Number.isFinite(percent) ? Math.round(percent) : 0))
@@ -62,7 +70,7 @@ export async function uploadImageBatch(
 			onUploaded(url, item.file);
 		} catch (cause) {
 			item.status = 'failed';
-			item.error = cause instanceof Error ? cause.message : 'Upload failed.';
+			item.error = cause instanceof Error ? cause.message : tr('editor.error.uploadFailed');
 		}
 		onProgress();
 	}

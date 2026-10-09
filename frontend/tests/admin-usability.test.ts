@@ -12,6 +12,7 @@ import PostEditor from '../src/lib/components/PostEditor.svelte';
 import PostDeleteConfirmation from '../src/lib/components/PostDeleteConfirmation.svelte';
 
 const data: ComponentProps<typeof Admin>['data'] = {
+	locale: 'en' as const,
 	siteBase: 'https://example.test',
 	sessionRole: 'admin',
 	user: null,

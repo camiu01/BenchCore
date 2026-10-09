@@ -3,6 +3,7 @@
 	import '../app.css';
 	import { onMount } from 'svelte';
 	import { applyTheme, getStoredTheme } from '../lib/theme.js';
+	import CookieNotice from '../lib/components/CookieNotice.svelte';
 
 	let { children } = $props();
 
@@ -12,3 +13,4 @@
 </script>
 
 {@render children()}
+<CookieNotice />

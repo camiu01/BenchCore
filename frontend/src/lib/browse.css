@@ -1,0 +1,111 @@
+/* @file browse.css @brief Archive search, tag chips, filter panel, card actions and breadcrumbs. */
+.archive-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+}
+.archive-tags label {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 0 12px;
+	border: 2px solid var(--border);
+	background: var(--sheet-bg);
+	cursor: pointer;
+	text-transform: uppercase;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+}
+.archive-tags label:hover {
+	border-color: var(--accent);
+}
+.archive-tags label:has(input:checked) {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: var(--accent-ink);
+}
+.archive-tags label:has(input:focus-visible) {
+	outline: 3px solid var(--accent);
+	outline-offset: 3px;
+}
+.archive-tags input {
+	width: 18px;
+	height: 18px;
+	accent-color: var(--ink);
+}
+.search-row {
+	display: flex;
+	gap: 8px;
+}
+.search-row .field-input {
+	flex: 1;
+}
+.filter-panel {
+	border: 2px dashed var(--border);
+	padding: 0 16px;
+}
+.filter-panel[open] {
+	padding-bottom: 16px;
+}
+.filter-panel summary {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-height: 44px;
+	cursor: pointer;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	font-size: 12px;
+}
+.filter-panel fieldset {
+	border: 0;
+	padding: 0;
+	margin: 0 0 16px;
+}
+.card-actions {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 8px;
+	padding-top: 12px;
+	border-top: 1px dashed var(--border);
+}
+.breadcrumb {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 0 0 20px;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: var(--muted);
+}
+.breadcrumb a {
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
+}
+.breadcrumb [aria-current='page'] {
+	display: inline-flex;
+	align-items: center;
+	color: var(--accent);
+	font-weight: 700;
+	overflow-wrap: anywhere;
+}
+.spec-table a {
+	color: var(--accent);
+	font-weight: 700;
+	text-underline-offset: 3px;
+}
+::selection {
+	background: var(--accent);
+	color: var(--accent-ink);
+}
+@media (max-width: 600px) {
+	.search-row {
+		flex-direction: column;
+	}
+}

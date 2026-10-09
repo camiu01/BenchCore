@@ -73,8 +73,9 @@ describe('account browser boundaries', () => {
 		const event = {
 			url,
 			locals: { user: null },
+			cookies: { get: () => undefined },
 			request: new Request(url, { headers: { cookie: 'session=fixture' } })
-		} as Parameters<typeof handle>[0]['event'];
+		} as unknown as Parameters<typeof handle>[0]['event'];
 		const denied = await handle({ event, resolve });
 		expect(denied.status).toBe(403);
 		expect(denied.headers.get('cache-control')).toBe('no-store');

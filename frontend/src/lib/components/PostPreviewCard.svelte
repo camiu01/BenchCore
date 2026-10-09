@@ -2,6 +2,7 @@
 <script lang="ts">
 	import { loadPostPreview, previewCover, type PostPreview } from '../post-preview.js';
 	import type { PreviewController, PreviewTarget } from '../linked-previews.js';
+	import { t } from '../i18n/t.svelte.js';
 	let { target, controller }: { target: PreviewTarget; controller: PreviewController } = $props();
 	let preview = $state<PostPreview | null>(null);
 	let loading = $state(true);
@@ -28,7 +29,7 @@
 	class="post-preview-card"
 	role="dialog"
 	aria-modal="false"
-	aria-label="Linked post preview"
+	aria-label={t('public.preview.aria')}
 	tabindex="-1"
 	style:left="{target.x}px"
 	style:top="{target.y}px"
@@ -41,25 +42,25 @@
 	}}
 >
 	<div class="preview-heading">
-		<span class="field-label">Post preview</span>
+		<span class="field-label">{t('public.preview.label')}</span>
 		<button
 			class="btn"
 			type="button"
 			onclick={() => controller.dismiss()}
-			aria-label="Close post preview">Close</button
+			aria-label={t('public.preview.closeAria')}>{t('public.preview.close')}</button
 		>
 	</div>
-	{#if loading}<p role="status">Loading preview…</p>
+	{#if loading}<p role="status">{t('public.preview.loading')}</p>
 	{:else if preview}
 		<h3>{preview.title}</h3>
-		{#if preview.locked}<p>Readers only. Sign in to read this post.</p>
+		{#if preview.locked}<p>{t('public.preview.locked')}</p>
 		{:else}
 			{#if cover}<img src={cover} alt="" />{/if}
 			{#if preview.description}<p>{preview.description}</p>{/if}
 		{/if}
 		{#if preview.tags.length}<p class="field-help">{preview.tags.join(' · ')}</p>{/if}
-	{:else}<p role="status">Preview unavailable. Open the post to try again.</p>{/if}
-	<a class="btn" href="/posts/{encodeURIComponent(target.slug)}">Open post →</a>
+	{:else}<p role="status">{t('public.preview.unavailable')}</p>{/if}
+	<a class="btn" href="/posts/{encodeURIComponent(target.slug)}">{t('public.preview.open')}</a>
 </div>
 
 <style>
@@ -71,10 +72,10 @@
 		overflow: auto;
 		padding: 16px;
 		box-sizing: border-box;
-		border: 1px solid var(--border);
+		border: 2px solid var(--border);
 		background: var(--sheet-bg);
 		color: var(--ink);
-		box-shadow: 0 8px 24px rgb(0 0 0 / 16%);
+		box-shadow: 6px 6px 0 var(--shadow-ink);
 	}
 	.preview-heading {
 		display: flex;

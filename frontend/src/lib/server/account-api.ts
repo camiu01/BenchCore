@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import { apiBase } from '../api.js';
 import { mutationOrigin } from '../site.js';
+import { serverT } from './server-t.js';
 import { apiFetch } from './transport.js';
 
 export const accountSchema = z.object({
@@ -74,16 +75,16 @@ export async function listAccounts(cookie: string | null, offset: number) {
  */
 export function accountError(status: number): string {
 	if (status === 429) {
-		return 'Too many attempts. Please retry later.';
+		return serverT('auth.error.rateLimited');
 	}
 	if (status === 409) {
-		return 'Account details unavailable, or this change would remove the last active administrator.';
+		return serverT('auth.error.conflict');
 	}
 	if (status === 400) {
-		return 'Check the fields and use a different password with at least 8 characters.';
+		return serverT('auth.error.badFields');
 	}
 	if (status === 401 || status === 403) {
-		return 'Sign in again with the required account permissions.';
+		return serverT('auth.error.permissions');
 	}
-	return 'Account service unavailable. Please retry.';
+	return serverT('auth.error.unavailable');
 }

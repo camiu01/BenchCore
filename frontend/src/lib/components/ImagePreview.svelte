@@ -1,5 +1,6 @@
 <!-- @file ImagePreview.svelte @brief Image dimensions, size and keyboard-accessible enlarged preview. -->
 <script lang="ts">
+	import { t } from '../i18n/t.svelte.js';
 	import { imageDetails, imageFileSize, type ImageDetails } from '../image-details.js';
 	let { url, name, sizeBytes }: { url: string; name: string; sizeBytes?: number } = $props();
 	let dialog: HTMLDialogElement;
@@ -8,6 +9,11 @@
 	let width = $state(0);
 	let height = $state(0);
 	const size = $derived(sizeBytes ?? details?.sizeBytes ?? null);
+	const dimensionsLabel = $derived(
+		width > 0
+			? t('editor.preview.dimensions', { width, height })
+			: t('editor.preview.dimensionsUnavailable')
+	);
 
 	$effect(() => {
 		void url;
@@ -38,7 +44,7 @@
 	<button
 		class="image-preview-trigger"
 		type="button"
-		aria-label="Enlarge image {name}"
+		aria-label={t('editor.preview.enlarge', { name })}
 		onclick={() => dialog.showModal()}
 	>
 		<img
@@ -54,20 +60,22 @@
 			loading="lazy"
 		/>
 	</button>
-	<span class="field-help"
-		>{width > 0 ? `${width} × ${height} px` : 'Dimensions unavailable'} · {imageFileSize(
-			size
-		)}</span
-	>
+	<span class="field-help">{dimensionsLabel} · {imageFileSize(size, t)}</span>
 </div>
-<dialog bind:this={dialog} class="image-preview-dialog" aria-label="Image preview: {name}">
+<dialog
+	bind:this={dialog}
+	class="image-preview-dialog"
+	aria-label={t('editor.preview.dialog', { name })}
+>
 	<div class="btn-row">
 		<strong>{details?.filename ?? name}</strong>
-		<button class="btn" type="button" onclick={() => dialog.close()}>Close preview</button>
+		<button class="btn" type="button" onclick={() => dialog.close()}
+			>{t('editor.preview.close')}</button
+		>
 	</div>
 	<img src={url} alt={name} loading="lazy" onload={dimensions} />
 	<p class="field-help">
-		{width > 0 ? `${width} × ${height} px` : 'Dimensions unavailable'} · {imageFileSize(size)}
+		{dimensionsLabel} · {imageFileSize(size, t)}
 	</p>
 </dialog>
 

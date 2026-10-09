@@ -202,6 +202,12 @@ export interface PostRepository {
 	 */
 	listMediaCandidates(key: string): Promise<PostRow[]>;
 	/**
+	 * @brief Loads only posts whose Markdown mentions a slug, case-insensitively.
+	 * @param slug Normalized target slug.
+	 * @return Candidate rows for exact wikilink validation.
+	 */
+	listBacklinkCandidates(slug: string): Promise<PostRow[]>;
+	/**
 	 * @brief Lists every post, newest first (admin view).
 	 * @return All rows with tag names.
 	 */

@@ -7,6 +7,7 @@ import { mediaRecord, sanitizeKey } from '../media/storage.js';
 import { imageUsage, deleteManagedImage } from '../media/deletion-service.js';
 import { requireUser } from './auth.js';
 import { readBody, sendJson } from './response.js';
+import { apiMessage } from '../i18n/index.js';
 import type { ApiHandler } from './types.js';
 
 const deletionSchema = z.object({ version: z.string().regex(/^[a-f0-9]{64}$/) });
@@ -48,7 +49,7 @@ export const handleAdminMedia: ApiHandler = async (req, res, deps, url, key) => 
 	const result = await deleteManagedImage(deps.posts, deps.media, key, parsed.data.version);
 	if (result === 'conflict') { sendJson(res, 409, { error: 'usage_changed' }); return; }
 	if (result === 'storage_failed') {
-		sendJson(res, 502, { error: 'storage_failed', message: 'Saved references removed, but storage deletion failed. Retry.' });
+		sendJson(res, 502, { error: 'storage_failed', message: apiMessage(req, 'media.storage_failed') });
 		return;
 	}
 	res.writeHead(204); res.end();

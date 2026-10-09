@@ -145,9 +145,11 @@ class DrizzlePosts implements PostRepository {
 		const likesCount = (options.includeReaderContent ? actualLikes
 			: sql<number>`case when ${posts.audience} = 'readers' then 0 else ${actualLikes} end`).mapWith(Number);
 		const order = options.sort === 'popular' ? likesCount : options.sort === 'updated' ? posts.updatedAt : posts.publishedAt;
-		const rows = await this.db.select({ post: posts, likesCount }).from(posts).where(visible)
-			.orderBy(desc(order), desc(posts.publishedAt), desc(posts.id)).limit(options.limit).offset(options.offset);
-		const totals = await this.db.select({ value: count() }).from(posts).where(visible);
+		const [rows, totals] = await Promise.all([
+			this.db.select({ post: posts, likesCount }).from(posts).where(visible)
+				.orderBy(desc(order), desc(posts.publishedAt), desc(posts.id)).limit(options.limit).offset(options.offset),
+			this.db.select({ value: count() }).from(posts).where(visible)
+		]);
 		return { items: await this.withTags(rows.map(({ post, likesCount }) => ({ ...post, likesCount }))), total: totals[0]?.value ?? 0 };
 	}
 
@@ -188,6 +190,15 @@ class DrizzlePosts implements PostRepository {
 			sql`position(${key} in ${posts.contentMarkdown}) > 0`,
 			sql`position(${key} in ${posts.coverImage}) > 0`
 		));
+	}
+
+	/**
+	 * @brief Loads only posts mentioning a slug, never every body in the archive.
+	 * @param slug Normalized target slug.
+	 * @return Matching post rows.
+	 */
+	async listBacklinkCandidates(slug: string) {
+		return this.db.select().from(posts).where(ilike(posts.contentMarkdown, adminSearchPattern(slug)));
 	}
 
 	/**

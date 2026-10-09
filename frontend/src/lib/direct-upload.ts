@@ -4,6 +4,8 @@
  */
 import { z } from 'zod';
 import { uploadWithProgress } from './upload-progress.js';
+import { DEFAULT_LOCALE } from './i18n/locale.js';
+import { translate, type MessageKey, type MessageParams } from './i18n/translate.js';
 
 const preparedSchema = z.object({
 	uploadUrl: z
@@ -30,12 +32,15 @@ const completedSchema = z.object({
  * @param file Selected image.
  * @param fetcher Browser fetch or an offline test double.
  * @param progress Overall upload workflow percentage.
+ * @param tr Message translator for user-facing errors.
  * @return Validated same-origin media URL.
  */
 export async function directImageUpload(
 	file: File,
 	fetcher: typeof fetch = fetch,
-	progress: (percent: number) => void = () => undefined
+	progress: (percent: number) => void = () => undefined,
+	tr: (key: MessageKey, params?: MessageParams) => string = (key, params) =>
+		translate(DEFAULT_LOCALE, key, params)
 ): Promise<string> {
 	if (
 		!file.size ||
@@ -43,7 +48,7 @@ export async function directImageUpload(
 		file.name.length > 200 ||
 		!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type)
 	) {
-		throw new Error('Select a png/jpg/webp/gif image up to 5 MiB.');
+		throw new Error(tr('editor.error.invalidFile'));
 	}
 	progress(0);
 	const prepared = await fetcher('/api/media/upload', {
@@ -54,18 +59,22 @@ export async function directImageUpload(
 		signal: AbortSignal.timeout(15_000)
 	});
 	if (!prepared.ok) {
-		throw new Error('Upload authorization failed. Check your session and R2 configuration.');
+		throw new Error(tr('editor.error.authorization'));
 	}
 	const { uploadUrl, ticket } = preparedSchema.parse(await prepared.json());
-	await transferImage(file, uploadUrl, fetcher, progress);
+	await transferImage(file, uploadUrl, fetcher, progress, tr);
 	progress(95);
-	const url = await completeUpload(ticket, fetcher);
+	const url = await completeUpload(ticket, fetcher, tr);
 	progress(100);
 	return url;
 }
 
-/** @brief Verifies staged metadata before exposing a managed image URL. @param ticket Owner-bound ticket. @param fetcher API transport. @return Validated URL. */
-async function completeUpload(ticket: string, fetcher: typeof fetch): Promise<string> {
+/** @brief Verifies staged metadata before exposing a managed image URL. @param ticket Owner-bound ticket. @param fetcher API transport. @param tr Message translator. @return Validated URL. */
+async function completeUpload(
+	ticket: string,
+	fetcher: typeof fetch,
+	tr: (key: MessageKey, params?: MessageParams) => string
+): Promise<string> {
 	const completed = await fetcher('/api/media/complete', {
 		method: 'POST',
 		credentials: 'same-origin',
@@ -74,20 +83,27 @@ async function completeUpload(ticket: string, fetcher: typeof fetch): Promise<st
 		signal: AbortSignal.timeout(15_000)
 	});
 	if (!completed.ok) {
-		throw new Error('Upload verification failed. Retry the upload.');
+		throw new Error(tr('editor.error.verification'));
 	}
 	return completedSchema.parse(await completed.json()).url;
 }
 
-/** @brief Selects measurable browser transfer, retaining an offline fetch seam. @param file Image. @param url Validated signed URL. @param fetcher Fetch seam. @param progress Overall workflow percentage. @return Completion. */
+/** @brief Selects measurable browser transfer, retaining an offline fetch seam. @param file Image. @param url Validated signed URL. @param fetcher Fetch seam. @param progress Overall workflow percentage. @param tr Message translator. @return Completion. */
 async function transferImage(
 	file: File,
 	url: string,
 	fetcher: typeof fetch,
-	progress: (percent: number) => void
+	progress: (percent: number) => void,
+	tr: (key: MessageKey, params?: MessageParams) => string
 ): Promise<void> {
 	if (typeof XMLHttpRequest !== 'undefined' && fetcher === fetch) {
-		await uploadWithProgress(file, url, (percent) => progress(Math.round(percent * 0.9)));
+		await uploadWithProgress(
+			file,
+			url,
+			(percent) => progress(Math.round(percent * 0.9)),
+			undefined,
+			tr
+		);
 		return;
 	}
 	const response = await fetcher(url, {
@@ -98,7 +114,7 @@ async function transferImage(
 		redirect: 'error',
 		signal: AbortSignal.timeout(90_000)
 	});
-	if (!response.ok) throw new Error('R2 upload failed. Check the bucket CORS policy.');
+	if (!response.ok) throw new Error(tr('editor.error.r2Failed'));
 	progress(90);
 }
 

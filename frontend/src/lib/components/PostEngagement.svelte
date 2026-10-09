@@ -1,6 +1,8 @@
 <!-- @file PostEngagement.svelte @brief Public approved comments and anonymous like controls. -->
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { currentLocale, t } from '../i18n/t.svelte.js';
+	import { publicationDate } from '../presentation.js';
 
 	interface PublicComment {
 		id: string;
@@ -58,7 +60,7 @@
 			comments = [...comments, ...page.items];
 			hasMoreComments = page.hasMore;
 		} catch {
-			message = 'Comments unavailable. Please retry.';
+			message = t('public.engagement.commentsFailed');
 		} finally {
 			loadingComments = false;
 		}
@@ -78,7 +80,7 @@
 			likeCount = result.count;
 			liked = result.liked;
 		} catch {
-			message = 'Like unavailable. Please retry.';
+			message = t('public.engagement.likeFailed');
 		} finally {
 			liking = false;
 		}
@@ -101,18 +103,18 @@
 		}).catch(() => null);
 		submitting = false;
 		if (!response?.ok) {
-			message = 'Comment unavailable. Check the fields and retry.';
+			message = t('public.engagement.commentFailed');
 			return;
 		}
 		form.reset();
-		message = 'Comment submitted for moderation.';
+		message = t('public.engagement.submitted');
 	}
 
 	onMount(loadEngagement);
 </script>
 
 <section class="tool-section engagement">
-	<div class="section-banner">// RESPONSE CHANNEL</div>
+	<div class="section-banner">{t('public.engagement.banner')}</div>
 	<div class="engagement-summary">
 		<button
 			class:active={liked}
@@ -122,14 +124,14 @@
 			disabled={!online || loading || liking}
 		>
 			<span aria-hidden="true">♥</span>
-			{liked ? 'LIKED' : 'LIKE'} · {likeCount}
+			{liked ? t('public.engagement.liked') : t('public.engagement.like')} · {likeCount}
 		</button>
-		<span class="dim">{comments.length} approved comment(s)</span>
+		<span class="dim">{t('public.engagement.approved', { n: comments.length })}</span>
 	</div>
 
 	{#if message}<p class="summary" role="status">{message}</p>{/if}
 	{#if !online}
-		<p class="error-stamp" role="alert">Comments and likes are temporarily unavailable.</p>
+		<p class="error-stamp" role="alert">{t('public.engagement.offline')}</p>
 	{:else}
 		<div class="comment-list">
 			{#each comments as comment (comment.id)}
@@ -137,22 +139,22 @@
 					<header>
 						<strong>{comment.authorName}</strong>
 						<time datetime={comment.createdAt}
-							>{new Date(comment.createdAt).toLocaleDateString()}</time
+							>{publicationDate(comment.createdAt, currentLocale())}</time
 						>
 					</header>
 					<p>{comment.content}</p>
 				</article>
 			{:else}
-				<p class="summary">No approved comments yet.</p>
+				<p class="summary">{t('public.engagement.none')}</p>
 			{/each}
 		</div>
 		{#if hasMoreComments}
 			<button class="btn" type="button" onclick={loadMoreComments} disabled={loadingComments}>
-				{loadingComments ? 'LOADING…' : 'LOAD MORE COMMENTS'}
+				{loadingComments ? t('public.engagement.loading') : t('public.engagement.loadMore')}
 			</button>
 		{/if}
 		<form class="form-grid comment-form" onsubmit={submitComment}>
-			<label class="field-label" for="comment-author">Name</label>
+			<label class="field-label" for="comment-author">{t('public.engagement.name')}</label>
 			<input
 				class="field-input"
 				id="comment-author"
@@ -161,7 +163,7 @@
 				maxlength="80"
 				required
 			/>
-			<label class="field-label" for="comment-content">Comment</label>
+			<label class="field-label" for="comment-content">{t('public.engagement.comment')}</label>
 			<textarea
 				class="field-input"
 				id="comment-content"
@@ -171,7 +173,7 @@
 				required></textarea>
 			<div class="btn-row">
 				<button class="btn btn-accent" type="submit" disabled={submitting}>
-					{submitting ? 'SENDING…' : 'SUBMIT FOR REVIEW'}
+					{submitting ? t('public.engagement.sending') : t('public.engagement.submit')}
 				</button>
 			</div>
 		</form>

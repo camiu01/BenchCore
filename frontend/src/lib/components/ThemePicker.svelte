@@ -2,6 +2,7 @@
 <script lang="ts">
 	import { applyTheme, THEMES, type Theme } from '../theme.js';
 	import { onMount } from 'svelte';
+	import { t } from '../i18n/t.svelte.js';
 
 	let current: Theme = $state('light');
 
@@ -25,10 +26,10 @@
 </script>
 
 <div class="theme-picker">
-	<span>MODE:</span>
+	<span>{t('theme.mode')}</span>
 	{#each THEMES as theme (theme)}
 		<button class="theme-btn" class:active={current === theme} onclick={() => select(theme)}
-			>{theme}</button
+			>{t(`theme.${theme}`)}</button
 		>
 	{/each}
 </div>

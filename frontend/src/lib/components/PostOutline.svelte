@@ -1,13 +1,14 @@
 <!-- @file PostOutline.svelte @brief Collapsible heading navigation for posts with multiple sections. -->
 <script lang="ts">
 	import type { PostHeading } from '../post-outline.js';
+	import { t } from '../i18n/t.svelte.js';
 	let { headings }: { headings: PostHeading[] } = $props();
 </script>
 
 {#if headings.length >= 3}
-	<nav class="post-outline" aria-label="On this page">
+	<nav class="post-outline" aria-label={t('public.outline.label')}>
 		<details open>
-			<summary>On this page</summary>
+			<summary>{t('public.outline.label')}</summary>
 			<ol>
 				{#each headings as heading (heading.id)}
 					<li data-level={heading.level}><a href="#{heading.id}">{heading.title}</a></li>

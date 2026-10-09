@@ -10,6 +10,7 @@ import { buildSessionExpiry, clearSessionCookieHeader, createSessionToken, hashT
 	parseCookies, SESSION_COOKIE, sessionCookieHeader } from '../auth/session.js';
 import { hashPassword, verifyPassword } from '../auth/password.js';
 import { flattenIssues } from '../markdown/schema.js';
+import { apiMessage } from '../i18n/index.js';
 import type { ApiDeps, ApiHandler } from './types.js';
 import { readBody, sendJson } from './response.js';
 
@@ -78,7 +79,7 @@ export const handleLogin: ApiHandler = async (req, res, deps) => {
 	dummyHash ??= hashPassword(randomUUID());
 	const valid = await verifyPassword(parsed.data.password, user?.passwordHash ?? await dummyHash);
 	if (!valid || !user || !user.isActive) {
-		sendJson(res, 401, { error: 'unauthorized', message: 'invalid credentials' }); return;
+		sendJson(res, 401, { error: 'unauthorized', message: apiMessage(req, 'auth.invalid_credentials') }); return;
 	}
 	const session = createSessionToken();
 	await deps.sessions.create({ id: randomUUID(), tokenHash: session.tokenHash, userId: user.id,

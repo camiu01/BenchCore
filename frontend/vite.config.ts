@@ -56,6 +56,7 @@ export default defineConfig({
 	],
 	ssr: { noExternal: serverless ? true : ['cookie'] },
 	test: {
-		include: ['tests/**/*.test.ts', 'src/**/*.test.ts']
+		include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],
+		setupFiles: ['tests/support/page-state.ts']
 	}
 });

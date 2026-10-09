@@ -27,8 +27,9 @@ function hookEvent(path: string, method = 'GET', origin?: string) {
 	return {
 		url,
 		locals: { user: null },
+		cookies: { get: () => undefined },
 		request: new Request(url, { method, headers: origin === undefined ? {} : { origin } })
-	} as Parameters<typeof handle>[0]['event'];
+	} as unknown as Parameters<typeof handle>[0]['event'];
 }
 
 describe('frontend origin and auth guards', () => {

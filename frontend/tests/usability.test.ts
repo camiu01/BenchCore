@@ -17,6 +17,7 @@ afterEach(() => {
 });
 
 const base = {
+	locale: 'en' as const,
 	siteBase: 'https://example.test',
 	sessionRole: null,
 	directUploads: false,

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { apiBase, tagSchema } from '../api.js';
 import { mutationOrigin } from '../site.js';
 import { payloadFromValues, type EditorValues } from './editor-values.js';
+import { serverT } from './server-t.js';
 import { apiFetch } from './transport.js';
 export {
 	blankValues,
@@ -120,7 +121,7 @@ async function authedJson(
 		const data: unknown = response.status === 204 ? null : await response.json().catch(() => null);
 		return { status: response.status, data };
 	} catch {
-		return { status: 503, data: { message: 'API unreachable. Please retry.' } };
+		return { status: 503, data: { message: serverT('admin.api.unreachable') } };
 	}
 }
 
@@ -185,7 +186,10 @@ export async function adminUpdateTagColor(cookie: string | null, id: string, col
 	);
 	return status === 200
 		? { ok: true as const }
-		: { ok: false as const, error: messageFrom(data, `Color update failed (${status}).`) };
+		: {
+				ok: false as const,
+				error: messageFrom(data, serverT('admin.error.colorUpdateFailed', { status }))
+			};
 }
 
 /**
@@ -202,7 +206,10 @@ export async function adminDeleteTag(cookie: string | null, id: string) {
 	);
 	return status === 204
 		? { ok: true as const }
-		: { ok: false as const, error: messageFrom(data, `Tag deletion failed (${status}).`) };
+		: {
+				ok: false as const,
+				error: messageFrom(data, serverT('admin.error.tagDeleteFailed', { status }))
+			};
 }
 
 /**
@@ -244,7 +251,10 @@ export async function adminModerateComment(
 		? { ok: true as const }
 		: {
 				ok: false as const,
-				error: messageFrom(result.data, `Moderation failed (${result.status}).`)
+				error: messageFrom(
+					result.data,
+					serverT('admin.error.moderationFailed', { status: result.status })
+				)
 			};
 }
 
@@ -264,7 +274,10 @@ export async function adminDeleteComment(cookie: string | null, id: string) {
 		? { ok: true as const }
 		: {
 				ok: false as const,
-				error: messageFrom(result.data, `Comment deletion failed (${result.status}).`)
+				error: messageFrom(
+					result.data,
+					serverT('admin.error.commentDeleteFailed', { status: result.status })
+				)
 			};
 }
 
@@ -300,14 +313,14 @@ export async function adminSavePost(
 	try {
 		payload = payloadFromValues(values);
 	} catch {
-		return { ok: false, error: 'Invalid fields. Dates must be ISO timestamps with a timezone.' };
+		return { ok: false, error: serverT('admin.error.invalidFields') };
 	}
 	const path = id === null ? '/api/posts' : `/api/posts/${encodeURIComponent(id)}`;
 	const { status, data } = await authedJson(cookie, id === null ? 'POST' : 'PUT', path, payload);
 	if (status === (id === null ? 201 : 200)) {
 		return { ok: true };
 	}
-	return { ok: false, error: messageFrom(data, `Save failed (${status}).`) };
+	return { ok: false, error: messageFrom(data, serverT('admin.error.saveFailed', { status })) };
 }
 
 /**
@@ -351,7 +364,7 @@ export async function adminUploadMedia(
 		file.size > 5 * 1024 * 1024 ||
 		!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type)
 	) {
-		return { ok: false, error: 'Select a png/jpg/webp/gif image up to 5 MiB.' };
+		return { ok: false, error: serverT('admin.error.invalidImage') };
 	}
 	const buffer = Buffer.from(await file.arrayBuffer());
 	const { status, data } = await authedJson(cookie, 'POST', '/api/media', {
@@ -363,5 +376,5 @@ export async function adminUploadMedia(
 	if (status === 201 && parsed.success) {
 		return { ok: true, url: parsed.data.url };
 	}
-	return { ok: false, error: messageFrom(data, `Upload failed (${status}).`) };
+	return { ok: false, error: messageFrom(data, serverT('admin.error.uploadFailed', { status })) };
 }

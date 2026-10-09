@@ -9,6 +9,7 @@ import type { ServerResponse } from 'node:http';
 import { flattenIssues } from '../markdown/schema.js';
 import { sanitizeKey } from '../media/storage.js';
 import { imageUsage } from '../media/deletion-service.js';
+import { apiMessage } from '../i18n/index.js';
 import type { ApiDeps, ApiHandler } from './types.js';
 import { getSessionUser, requireUser } from './auth.js';
 import { canReadPost, READER_CACHE_HEADERS } from '../posts/audience.js';
@@ -40,7 +41,7 @@ export const handleUploadMedia: ApiHandler = async (req, res, deps) => {
 		const record = await deps.media.save(Buffer.from(parsed.data.contentBase64, 'base64'), parsed.data.filename, parsed.data.mime);
 		sendJson(res, 201, { ...record, url: `${MEDIA_PREFIX}/${record.key}` });
 	} catch {
-		sendJson(res, 400, { error: 'validation', message: 'unsupported media or upload size' });
+		sendJson(res, 400, { error: 'validation', message: apiMessage(req, 'media.unsupported') });
 	}
 };
 
@@ -59,7 +60,7 @@ export const handleMedia: ApiHandler = async (req, res, deps, _url, key) => {
 	if (!sanitizeKey(key)) { sendJson(res, 404, { error: 'not_found' }); return; }
 	if (req.method === 'DELETE') {
 		if ((await imageUsage(deps.posts, key)).rows.length > 0) {
-			sendJson(res, 409, { error: 'image_in_use', message: 'Confirm deletion through the editor.' });
+			sendJson(res, 409, { error: 'image_in_use', message: apiMessage(req, 'media.in_use') });
 			return;
 		}
 		if (!await deps.media.remove(key)) { sendJson(res, 404, { error: 'not_found' }); return; }

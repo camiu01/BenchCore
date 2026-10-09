@@ -7,6 +7,7 @@
 	import TagChip from './TagChip.svelte';
 	import { createPreviewController, type PreviewTarget } from '../linked-previews.js';
 	import PostPreviewCard from './PostPreviewCard.svelte';
+	import { t } from '../i18n/t.svelte.js';
 
 	interface Props {
 		graph: GraphData;
@@ -25,7 +26,7 @@
 	const selectedSlug = $derived(selection === undefined ? focus : selection);
 	const selected = $derived(graph.nodes.find((node) => node.slug === selectedSlug) ?? null);
 	const results = $derived(graph.nodes.filter((node) => matchesGraphNode(node, query)));
-	const related = $derived(relatedGraphNodes(graph, selectedSlug));
+	const related = $derived(relatedGraphNodes(graph, selectedSlug, t));
 	let applyFilter: (query: string) => void = () => undefined;
 	let applySelection: (slug: string | null) => void = () => undefined;
 	let applyFocus: (slug: string | null) => void = () => undefined;
@@ -58,7 +59,7 @@
 	}
 
 	onMount(() => {
-		const controller = createGraphRenderer(svg, graph, selectNode, previews);
+		const controller = createGraphRenderer(svg, graph, selectNode, previews, t);
 		resetView = controller.reset;
 		zoomView = controller.zoom;
 		applyFilter = controller.filter;
@@ -74,10 +75,9 @@
 
 <div class="graph-toolbar">
 	<p class="summary">
-		Discover posts that share a topic or link to each other. Select a post to see what connects it
-		to the others.
+		{t('public.graphView.intro')}
 	</p>
-	<label class="field-label" for="graph-search">Find a post or topic</label>
+	<label class="field-label" for="graph-search">{t('public.graphView.findLabel')}</label>
 	<div class="graph-controls">
 		<input
 			id="graph-search"
@@ -85,36 +85,44 @@
 			type="search"
 			bind:value={query}
 			oninput={() => searchGraph(query)}
-			placeholder="Search by title or tag"
+			placeholder={t('public.graphView.searchPlaceholder')}
 		/>
-		<button class="btn" type="button" aria-label="Zoom in" onclick={() => zoomView(1.4)}
-			>Zoom +</button
+		<button
+			class="btn"
+			type="button"
+			aria-label={t('public.graphView.zoomInAria')}
+			onclick={() => zoomView(1.4)}>{t('public.graphView.zoomIn')}</button
 		>
-		<button class="btn" type="button" aria-label="Zoom out" onclick={() => zoomView(1 / 1.4)}
-			>Zoom −</button
+		<button
+			class="btn"
+			type="button"
+			aria-label={t('public.graphView.zoomOutAria')}
+			onclick={() => zoomView(1 / 1.4)}>{t('public.graphView.zoomOut')}</button
 		>
-		<button class="btn" type="button" onclick={() => resetView()}>Fit view</button>
+		<button class="btn" type="button" onclick={() => resetView()}
+			>{t('public.graphView.fit')}</button
+		>
 		{#if selected}<button class="btn" type="button" aria-pressed={focused} onclick={toggleFocus}
-				>{focused ? 'Show full map' : 'Focus connections'}</button
+				>{focused ? t('public.graphView.showFull') : t('public.graphView.focus')}</button
 			>{/if}
 		{#if query}<button class="btn" type="button" onclick={() => searchGraph('')}
-				>Clear search</button
+				>{t('public.graphView.clearSearch')}</button
 			>{/if}
 		{#if selectedSlug}<button class="btn" type="button" onclick={() => selectNode(null)}
-				>Show all connections</button
+				>{t('public.graphView.showAll')}</button
 			>{/if}
 	</div>
 </div>
 {#if focused && selected}<p class="field-help" role="status">
-		Focused on {selected.title} and {related.length} connected posts.
+		{t('public.graphView.focused', { title: selected.title, n: related.length })}
 	</p>{/if}
 
-<div class="graph-legend" role="group" aria-label="Filter by topic">
+<div class="graph-legend" role="group" aria-label={t('public.graphView.filterGroup')}>
 	<button
 		class="topic-filter"
 		type="button"
 		aria-pressed={query === ''}
-		onclick={() => searchGraph('')}>All topics</button
+		onclick={() => searchGraph('')}>{t('public.graphView.allTopics')}</button
 	>
 	{#each Array.from(new Map(graph.nodes
 				.flatMap((node) => node.tags)
@@ -123,7 +131,7 @@
 			class="topic-filter"
 			type="button"
 			aria-pressed={query === tag.name}
-			aria-label="Filter by topic {tag.name}"
+			aria-label={t('public.graphView.filterTopic', { tag: tag.name })}
 			onclick={() => searchGraph(tag.name)}
 		>
 			<TagChip label={tag.name} color={tag.color} />
@@ -137,12 +145,12 @@
 			bind:this={svg}
 			viewBox="0 0 980 620"
 			role="group"
-			aria-label="Published post connection graph"
+			aria-label={t('public.graphView.mapAria')}
 		></svg>
 	</div>
 	<aside class="graph-detail" aria-live="polite">
 		{#if selected}
-			<p class="field-label">Selected post</p>
+			<p class="field-label">{t('public.graphView.selectedPost')}</p>
 			<h2>{selected.title}</h2>
 			{#if selected.description}<p>{selected.description}</p>{/if}
 			<div class="tag-list">
@@ -150,8 +158,10 @@
 					<TagChip label={tag.name} color={tag.color} />
 				{/each}
 			</div>
-			<a class="btn btn-accent" href="/posts/{encodeURIComponent(selected.slug)}">Read post →</a>
-			<h3>Connected posts ({related.length})</h3>
+			<a class="btn btn-accent" href="/posts/{encodeURIComponent(selected.slug)}"
+				>{t('public.graphView.readPost')}</a
+			>
+			<h3>{t('public.graphView.connected', { n: related.length })}</h3>
 			<ul class="graph-related">
 				{#each related as node (node.slug)}
 					<li>
@@ -159,39 +169,39 @@
 						<span>{node.reason}</span>
 					</li>
 				{:else}
-					<li>No connections yet. Try another post from the list below.</li>
+					<li>{t('public.graphView.noConnections')}</li>
 				{/each}
 			</ul>
 		{:else}
-			<p class="field-label">Start exploring</p>
+			<p class="field-label">{t('public.graphView.start')}</p>
 			<p>
-				Choose a dot on the map or a title in the list below. Each dot is a post; each line is a
-				shared topic or a link.
+				{t('public.graphView.startBody')}
 			</p>
-			<p>Move the map by dragging its background. Use the zoom buttons to get a closer look.</p>
+			<p>{t('public.graphView.startHint')}</p>
 		{/if}
 	</aside>
 </div>
 
 <section class="graph-fallback" aria-labelledby="graph-results">
-	<h2 id="graph-results">Browse posts ({results.length})</h2>
-	<p class="muted">Use the list instead of the map, or open a post directly.</p>
+	<h2 id="graph-results">{t('public.graphView.browse', { n: results.length })}</h2>
+	<p class="muted">{t('public.graphView.browseHint')}</p>
 	<ul class="graph-post-list">
 		{#each results as node (node.slug)}
 			<li>
 				<div>
 					<a href="/posts/{encodeURIComponent(node.slug)}">{node.title}</a>
-					<span>{node.tags.map((tag) => tag.name).join(', ') || 'No tags'}</span>
+					<span>{node.tags.map((tag) => tag.name).join(', ') || t('public.graphView.noTags')}</span>
 				</div>
 				<button
 					class="btn"
 					type="button"
 					onclick={() => selectNode(node.slug)}
-					aria-label="Show connections for {node.title}">Connections</button
+					aria-label={t('public.graphView.showConnectionsFor', { title: node.title })}
+					>{t('public.graphView.connections')}</button
 				>
 			</li>
 		{:else}
-			<li role="status">No posts match “{query}”. Try another title or tag.</li>
+			<li role="status">{t('public.graphView.noMatch', { query })}</li>
 		{/each}
 	</ul>
 </section>

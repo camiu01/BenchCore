@@ -1,5 +1,7 @@
 <!-- @file TagColorEditor.svelte @brief Accessible preset and custom HEX tag color editor. -->
 <script lang="ts">
+	import { t } from '../i18n/t.svelte.js';
+
 	interface Props {
 		id: string;
 		name: string;
@@ -27,13 +29,13 @@
 
 <form method="POST" action="?/color" class="tag-color-form">
 	<input type="hidden" name="id" value={id} />
-	<div class="tag-swatches" role="group" aria-label="Preset colors">
+	<div class="tag-swatches" role="group" aria-label={t('admin.tagColor.presets')}>
 		{#each palette as preset (preset)}
 			<button
 				type="button"
 				class:active={color.toUpperCase() === preset}
 				class="tag-swatch"
-				aria-label="Use {preset} for {name}"
+				aria-label={t('admin.tagColor.use', { color: preset, name })}
 				aria-pressed={color.toUpperCase() === preset}
 				title={preset}
 				onclick={() => (color = preset)}
@@ -44,7 +46,7 @@
 		{/each}
 	</div>
 	<div class="tag-custom-color">
-		<input type="color" bind:value={color} aria-label="Color picker for {name}" />
+		<input type="color" bind:value={color} aria-label={t('admin.tagColor.picker', { name })} />
 		<input
 			class="field-input color-code"
 			name="color"
@@ -52,8 +54,8 @@
 			pattern={'#[0-9A-Fa-f]{6}'}
 			maxlength="7"
 			required
-			aria-label="HEX color for {name}"
+			aria-label={t('admin.tagColor.hex', { name })}
 		/>
-		<button class="btn" type="submit">SAVE</button>
+		<button class="btn" type="submit">{t('admin.tagColor.save')}</button>
 	</div>
 </form>

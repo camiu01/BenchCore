@@ -5,44 +5,49 @@
 	import Seo from '../../lib/components/Seo.svelte';
 	import type { PageData } from './$types';
 	import { authenticationLink } from '../../lib/navigation.js';
+	import { currentLocale, t } from '../../lib/i18n/t.svelte.js';
 
 	let { data }: { data: PageData } = $props();
 	const nav = $derived([
-		{ href: '/', label: '[01] index' },
-		{ href: '/posts', label: '[02] records' },
-		{ href: '/tags', label: '[03] tags' },
-		authenticationLink(data.sessionRole, '04')
+		{ href: '/', label: `[01] ${t('public.nav.index')}` },
+		{ href: '/posts', label: `[02] ${t('public.nav.records')}` },
+		{ href: '/tags', label: `[03] ${t('public.nav.tags')}` },
+		authenticationLink(data.sessionRole, '04', currentLocale())
 	]);
 </script>
 
 <Seo
-	title="Graph | BenchCore"
-	description="Explore connections between published BenchCore records."
+	title={t('public.graph.seoTitle')}
+	description={t('public.graph.seoDescription')}
 	canonical="{data.siteBase}/graph"
 />
 
 <DocShell
-	docId="FORM: BENCHCORE-2026 // REF: GRAPH"
-	title="EXPLORE CONNECTIONS"
-	sub="{data.graph.nodes.length} posts · {data.graph.edges
-		.length} connections through tags and links"
+	docId={t('public.docId', { ref: 'GRAPH' })}
+	title={t('public.graph.title')}
+	sub={t('public.graph.sub', {
+		posts: data.graph.nodes.length,
+		links: data.graph.edges.length
+	})}
 	{nav}
-	footerLeft={data.online ? 'GRAPH: LINKED' : 'GRAPH: OFFLINE'}
-	footerRight="FIND A TOPIC · DISCOVER A POST"
+	footerLeft={data.online ? t('public.graph.footerLinked') : t('public.graph.footerOffline')}
+	footerRight={t('public.graph.footerRight')}
 	wide
 	activeHref="/graph"
 >
 	<main>
 		{#if !data.online}
 			<p class="error-stamp" role="alert">
-				Connections are temporarily unavailable. Please try again.
+				{t('public.graph.unavailable')}
 			</p>
-			<a class="btn" href="/graph">Try again</a>
+			<a class="btn" href="/graph">{t('public.tryAgain')}</a>
 		{:else if data.graph.nodes.length === 0}
 			<article class="record">
-				<div class="record-header"><span class="record-title">GRAPH // EMPTY</span></div>
-				<p class="summary">There are no published posts to explore yet.</p>
-				<a class="btn" href="/posts">Browse posts</a>
+				<div class="record-header">
+					<span class="record-title">{t('public.graph.emptyTitle')}</span>
+				</div>
+				<p class="summary">{t('public.graph.emptyBody')}</p>
+				<a class="btn" href="/posts">{t('public.browsePosts')}</a>
 			</article>
 		{:else}
 			{#key data.graph}

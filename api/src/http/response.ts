@@ -4,6 +4,7 @@
  */
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { ErrorPayload } from './types.js';
+import { apiMessage } from '../i18n/index.js';
 
 export const BODY_LIMIT = 256 * 1024;
 export const MEDIA_BODY_LIMIT = 8 * 1024 * 1024;
@@ -73,7 +74,7 @@ export async function readBody(req: IncomingMessage, res: ServerResponse,
 	if (body.ok) { return { data: body.data }; }
 	sendJson(res, body.reason === 'too_large' ? 413 : 400, {
 		error: body.reason === 'too_large' ? 'too_large' : 'validation',
-		message: `invalid body: ${body.reason}`
+		message: apiMessage(req, body.reason === 'too_large' ? 'body.too_large' : body.reason === 'empty' ? 'body.empty' : 'body.invalid')
 	} satisfies ErrorPayload);
 	return null;
 }

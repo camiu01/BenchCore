@@ -6,6 +6,7 @@
 import { error } from '@sveltejs/kit';
 import { resolveMediaUrl, getPostBySlug } from '../../../lib/api.js';
 import { siteBase } from '../../../lib/site.js';
+import { serverT } from '../../../lib/server/server-t.js';
 import type { PageServerLoad } from './$types';
 
 /**
@@ -16,7 +17,7 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ params, request }) => {
 	const post = await getPostBySlug(params.slug, request.headers.get('cookie'));
 	if (post === null) {
-		throw error(404, 'record not found');
+		throw error(404, serverT('public.post.notFound'));
 	}
 	const cover = resolveMediaUrl(post.coverImage);
 	return { post, cover, coverAbsolute: cover === null ? null : new URL(cover, siteBase()).href };

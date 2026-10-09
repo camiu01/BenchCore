@@ -7,6 +7,7 @@
  */
 import { z } from 'zod';
 import { apiFetch } from './server/transport.js';
+import { guestCached } from './guest-cache.js';
 import type { ArchiveQuery } from './posts-query.js';
 
 /**
@@ -160,10 +161,27 @@ export function resolveMediaUrl(value: string | null): string | null {
  * @param cookie Optional reader session forwarded only to the trusted API.
  * @returns The validated DTO or null when unreachable/invalid.
  */
-async function getDto<T>(
+function getDto<T>(
 	schema: z.ZodType<T>,
 	path: string,
 	cookie: string | null = null
+): Promise<T | null> {
+	return cookie === null
+		? guestCached(path, () => fetchDto(schema, path, null))
+		: fetchDto(schema, path, cookie);
+}
+
+/**
+ * @brief Performs the validated API request.
+ * @param schema The Zod schema for the response.
+ * @param path The API path starting with /api/.
+ * @param cookie Optional viewer session.
+ * @returns The validated DTO or null when unreachable/invalid.
+ */
+async function fetchDto<T>(
+	schema: z.ZodType<T>,
+	path: string,
+	cookie: string | null
 ): Promise<T | null> {
 	try {
 		const response = await apiFetch(`${apiBase()}${path}`, {

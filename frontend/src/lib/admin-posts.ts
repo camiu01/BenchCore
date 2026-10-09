@@ -2,6 +2,29 @@
  * @file admin-posts.ts
  * @brief Presentation-only filtering and status counts for the loaded admin posts.
  */
+import type { MessageKey } from './i18n/translate.js';
+
+/** Display labels for post statuses; the status values themselves stay API data. */
+export const postStatusKeys = {
+	draft: 'admin.stamp.draft',
+	published: 'admin.stamp.published',
+	archived: 'admin.stamp.archived'
+} as const satisfies Record<string, MessageKey>;
+
+/** Display labels for comment moderation statuses. */
+export const commentStatusKeys = {
+	pending: 'admin.comments.status.pending',
+	approved: 'admin.comments.status.approved',
+	rejected: 'admin.comments.status.rejected'
+} as const satisfies Record<string, MessageKey>;
+
+/** Moderation button labels keyed by the status they apply. */
+export const commentActionKeys = {
+	approved: 'admin.comments.approve',
+	rejected: 'admin.comments.reject',
+	pending: 'admin.comments.markPending'
+} as const satisfies Record<string, MessageKey>;
+
 interface PostSummary {
 	title: string;
 	slug: string;

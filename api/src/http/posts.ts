@@ -7,6 +7,7 @@ import { createPost, deletePost, getPublishedPost, listPublishedPosts, PostError
 import { normalizeSlug } from '../posts/publishing.js';
 import { flattenIssues } from '../markdown/schema.js';
 import { renderMarkdown } from '../markdown/render.js';
+import { apiMessage } from '../i18n/index.js';
 import type { ApiHandler } from './types.js';
 import { getSessionUser, requireUser } from './auth.js';
 import { READER_CACHE_HEADERS } from '../posts/audience.js';
@@ -78,7 +79,7 @@ export const handleWritePost: ApiHandler = async (req, res, deps, _url, id) => {
 	} catch (error) {
 		if (!(error instanceof PostError)) { throw error; }
 		const status = error.code === 'not_found' ? 404 : error.code === 'conflict' ? 409 : 400;
-		sendJson(res, status, { error: status === 400 ? 'validation' : error.code, message: error.message });
+		sendJson(res, status, { error: status === 400 ? 'validation' : error.code, message: error.localized ? apiMessage(req, error.localized.key, error.localized.params) : error.message });
 	}
 };
 

@@ -5,6 +5,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { ApiDeps } from './types.js';
 import { sendJson } from './response.js';
+import { apiMessage } from '../i18n/index.js';
 
 const LOCAL_ORIGINS = ['http://localhost:5173', 'http://localhost:5180', 'http://localhost:5181'];
 const DEFAULT_LIMIT = { windowMs: 60_000, requests: 120, loginRequests: 10, maxClients: 10_000 };
@@ -66,7 +67,7 @@ export function createSecurityGuard(deps: ApiDeps): (req: IncomingMessage, res: 
 		const now = Date.now();
 		const mutating = !['GET', 'HEAD', 'OPTIONS'].includes(req.method ?? 'GET');
 		if (mutating && (!req.headers.origin || !origins.has(req.headers.origin))) {
-			sendJson(res, 403, { error: 'forbidden', message: 'untrusted request origin' });
+			sendJson(res, 403, { error: 'forbidden', message: apiMessage(req, 'origin.untrusted') });
 			return false;
 		}
 		const key = deps.clientAddress?.(req) ?? req.socket.remoteAddress ?? 'unknown';

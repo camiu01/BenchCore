@@ -5,6 +5,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { accountError, accountRequest } from '../../lib/server/account-api.js';
+import { serverT } from '../../lib/server/server-t.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /** @brief Exposes only the current session's public owner. @param event Session. @return Owner. */
@@ -32,7 +33,7 @@ export const actions: Actions = {
 				newPassword: form.get('newPassword')
 			});
 		if (!parsed.success || parsed.data.newPassword !== form.get('confirmation')) {
-			return fail(400, { error: 'Use matching passwords with at least 8 characters.' });
+			return fail(400, { error: serverT('auth.error.passwordsMismatch') });
 		}
 		const result = await accountRequest(
 			request.headers.get('cookie'),

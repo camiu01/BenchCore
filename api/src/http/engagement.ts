@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import { createSessionToken, hashToken, parseCookies, tokenCookieHeader } from '../auth/session.js';
 import { commentSchema, createComment, findPublicPost, moderationSchema, publicComment } from '../posts/engagement-service.js';
+import { apiMessage } from '../i18n/index.js';
 import type { ApiHandler } from './types.js';
 import { getSessionUser, requireUser } from './auth.js';
 import { canReadPost, READER_CACHE_HEADERS } from '../posts/audience.js';
@@ -39,7 +40,7 @@ export const handleComments: ApiHandler = async (req, res, deps, url, slug) => {
 	const parsed = commentSchema.safeParse(body.data);
 	if (!parsed.success) { sendJson(res, 400, { error: 'validation' }); return; }
 	await createComment(deps.comments, post.id, parsed.data);
-	sendJson(res, 202, { ok: true, message: 'Comment submitted for moderation' });
+	sendJson(res, 202, { ok: true, message: apiMessage(req, 'comment.submitted') });
 };
 
 /**

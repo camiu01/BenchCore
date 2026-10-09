@@ -1,5 +1,6 @@
 <!-- @file PostImages.svelte @brief Saved and newly uploaded image management with shared-use confirmation. -->
 <script lang="ts">
+	import { t } from '../i18n/t.svelte.js';
 	import CopyImageLink from './CopyImageLink.svelte';
 	import ImagePreview from './ImagePreview.svelte';
 	import { reorderableImageKeys } from '../image-order.js';
@@ -44,9 +45,9 @@
 		onbusy(true);
 		message = '';
 		try {
-			usage = await inspectImage(key);
+			usage = await inspectImage(key, fetch, t);
 		} catch {
-			message = 'Cannot check image usage. No image was deleted.';
+			message = t('editor.images.checkFailed');
 			cancelRemoval();
 		}
 	}
@@ -63,12 +64,12 @@
 		if (!pendingKey || !usage || deleting) return;
 		deleting = true;
 		try {
-			await deleteImage(pendingKey, usage.version);
+			await deleteImage(pendingKey, usage.version, fetch, t);
 			onremoved(pendingKey);
-			message = 'Image permanently deleted from storage and removed from saved posts.';
+			message = t('editor.images.deleted');
 			cancelRemoval();
 		} catch (cause) {
-			message = cause instanceof Error ? cause.message : 'Image deletion failed.';
+			message = cause instanceof Error ? cause.message : t('editor.images.deleteFailed');
 			cancelRemoval();
 		} finally {
 			deleting = false;
@@ -77,15 +78,13 @@
 </script>
 
 {#if keys.length > 0}
-	<section class="tool-section" aria-label="Post images">
-		<div class="section-banner">// POST IMAGES</div>
+	<section class="tool-section" aria-label={t('editor.images.label')}>
+		<div class="section-banner">{t('editor.images.banner')}</div>
 		<p class="summary">
-			Includes existing images and the cover. Removing an image also deletes the stored file
-			permanently, after confirmation.
+			{t('editor.images.intro')}
 		</p>
 		<p class="field-help">
-			Move buttons reorder stand-alone Markdown images. Captions, code and other text stay
-			unchanged. Save the post to keep the new order.
+			{t('editor.images.moveHelp')}
 		</p>
 		<ul class="image-upload-list">
 			{#each keys as key (key)}
@@ -97,18 +96,18 @@
 						<button
 							class="btn"
 							type="button"
-							aria-label="Move image {key} earlier"
+							aria-label={t('editor.images.moveEarlierAria', { key })}
 							disabled={disabled || pendingKey !== null || movable.indexOf(key) === 0}
-							onclick={() => onmove?.(key, -1)}>Move up</button
+							onclick={() => onmove?.(key, -1)}>{t('editor.images.moveUp')}</button
 						>
 						<button
 							class="btn"
 							type="button"
-							aria-label="Move image {key} later"
+							aria-label={t('editor.images.moveLaterAria', { key })}
 							disabled={disabled ||
 								pendingKey !== null ||
 								movable.indexOf(key) === movable.length - 1}
-							onclick={() => onmove?.(key, 1)}>Move down</button
+							onclick={() => onmove?.(key, 1)}>{t('editor.images.moveDown')}</button
 						>
 					{/if}
 					{#if oncover}<button
@@ -116,13 +115,15 @@
 							type="button"
 							disabled={disabled || pendingKey !== null || managedImageKey(cover) === key}
 							onclick={() => oncover?.(key)}
-							>{managedImageKey(cover) === key ? 'Current cover' : 'Use as cover'}</button
+							>{managedImageKey(cover) === key
+								? t('editor.images.currentCover')
+								: t('editor.images.useAsCover')}</button
 						>{/if}
 					<button
 						class="btn"
 						type="button"
 						disabled={disabled || pendingKey !== null}
-						onclick={() => prepareRemoval(key)}>REMOVE</button
+						onclick={() => prepareRemoval(key)}>{t('editor.images.remove')}</button
 					>
 				</li>
 			{/each}
@@ -133,30 +134,32 @@
 	<section
 		class="image-removal-confirmation"
 		role="alert"
-		aria-label="Confirm permanent image deletion"
+		aria-label={t('editor.images.confirmLabel')}
 	>
-		<strong>Delete this image permanently?</strong>
+		<strong>{t('editor.images.confirmTitle')}</strong>
 		<p>
-			This removes the file from storage, every matching image reference and any matching cover.
+			{t('editor.images.confirmBody')}
 		</p>
 		{#if usage.uses.length > 0}
-			<p>These saved posts will be updated immediately, even without pressing Save:</p>
+			<p>{t('editor.images.confirmUses')}</p>
 			<ul>
 				{#each usage.uses as post (post.id)}<li>{post.title} ({post.slug})</li>{/each}
 			</ul>
 		{:else}
 			<p>
-				No saved post uses this image. Its unsaved references in this editor will also be removed.
+				{t('editor.images.confirmNoUses')}
 			</p>
 		{/if}
 		<div class="btn-row">
-			<button class="btn" type="button" onclick={cancelRemoval} disabled={deleting}>CANCEL</button>
+			<button class="btn" type="button" onclick={cancelRemoval} disabled={deleting}
+				>{t('editor.images.cancel')}</button
+			>
 			<button class="btn btn-accent" type="button" onclick={confirmRemoval} disabled={deleting}>
-				{deleting ? 'DELETING…' : 'DELETE FILE AND ALL REFERENCES'}
+				{deleting ? t('editor.images.deleting') : t('editor.images.deleteAll')}
 			</button>
 		</div>
 	</section>
 {:else if pendingKey}
-	<p class="summary" role="status">Checking saved image usage…</p>
+	<p class="summary" role="status">{t('editor.images.checking')}</p>
 {/if}
 {#if message}<p class="summary" role="status">{message}</p>{/if}

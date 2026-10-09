@@ -6,6 +6,7 @@
 		moveQueuedImage,
 		type ImageUploadItem
 	} from '../image-batch.js';
+	import { t } from '../i18n/t.svelte.js';
 	import CopyImageLink from './CopyImageLink.svelte';
 	import ImagePreview from './ImagePreview.svelte';
 	import QueuedImagePreview from './QueuedImagePreview.svelte';
@@ -23,6 +24,12 @@
 	let message = $state('');
 	const completed = $derived(items.filter((item) => item.status === 'uploaded').length);
 	const pending = $derived(items.some((item) => item.status !== 'uploaded'));
+	const statusLabels = {
+		queued: 'editor.upload.queued',
+		uploading: 'editor.upload.uploadingStamp',
+		uploaded: 'editor.upload.inContent',
+		failed: 'editor.upload.failed'
+	} as const;
 
 	/**
 	 * @brief Queues selected files and optionally starts a dropped batch.
@@ -33,8 +40,7 @@
 	export async function queueFiles(files: File[], start = false): Promise<void> {
 		if (busy || disabled || files.length === 0) return;
 		items = imageUploadQueue(files);
-		message =
-			files.length > 20 ? 'Up to 20 images per batch. Only the first 20 were selected.' : '';
+		message = files.length > 20 ? t('editor.upload.tooMany') : '';
 		if (start) await upload();
 	}
 	/** @brief Removes a deleted asset from upload previews. @param key Media key. @return Nothing. */
@@ -52,10 +58,16 @@
 		busy = true;
 		onbusy(true);
 		try {
-			await uploadImageBatch(items, onuploaded, () => {
-				items = [...items];
-			});
-			message = `${completed} of ${items.length} images attached. Save the record to keep them.`;
+			await uploadImageBatch(
+				items,
+				onuploaded,
+				() => {
+					items = [...items];
+				},
+				undefined,
+				t
+			);
+			message = t('editor.upload.attached', { done: completed, total: items.length });
 		} finally {
 			busy = false;
 			onbusy(false);
@@ -63,7 +75,7 @@
 	}
 </script>
 
-<label class="field-label" for="direct-image">Attach images (up to 20 per batch, 5 MiB each)</label>
+<label class="field-label" for="direct-image">{t('editor.upload.label')}</label>
 <input
 	id="direct-image"
 	class="field-input"
@@ -82,16 +94,17 @@
 		type="button"
 		onclick={upload}
 		disabled={busy || disabled || !pending}
-		>{busy ? `UPLOADING ${completed}/${items.length}…` : 'UPLOAD SELECTED IMAGES →'}</button
+		>{busy
+			? t('editor.upload.uploading', { done: completed, total: items.length })
+			: t('editor.upload.start')}</button
 	>
 </div>
 <p class="summary" aria-live="polite">{message}</p>
 <p class="summary">
-	Select multiple files or drop images onto the Markdown editor. The first successful upload becomes
-	the cover only when the cover field is empty.
+	{t('editor.upload.hint')}
 </p>
 {#if items.length > 0}
-	<ul class="image-upload-list" aria-label="Image upload queue">
+	<ul class="image-upload-list" aria-label={t('editor.upload.queue')}>
 		{#each items as item, index (index)}
 			<li>
 				{#if item.url}
@@ -100,13 +113,16 @@
 					<QueuedImagePreview file={item.file} />
 				{/if}
 				<span>{item.file.name}</span>
-				<span class="stamp">{item.status === 'uploaded' ? 'IN CONTENT' : item.status}</span>
-				<progress max="100" value={item.progress} aria-label="Upload progress for {item.file.name}"
+				<span class="stamp">{t(statusLabels[item.status])}</span>
+				<progress
+					max="100"
+					value={item.progress}
+					aria-label={t('editor.upload.progressAria', { name: item.file.name })}
 					>{item.progress}%</progress
 				>
 				<span class="field-help"
 					>{item.progress}%{item.progress === 95 && item.status === 'uploading'
-						? ' · Verifying upload'
+						? ` · ${t('editor.upload.verifying')}`
 						: ''}</span
 				>
 				{#if !completed}
@@ -114,19 +130,19 @@
 						class="btn"
 						type="button"
 						disabled={busy || disabled || index === 0}
-						aria-label="Move {item.file.name} earlier"
+						aria-label={t('editor.upload.moveEarlierAria', { name: item.file.name })}
 						onclick={() => {
 							items = moveQueuedImage(items, index, -1);
-						}}>Move up</button
+						}}>{t('editor.images.moveUp')}</button
 					>
 					<button
 						class="btn"
 						type="button"
 						disabled={busy || disabled || index === items.length - 1}
-						aria-label="Move {item.file.name} later"
+						aria-label={t('editor.upload.moveLaterAria', { name: item.file.name })}
 						onclick={() => {
 							items = moveQueuedImage(items, index, 1);
-						}}>Move down</button
+						}}>{t('editor.images.moveDown')}</button
 					>
 				{/if}
 				{#if item.status === 'uploaded' && item.url}
@@ -139,6 +155,6 @@
 {/if}
 <noscript
 	><p class="summary">
-		R2 upload requires JavaScript. Existing image references remain editable.
+		{t('editor.upload.noscript')}
 	</p></noscript
 >

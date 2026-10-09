@@ -3,6 +3,8 @@
  * @brief Validated browser client for managed-image inspection and deletion.
  */
 import { z } from 'zod';
+import { DEFAULT_LOCALE } from './i18n/locale.js';
+import { translate, type MessageKey, type MessageParams } from './i18n/translate.js';
 import { managedImageKey, removeImageReferences } from '../../../api/src/media/references.js';
 export {
 	managedImageKey,
@@ -40,14 +42,17 @@ export function removeImageFromEditor(
  * @brief Retrieves saved post uses before irreversible deletion.
  * @param key Managed media key.
  * @param fetcher Browser fetch or test double.
+ * @param tr Message translator for user-facing errors.
  * @return Validated uses and confirmation fingerprint.
  */
 export async function inspectImage(
 	key: string,
-	fetcher: typeof fetch = fetch
+	fetcher: typeof fetch = fetch,
+	tr: (key: MessageKey, params?: MessageParams) => string = (key, params) =>
+		translate(DEFAULT_LOCALE, key, params)
 ): Promise<ImageUsage> {
 	const response = await fetcher(`/api/admin/media/${encodeURIComponent(key)}`);
-	if (!response.ok) throw new Error('Cannot check image usage. Please retry.');
+	if (!response.ok) throw new Error(tr('editor.error.inspectFailed'));
 	return usageSchema.parse(await response.json());
 }
 
@@ -56,20 +61,22 @@ export async function inspectImage(
  * @param key Managed media key.
  * @param version Confirmed usage fingerprint.
  * @param fetcher Browser fetch or test double.
+ * @param tr Message translator for user-facing errors.
  * @return Completion.
  */
 export async function deleteImage(
 	key: string,
 	version: string,
-	fetcher: typeof fetch = fetch
+	fetcher: typeof fetch = fetch,
+	tr: (key: MessageKey, params?: MessageParams) => string = (key, params) =>
+		translate(DEFAULT_LOCALE, key, params)
 ): Promise<void> {
 	const response = await fetcher(`/api/admin/media/${encodeURIComponent(key)}`, {
 		method: 'DELETE',
 		headers: { 'content-type': 'application/json' },
 		body: JSON.stringify({ version })
 	});
-	if (response.status === 409) throw new Error('Image usage changed. Check again before deleting.');
-	if (response.status === 502)
-		throw new Error('Storage deletion failed. Saved references may have been removed; retry.');
-	if (!response.ok) throw new Error('Image deletion failed. Please retry.');
+	if (response.status === 409) throw new Error(tr('editor.error.usageChanged'));
+	if (response.status === 502) throw new Error(tr('editor.error.storageDeleteFailed'));
+	if (!response.ok) throw new Error(tr('editor.error.deleteRetry'));
 }

@@ -11,6 +11,7 @@ import type { LayoutServerLoad } from './$types';
  * @return The canonical site base and presentation settings.
  */
 export const load: LayoutServerLoad = ({ locals }) => ({
+	locale: locals.locale,
 	sessionRole: locals.user?.role ?? null,
 	siteBase: siteBase(),
 	directUploads:

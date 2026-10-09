@@ -1,6 +1,7 @@
 <!-- @file PostEditor.svelte @brief Engineering-log page and presentation component. -->
 <script lang="ts">
 	import type { EditorValues } from '../server/editor-values.js';
+	import { t } from '../i18n/t.svelte.js';
 	import DirectUpload from './DirectUpload.svelte';
 	import DateTimeField from './DateTimeField.svelte';
 	import PostImages from './PostImages.svelte';
@@ -58,6 +59,11 @@
 	let uploadCursor = 0;
 	let draggingImages = $state(false);
 	let deleteConfirmation = $state(false);
+	const statusLabels = [
+		{ value: 'draft', label: 'editor.status.draft' },
+		{ value: 'published', label: 'editor.status.published' },
+		{ value: 'archived', label: 'editor.status.archived' }
+	] as const;
 
 	/** @brief Locks the insertion position while files upload. @param busy Upload state. @return Nothing. */
 	function setUploadBusy(busy: boolean): void {
@@ -180,11 +186,11 @@
 		<div class="form-grid">
 			<div class="field-row">
 				<div>
-					<label class="field-label" for="title">Title</label>
+					<label class="field-label" for="title">{t('editor.field.title')}</label>
 					<input class="field-input" id="title" name="title" required value={values.title} />
 				</div>
 				<div>
-					<label class="field-label" for="slug">Post URL (slug)</label>
+					<label class="field-label" for="slug">{t('editor.field.slug')}</label>
 					<input
 						class="field-input"
 						id="slug"
@@ -193,13 +199,11 @@
 						value={values.slug}
 						aria-describedby="slug-help"
 					/>
-					<span class="field-help" id="slug-help"
-						>Use lowercase letters, numbers and hyphens, for example my-first-post.</span
-					>
+					<span class="field-help" id="slug-help">{t('editor.field.slugHelp')}</span>
 				</div>
 			</div>
 			<div>
-				<label class="field-label" for="description">Short summary</label>
+				<label class="field-label" for="description">{t('editor.field.description')}</label>
 				<input
 					class="field-input"
 					id="description"
@@ -207,30 +211,30 @@
 					value={values.description}
 					aria-describedby="description-help"
 				/>
-				<span class="field-help" id="description-help"
-					>Shown in post lists and search previews.</span
-				>
+				<span class="field-help" id="description-help">{t('editor.field.descriptionHelp')}</span>
 			</div>
 			<div class="field-row">
 				<div>
-					<label class="field-label" for="status">Status</label>
+					<label class="field-label" for="status">{t('editor.field.status')}</label>
 					<select class="field-input" id="status" name="status">
-						{#each ['draft', 'published', 'archived'] as status (status)}
-							<option value={status} selected={values.status === status}>{status}</option>
+						{#each statusLabels as status (status.value)}
+							<option value={status.value} selected={values.status === status.value}
+								>{t(status.label)}</option
+							>
 						{/each}
 					</select>
-					<label class="field-label" for="audience">Audience</label>
+					<label class="field-label" for="audience">{t('editor.field.audience')}</label>
 					<select class="field-input" id="audience" name="audience">
 						<option value="public" selected={(values.audience ?? 'public') === 'public'}
-							>Public</option
+							>{t('editor.audience.public')}</option
 						>
 						<option value="readers" selected={values.audience === 'readers'}
-							>Readers and admins only</option
+							>{t('editor.audience.readers')}</option
 						>
 					</select>
 				</div>
 				<div>
-					<label class="field-label" for="tags">Tags (comma separated)</label>
+					<label class="field-label" for="tags">{t('editor.field.tags')}</label>
 					<input class="field-input" id="tags" name="tags" value={values.tags} />
 				</div>
 			</div>
@@ -238,11 +242,11 @@
 				<DateTimeField
 					id="published_at_picker"
 					name="published_at"
-					label="Published at (blank = auto)"
+					label={t('editor.field.publishedAt')}
 					value={values.publishedAt}
 				/>
 				<div>
-					<label class="field-label" for="cover_image">Cover image (URL or media key)</label>
+					<label class="field-label" for="cover_image">{t('editor.field.cover')}</label>
 					<input
 						bind:this={coverInput}
 						class="field-input"
@@ -260,21 +264,19 @@
 				<DateTimeField
 					id="publish_at_picker"
 					name="publish_at"
-					label="Schedule publication (blank = none)"
+					label={t('editor.field.publishAt')}
 					value={values.publishAt}
 					readonly={!schedulerEnabled}
 				/>
 				{#if !schedulerEnabled}<p class="summary">
-						Automatic publication is temporarily disabled. Existing schedules are preserved; clear a
-						schedule before publishing manually.
+						{t('editor.schedulerDisabled')}
 					</p>{/if}
 			</div>
 			<div>
-				<label class="field-label" for="content">Content (Markdown + [[wikilinks]])</label>
+				<label class="field-label" for="content">{t('editor.field.content')}</label>
 				{#if directUploads}
 					<p class="summary">
-						Place the cursor where images should go, then select files below or drop them here.
-						Images are inserted automatically.
+						{t('editor.field.contentUploadHint')}
 					</p>
 				{/if}
 				<div class="wikilink-editor">
@@ -300,14 +302,14 @@
 		</div>
 		<div class="btn-row editor-actions">
 			<button class="btn btn-accent" type="submit" formaction="?/save" disabled={editingMedia}
-				>Save post →</button
+				>{t('editor.action.save')}</button
 			>
 			<button
 				class="btn"
 				type="submit"
 				formaction="?/preview"
 				formnovalidate
-				disabled={editingMedia}>PREVIEW</button
+				disabled={editingMedia}>{t('editor.action.preview')}</button
 			>
 			{#if !isNew}
 				<button
@@ -318,7 +320,7 @@
 					aria-controls="post-delete-confirmation"
 					onclick={() => {
 						deleteConfirmation = !deleteConfirmation;
-					}}>Delete post</button
+					}}>{t('editor.action.delete')}</button
 				>
 			{/if}
 		</div>
@@ -356,7 +358,7 @@
 				disabled={removingImages}
 			/>
 		{:else}
-			<label class="field-label" for="image">Attach image (png/jpg/webp/gif, max 5 MiB)</label>
+			<label class="field-label" for="image">{t('editor.field.attachImage')}</label>
 			<input
 				class="field-input"
 				id="image"
@@ -365,12 +367,15 @@
 				accept="image/png,image/jpeg,image/webp,image/gif"
 			/>
 			<div class="btn-row">
-				<button class="btn" type="submit" formaction="?/upload" formnovalidate>UPLOAD →</button>
+				<button class="btn" type="submit" formaction="?/upload" formnovalidate
+					>{t('editor.action.upload')}</button
+				>
 			</div>
 		{/if}
 		{#if uploadedUrl !== null}
 			<p class="summary upload-note">
-				Filed at <code>{uploadedUrl}</code> (appended to the content above).
+				{t('editor.uploadedAt')} <code>{uploadedUrl}</code>
+				{t('editor.uploadedAppended')}
 			</p>
 		{/if}
 	</fieldset>
@@ -378,8 +383,8 @@
 
 {#if previewHtml !== null}
 	<section class="tool-section">
-		<div class="section-banner">Post preview</div>
-		<p class="field-help">This is a preview. Save the post to keep your changes.</p>
+		<div class="section-banner">{t('editor.preview.title')}</div>
+		<p class="field-help">{t('editor.preview.note')}</p>
 		<!-- Preview HTML is sanitized by the API render pipeline. -->
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 		<div class="record"><div class="record-body">{@html previewHtml}</div></div>

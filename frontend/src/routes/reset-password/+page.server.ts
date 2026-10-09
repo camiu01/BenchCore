@@ -5,6 +5,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { accountRequest } from '../../lib/server/account-api.js';
+import { serverT } from '../../lib/server/server-t.js';
 import type { Actions, PageServerLoad } from './$types';
 
 const tokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
@@ -30,7 +31,7 @@ export const actions: Actions = {
 			})
 			.safeParse(Object.fromEntries(form));
 		if (!parsed.success || parsed.data.newPassword !== parsed.data.confirmation) {
-			return fail(400, { error: 'Use matching passwords with at least 8 characters.' });
+			return fail(400, { error: serverT('auth.reset.error.invalidInput') });
 		}
 		const result = await accountRequest(null, '/api/auth/password/reset', 'POST', {
 			token: parsed.data.token,
@@ -40,8 +41,8 @@ export const actions: Actions = {
 			return fail(result.status === 429 ? 429 : 400, {
 				error:
 					result.status === 429
-						? 'Too many attempts. Please retry later.'
-						: 'This reset link is invalid or expired. Request a new one.'
+						? serverT('auth.error.rateLimited')
+						: serverT('auth.reset.error.expired')
 			});
 		}
 		throw redirect(303, '/login?passwordReset=1');

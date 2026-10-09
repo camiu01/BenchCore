@@ -1,5 +1,7 @@
 <!-- @file PostDeleteConfirmation.svelte @brief Explicit confirmation for permanent post deletion. -->
 <script lang="ts">
+	import { t } from '../i18n/t.svelte.js';
+
 	interface Props {
 		title: string;
 		disabled: boolean;
@@ -9,12 +11,12 @@
 </script>
 
 <section class="delete-confirmation" id="post-delete-confirmation" aria-labelledby="delete-heading">
-	<h3 id="delete-heading">Delete this post permanently?</h3>
-	<p>This removes “{title || 'Untitled post'}” from the archive. This action cannot be undone.</p>
+	<h3 id="delete-heading">{t('admin.delete.heading')}</h3>
+	<p>{t('admin.delete.body', { title: title || t('admin.delete.untitled') })}</p>
 	<div class="btn-row">
 		<button class="btn danger" type="submit" formaction="?/delete" formnovalidate {disabled}>
-			Yes, delete permanently
+			{t('admin.delete.confirm')}
 		</button>
-		<button class="btn" type="button" onclick={oncancel}>Keep post</button>
+		<button class="btn" type="button" onclick={oncancel}>{t('admin.delete.cancel')}</button>
 	</div>
 </section>

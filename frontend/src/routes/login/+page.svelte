@@ -3,6 +3,7 @@
 	import type { ActionData, PageData } from './$types';
 	import DocShell from '../../lib/components/DocShell.svelte';
 	import Seo from '../../lib/components/Seo.svelte';
+	import { t } from '../../lib/i18n/t.svelte.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	let passwordVisible = $state(false);
@@ -15,24 +16,24 @@
 </script>
 
 <Seo
-	title="Login | BenchCore"
-	description="Sign in to your BenchCore account."
+	title={t('auth.login.seoTitle')}
+	description={t('auth.login.seoDescription')}
 	canonical="{data.siteBase}/login"
 />
 
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: AUTH"
-	title="ACCOUNT LOGIN"
-	sub="Sign in to read members-only posts and join the conversation."
+	title={t('auth.login.title')}
+	sub={t('auth.login.sub')}
 	{nav}
-	footerLeft="AUTH: SESSION"
-	footerRight="HTTPONLY + LAX"
+	footerLeft={t('auth.login.footerLeft')}
+	footerRight={t('auth.login.footerRight')}
 >
 	<main>
 		<article class="record">
 			<div class="record-header">
-				<span class="record-title">CREDENTIALS</span>
-				<span class="stamp">SIGN IN</span>
+				<span class="record-title">{t('auth.login.credentials')}</span>
+				<span class="stamp">{t('auth.login.stamp')}</span>
 			</div>
 			{#if form?.error !== undefined}
 				<p class="error-stamp" role="alert">{form.error}</p>
@@ -42,7 +43,7 @@
 				<input type="hidden" name="next" value={data.next ?? ''} />
 				<div class="form-grid">
 					<div>
-						<label class="field-label" for="email">Username or email</label>
+						<label class="field-label" for="email">{t('auth.login.identifier')}</label>
 						<input
 							class="field-input"
 							id="email"
@@ -55,7 +56,7 @@
 						/>
 					</div>
 					<div>
-						<label class="field-label" for="password">Password</label>
+						<label class="field-label" for="password">{t('auth.login.password')}</label>
 						<div class="password-input">
 							<input
 								class="field-input"
@@ -68,9 +69,13 @@
 							<button
 								class="password-toggle"
 								type="button"
-								aria-label={passwordVisible ? 'Hide password' : 'Show password'}
+								aria-label={passwordVisible
+									? t('auth.login.hidePassword')
+									: t('auth.login.showPassword')}
 								aria-pressed={passwordVisible}
-								title={passwordVisible ? 'Hide password' : 'Show password'}
+								title={passwordVisible
+									? t('auth.login.hidePassword')
+									: t('auth.login.showPassword')}
 								onclick={() => (passwordVisible = !passwordVisible)}
 							>
 								{#if passwordVisible}
@@ -90,9 +95,9 @@
 					</div>
 				</div>
 				<div class="btn-row">
-					<button class="btn btn-accent" type="submit">SIGN IN →</button>
-					<a class="btn" href="/register">CREATE READER ACCOUNT</a>
-					<a class="btn" href="/forgot-password">FORGOT PASSWORD</a>
+					<button class="btn btn-accent" type="submit">{t('auth.login.submit')}</button>
+					<a class="btn" href="/register">{t('auth.login.createReader')}</a>
+					<a class="btn" href="/forgot-password">{t('auth.login.forgot')}</a>
 				</div>
 			</form>
 		</article>

@@ -4,6 +4,8 @@
  */
 import { z } from 'zod';
 import { managedImageKey } from './image-manager.js';
+import { DEFAULT_LOCALE } from './i18n/locale.js';
+import { translate, type MessageKey, type MessageParams } from './i18n/translate.js';
 
 const detailsSchema = z.object({
 	key: z.string(),
@@ -37,9 +39,14 @@ export async function imageDetails(
 	}
 }
 
-/** @brief Formats a byte count without implying unavailable metadata. @param bytes File size. @return Human-readable size. */
-export function imageFileSize(bytes: number | null): string {
-	if (bytes === null || !Number.isFinite(bytes) || bytes <= 0) return 'File size unavailable';
+/** @brief Formats a byte count without implying unavailable metadata. @param bytes File size. @param tr Message translator. @return Human-readable size. */
+export function imageFileSize(
+	bytes: number | null,
+	tr: (key: MessageKey, params?: MessageParams) => string = (key, params) =>
+		translate(DEFAULT_LOCALE, key, params)
+): string {
+	if (bytes === null || !Number.isFinite(bytes) || bytes <= 0)
+		return tr('editor.preview.sizeUnavailable');
 	if (bytes < 1024) return `${bytes} B`;
 	return bytes < 1024 * 1024
 		? `${Math.max(1, Math.round(bytes / 1024))} KiB`

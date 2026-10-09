@@ -13,6 +13,7 @@ import {
 	withUploadedImage,
 	valuesFromForm
 } from '../../../../lib/server/admin-api.js';
+import { serverT } from '../../../../lib/server/server-t.js';
 
 /**
  * @brief Loads blank editor defaults.
@@ -51,7 +52,12 @@ export const actions: Actions = {
 	preview: async ({ request }) => {
 		const values = valuesFromForm(await request.formData());
 		const html = await adminRenderPreview(request.headers.get('cookie'), values.content);
-		return { values, previewHtml: html ?? '(render failed)', uploadedUrl: null, error: null };
+		return {
+			values,
+			previewHtml: html ?? serverT('admin.preview.renderFailed'),
+			uploadedUrl: null,
+			error: null
+		};
 	},
 	/**
 	 * @brief Uploads an image and echoes values for cursor insertion.
@@ -67,7 +73,7 @@ export const actions: Actions = {
 				values,
 				previewHtml: null,
 				uploadedUrl: null,
-				error: 'No file selected.'
+				error: serverT('admin.error.noFile')
 			});
 		}
 		const result = await adminUploadMedia(request.headers.get('cookie'), file);

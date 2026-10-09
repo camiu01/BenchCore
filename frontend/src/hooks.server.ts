@@ -6,6 +6,8 @@ import type { Handle } from '@sveltejs/kit/hooks';
 import { isRedirect } from '@sveltejs/kit';
 import { resolveSessionUser } from './lib/server/session.js';
 import { secureResponse } from './lib/server/security.js';
+import { LOCALE_COOKIE, resolveLocale } from './lib/i18n/locale.js';
+import { runWithLocale } from './lib/server/request-locale.js';
 
 /**
  * @brief Guards private routes and same-origin mutations before resolving a request.
@@ -13,9 +15,28 @@ import { secureResponse } from './lib/server/security.js';
  * @return A secured page, redirect, or rejected mutation response.
  */
 export const handle: Handle = async ({ event, resolve }) => {
-	return handlePage({ event, resolve });
+	event.locals.locale = resolveLocale(
+		event.cookies.get(LOCALE_COOKIE),
+		event.request.headers.get('accept-language')
+	);
+	return runWithLocale(event.locals.locale, () => handlePage({ event, resolve }));
 };
 
+/**
+ * @brief Resolves a page and stamps the negotiated language on the document element.
+ * @param event Request event carrying the locale.
+ * @param resolve SvelteKit resolver.
+ * @return The rendered response.
+ */
+function resolveWithLanguage(
+	event: Parameters<Handle>[0]['event'],
+	resolve: Parameters<Handle>[0]['resolve']
+): Promise<Response> {
+	return resolve(event, {
+		transformPageChunk: ({ html }) =>
+			html.replace('<html lang="en"', `<html lang="${event.locals.locale}"`)
+	});
+}
 /**
  * @brief Applies existing page authentication and nonce-backed response security.
  * @param input Request event and resolver.
@@ -51,7 +72,7 @@ const handlePage: Handle = async ({ event, resolve }) => {
 		return secureResponse(new Response('Administrator access required', { status: 403 }), event);
 	}
 	try {
-		return secureResponse(await resolve(event), event);
+		return secureResponse(await resolveWithLanguage(event, resolve), event);
 	} catch (cause) {
 		if (!isRedirect(cause)) {
 			throw cause;

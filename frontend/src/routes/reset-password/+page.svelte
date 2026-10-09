@@ -2,6 +2,7 @@
 <script lang="ts">
 	import DocShell from '../../lib/components/DocShell.svelte';
 	import Seo from '../../lib/components/Seo.svelte';
+	import { t } from '../../lib/i18n/t.svelte.js';
 	import type { ActionData, PageData } from './$types';
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	const nav = [
@@ -11,26 +12,26 @@
 </script>
 
 <Seo
-	title="Reset password | BenchCore"
-	description="Choose a new account password."
+	title={t('auth.reset.seoTitle')}
+	description={t('auth.reset.seoDescription')}
 	canonical="{data.siteBase}/reset-password"
 />
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: RESET"
-	title="RESET PASSWORD"
-	sub="Choose a new password. You will be signed out on all devices."
+	title={t('auth.reset.title')}
+	sub={t('auth.reset.sub')}
 	{nav}
-	footerLeft="AUTH: RECOVERY"
-	footerRight="PASSWORD: SCRYPT"
+	footerLeft={t('auth.reset.footerLeft')}
+	footerRight={t('auth.reset.footerRight')}
 >
 	<main>
 		<article class="record">
-			<div class="record-header"><span class="record-title">NEW CREDENTIALS</span></div>
+			<div class="record-header"><span class="record-title">{t('auth.reset.heading')}</span></div>
 			{#if form?.error}<p class="error-stamp" role="alert">{form.error}</p>{/if}
 			{#if data.token}
 				<form method="POST" class="form-grid">
 					<input type="hidden" name="token" value={data.token} />
-					<label class="field-label" for="newPassword">New password, 8+ characters</label>
+					<label class="field-label" for="newPassword">{t('auth.reset.newPassword')}</label>
 					<input
 						class="field-input"
 						id="newPassword"
@@ -41,7 +42,7 @@
 						maxlength="200"
 						autocomplete="new-password"
 					/>
-					<label class="field-label" for="confirmation">Confirm new password</label>
+					<label class="field-label" for="confirmation">{t('auth.reset.confirmation')}</label>
 					<input
 						class="field-input"
 						id="confirmation"
@@ -53,12 +54,12 @@
 						autocomplete="new-password"
 					/>
 					<div class="btn-row">
-						<button class="btn btn-accent" type="submit">RESET PASSWORD</button>
+						<button class="btn btn-accent" type="submit">{t('auth.reset.submit')}</button>
 					</div>
 				</form>
 			{:else}
-				<p class="error-stamp" role="alert">This reset link is invalid. Request a new one.</p>
-				<a class="btn" href="/forgot-password">REQUEST NEW LINK</a>
+				<p class="error-stamp" role="alert">{t('auth.reset.invalidLink')}</p>
+				<a class="btn" href="/forgot-password">{t('auth.reset.requestNew')}</a>
 			{/if}
 		</article>
 	</main>

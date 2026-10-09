@@ -2,6 +2,9 @@
  * @file post-outline.ts
  * @brief Stable heading anchors and plain-text navigation for already sanitized post HTML.
  */
+import { DEFAULT_LOCALE } from './i18n/locale.js';
+import { translator } from './i18n/translate.js';
+
 export interface PostHeading {
 	id: string;
 	title: string;
@@ -39,8 +42,11 @@ function headingText(html: string): string {
 		.trim();
 }
 
-/** @brief Adds fixed safe IDs without reinterpreting Markdown or altering sanitized content. @param sanitizedHtml Trusted API-sanitized HTML. @return Anchored HTML and outline. */
-export function postOutline(sanitizedHtml: string): { html: string; headings: PostHeading[] } {
+/** @brief Adds fixed safe IDs without reinterpreting Markdown or altering sanitized content. @param sanitizedHtml Trusted API-sanitized HTML. @param tr Message translator. @return Anchored HTML and outline. */
+export function postOutline(
+	sanitizedHtml: string,
+	tr: ReturnType<typeof translator> = translator(DEFAULT_LOCALE)
+): { html: string; headings: PostHeading[] } {
 	const headings: PostHeading[] = [];
 	const html = sanitizedHtml.replace(
 		/<h([1-4])>([\s\S]*?)<\/h\1>/g,
@@ -48,7 +54,7 @@ export function postOutline(sanitizedHtml: string): { html: string; headings: Po
 			const id = `post-section-${headings.length + 1}`;
 			headings.push({
 				id,
-				title: headingText(content) || `Section ${headings.length + 1}`,
+				title: headingText(content) || tr('public.outline.section', { n: headings.length + 1 }),
 				level: Number(level)
 			});
 			return `<h${level} id="${id}">${content}</h${level}>`;

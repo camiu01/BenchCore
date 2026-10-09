@@ -10,23 +10,9 @@ import { renderMarkdown } from '../markdown/render.js';
 import { flattenIssues, slugField } from '../markdown/schema.js';
 import { canTransition, isPublic, normalizeSlug } from './publishing.js';
 import { canReadPost, type PostAudience, type ViewerRole } from './audience.js';
+import { PostError, postNotFound, slugConflict } from './post-error.js';
 
-/**
- * @brief Domain error with a machine-readable code.
- */
-export class PostError extends Error {
-	code: 'not_found' | 'validation' | 'transition' | 'conflict';
-
-	/**
-	 * @brief Builds a post domain error.
-	 * @param code The error code.
-	 * @param message The human-readable message.
-	 */
-	constructor(code: PostError['code'], message: string) {
-		super(message);
-		this.code = code;
-	}
-}
+export { PostError } from './post-error.js';
 
 /**
  * @brief Repository set required by the post service.
@@ -132,7 +118,7 @@ async function findBacklinks(
 	slug: string,
 	now: Date
 ): Promise<{ slug: string; title: string }[]> {
-	const all = await deps.posts.listAll();
+	const all = await deps.posts.listBacklinkCandidates(slug);
 	const pattern = new RegExp(`\\[\\[\\s*${slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(?:\\|[^\\]]+)?\\]\\]`, 'i');
 	return all
 		.filter((row) => row.slug !== slug && isPublic(row.status, row.publishedAt, now)
@@ -147,7 +133,14 @@ async function findBacklinks(
  * @param row The row with tags.
  * @return The list item DTO.
  */
-async function toListItem(deps: PostServiceDeps, row: PostWithTags): Promise<PostListItem> {
+async function toListItem(
+	deps: PostServiceDeps,
+	row: PostWithTags,
+	authors?: Map<string, string | null>
+): Promise<PostListItem> {
+	const authorName = row.authorId !== null && authors?.has(row.authorId)
+		? authors.get(row.authorId) ?? null
+		: await resolveAuthorName(deps.users, row.authorId);
 	return {
 		id: row.id,
 		slug: row.slug,
@@ -156,11 +149,23 @@ async function toListItem(deps: PostServiceDeps, row: PostWithTags): Promise<Pos
 		audience: row.audience,
 		locked: !canReadPost(row.audience, deps.viewerRole),
 		tags: row.tags,
-		authorName: await resolveAuthorName(deps.users, row.authorId),
+		authorName,
 		publishedAt: row.publishedAt?.toISOString() ?? null,
 		updatedAt: row.updatedAt.toISOString(),
 		likesCount: canReadPost(row.audience, deps.viewerRole) ? row.likesCount ?? await deps.likes?.count(row.id) ?? 0 : 0
 	};
+}
+
+/**
+ * @brief Loads each distinct author once, in parallel, instead of once per listed post.
+ * @param deps The repositories.
+ * @param rows Listed rows.
+ * @return Author names keyed by author id.
+ */
+async function loadAuthors(deps: PostServiceDeps, rows: PostWithTags[]): Promise<Map<string, string | null>> {
+	const ids = [...new Set(rows.flatMap((row) => row.authorId === null ? [] : [row.authorId]))];
+	const names = await Promise.all(ids.map((id) => resolveAuthorName(deps.users, id)));
+	return new Map(ids.map((id, index) => [id, names[index] ?? null]));
 }
 
 /**
@@ -182,10 +187,8 @@ export async function listPublishedPosts(
 		limit, offset, tag: options.tag, tags: options.tags, tagMode: options.tagMode, sort: options.sort, search: options.search, now,
 		includeReaderContent: deps.viewerRole === 'reader' || deps.viewerRole === 'admin'
 	});
-	const items: PostListItem[] = [];
-	for (const row of page.items) {
-		items.push(await toListItem(deps, row));
-	}
+	const authors = await loadAuthors(deps, page.items);
+	const items = await Promise.all(page.items.map((row) => toListItem(deps, row, authors)));
 	return { items, total: page.total };
 }
 
@@ -237,7 +240,7 @@ export async function createPost(
 	const slug = normalizeSlug(parsed.slug);
 	const existing = await deps.posts.findBySlug(slug);
 	if (existing !== null) {
-		throw new PostError('conflict', `slug already exists: ${slug}`);
+		throw slugConflict(slug);
 	}
 	const dates = publishingDates(parsed, null);
 	const rendered = await renderMarkdown(parsed.contentMarkdown, { knownSlugs, mediaPrefix: '/api/media' });
@@ -276,12 +279,12 @@ export async function updatePost(
 	const parsed = parseOrThrow(updatePostSchema, input);
 	const row = await deps.posts.findById(id);
 	if (row === null) {
-		throw new PostError('not_found', `post not found: ${id}`);
+		throw postNotFound(id);
 	}
 	const patch = await buildUpdatePatch(deps, row, parsed);
 	const updated = await deps.posts.update(id, patch);
 	if (updated === null) {
-		throw new PostError('not_found', `post not found: ${id}`);
+		throw postNotFound(id);
 	}
 	if (parsed.tags !== undefined) {
 		const tagRows = await deps.tags.upsertByName(parsed.tags);
@@ -306,7 +309,11 @@ function publishingDates(input: z.output<typeof updatePostSchema>, row: PostRow 
 	const publishAt = input.publishAt === undefined ? row?.publishAt ?? null
 		: input.publishAt === null ? null : new Date(input.publishAt);
 	if (publishAt && status !== 'draft') {
-		throw new PostError('validation', 'scheduled posts must remain drafts until the job publishes them');
+		throw new PostError(
+			'validation',
+			'scheduled posts must remain drafts until the job publishes them',
+			{ key: 'post.scheduled_draft' }
+		);
 	}
 	let publishedAt = input.publishedAt === undefined ? row?.publishedAt ?? null
 		: input.publishedAt === null ? null : new Date(input.publishedAt);
@@ -324,11 +331,14 @@ function publishingDates(input: z.output<typeof updatePostSchema>, row: PostRow 
 async function buildUpdatePatch(deps: PostServiceDeps, row: PostRow,
 	parsed: z.output<typeof updatePostSchema>): Promise<Partial<PostRow>> {
 	if (parsed.status !== undefined && !canTransition(row.status, parsed.status)) {
-		throw new PostError('transition', `illegal transition ${row.status} -> ${parsed.status}`);
+		throw new PostError('transition', `illegal transition ${row.status} -> ${parsed.status}`, {
+			key: 'post.illegal_transition',
+			params: { from: row.status, to: parsed.status }
+		});
 	}
 	const slug = parsed.slug === undefined ? row.slug : normalizeSlug(parsed.slug);
 	const clash = await deps.posts.findBySlug(slug);
-	if (clash !== null && clash.id !== row.id) { throw new PostError('conflict', `slug already exists: ${slug}`); }
+	if (clash !== null && clash.id !== row.id) { throw slugConflict(slug); }
 	const rendered = parsed.contentMarkdown === undefined ? null
 		: await renderMarkdown(parsed.contentMarkdown, { mediaPrefix: '/api/media' });
 	return {

@@ -1,22 +1,23 @@
 <!-- @file ReaderGate.svelte @brief Obscured placeholder without protected text, with reader sign-in links. -->
 <script lang="ts">
+	import { t } from '../i18n/t.svelte.js';
 	let { slug }: { slug: string } = $props();
 </script>
 
-<section class="reader-gate" aria-label="Readers-only content">
+<section class="reader-gate" aria-label={t('public.gate.aria')}>
 	<div class="reader-placeholder" aria-hidden="true">
 		<div></div>
 		<div></div>
 		<div></div>
 	</div>
 	<div class="reader-message">
-		<strong>READERS ONLY</strong>
-		<p>Sign in with a reader account to read this record.</p>
+		<strong>{t('public.readersOnly')}</strong>
+		<p>{t('public.gate.body')}</p>
 		<div class="btn-row">
 			<a class="btn btn-accent" href="/login?next={encodeURIComponent(`/posts/${slug}`)}"
-				>SIGN IN →</a
+				>{t('public.gate.signIn')}</a
 			>
-			<a class="btn" href="/register">CREATE READER ACCOUNT</a>
+			<a class="btn" href="/register">{t('public.gate.create')}</a>
 		</div>
 	</div>
 </section>

@@ -5,7 +5,24 @@ Version 0.7.0 is prepared locally. No tag, hosted release or deployment is creat
 
 ## Unreleased
 
-No additional changes.
+### Interface language
+
+- Add an English and Italian interface. The language comes from the `lang`
+  cookie (one year, first party, HttpOnly), otherwise from the browser's
+  `Accept-Language`, otherwise English. The picker works without JavaScript and
+  returns only to same-site paths. `<html lang>` and dates follow the language.
+- Localize API messages (`message` fields) from the same cookie or header. Error
+  `code` values stay stable, and Zod `issues` stay English diagnostics.
+- Show the new cookie in the cookie notice and on `/cookies`.
+
+### Design and speed
+
+- Restyle the site as paper-and-engineering neo-brutalism with hard offset
+  shadows, square controls and filled active states. Improve the archive filter
+  panel, breadcrumbs and card actions.
+- Cut public page latency: batched author lookups, a targeted backlink query,
+  parallel list and count queries, and a 15-second guest-only API read cache.
+- Add a non-blocking cookie notice and a `/cookies` page.
 
 ## 0.7.0 — 2026-10-06
 

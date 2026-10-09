@@ -2,13 +2,17 @@
  * @file upload-progress.ts
  * @brief Credential-free signed uploads with bounded byte progress.
  */
+import { DEFAULT_LOCALE } from './i18n/locale.js';
+import { translate, type MessageKey, type MessageParams } from './i18n/translate.js';
 
-/** @brief Sends bytes without cookies and rejects redirected final responses; XMLHttpRequest cannot prevent redirects in flight. @param file Image. @param url Validated R2 URL. @param progress Byte-transfer percentage. @param factory XMLHttpRequest test seam. @return Completion. */
+/** @brief Sends bytes without cookies and rejects redirected final responses; XMLHttpRequest cannot prevent redirects in flight. @param file Image. @param url Validated R2 URL. @param progress Byte-transfer percentage. @param factory XMLHttpRequest test seam. @param tr Message translator. @return Completion. */
 export function uploadWithProgress(
 	file: File,
 	url: string,
 	progress: (percent: number) => void,
-	factory: () => XMLHttpRequest = () => new XMLHttpRequest()
+	factory: () => XMLHttpRequest = () => new XMLHttpRequest(),
+	tr: (key: MessageKey, params?: MessageParams) => string = (key, params) =>
+		translate(DEFAULT_LOCALE, key, params)
 ): Promise<void> {
 	return new Promise((resolve, reject) => {
 		const request = factory();
@@ -26,15 +30,15 @@ export function uploadWithProgress(
 				request.status >= 300 ||
 				(request.responseURL && request.responseURL !== url)
 			) {
-				reject(new Error('R2 upload failed. Check the bucket CORS policy.'));
+				reject(new Error(tr('editor.error.r2Failed')));
 				return;
 			}
 			progress(100);
 			resolve();
 		};
-		request.onerror = () => reject(new Error('R2 upload failed. Check the bucket CORS policy.'));
-		request.ontimeout = () => reject(new Error('R2 upload timed out. Retry the upload.'));
-		request.onabort = () => reject(new Error('R2 upload was cancelled.'));
+		request.onerror = () => reject(new Error(tr('editor.error.r2Failed')));
+		request.ontimeout = () => reject(new Error(tr('editor.error.r2Timeout')));
+		request.onabort = () => reject(new Error(tr('editor.error.r2Cancelled')));
 		progress(0);
 		request.send(file);
 	});

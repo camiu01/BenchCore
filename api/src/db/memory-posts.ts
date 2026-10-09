@@ -168,6 +168,16 @@ class MemoryPosts implements PostRepository {
 	}
 
 	/**
+	 * @brief Finds rows whose Markdown mentions a slug.
+	 * @param slug Normalized target slug.
+	 * @return Candidate post rows without tag attachment.
+	 */
+	async listBacklinkCandidates(slug: string) {
+		const needle = slug.toLowerCase();
+		return [...this.rows.values()].filter((row) => row.contentMarkdown.toLowerCase().includes(needle));
+	}
+
+	/**
 	 * @brief Counts public posts once across all tag links.
 	 * @param now Visibility reference time.
 	 * @return Name-ordered tags with public post counts.

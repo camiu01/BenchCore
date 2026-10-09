@@ -3,6 +3,8 @@
  * @brief Shareable archive state and filter-preserving pagination.
  */
 import { z } from 'zod';
+import { DEFAULT_LOCALE } from './i18n/locale.js';
+import { translator } from './i18n/translate.js';
 
 const archiveSchema = z.object({
 	page: z.coerce.number().int().min(1).max(100001).catch(1),
@@ -39,11 +41,10 @@ export function archiveHref(query: ArchiveQuery, page = query.page): string {
 	return `/posts${params.size ? `?${params}` : ''}`;
 }
 
-/** @brief Describes the active sort without claiming newest-first for other orders. @param sort Sort key. @return Reader label. */
-export function archiveSortLabel(sort: ArchiveQuery['sort']): string {
-	return sort === 'popular'
-		? 'most liked first'
-		: sort === 'updated'
-			? 'recently updated first'
-			: 'newest first';
+/** @brief Describes the active sort without claiming newest-first for other orders. @param sort Sort key. @param tr Message translator. @return Reader label. */
+export function archiveSortLabel(
+	sort: ArchiveQuery['sort'],
+	tr: ReturnType<typeof translator> = translator(DEFAULT_LOCALE)
+): string {
+	return tr(`public.posts.sort.${sort}`);
 }

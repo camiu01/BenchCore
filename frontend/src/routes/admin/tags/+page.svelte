@@ -5,29 +5,30 @@
 	import Seo from '../../../lib/components/Seo.svelte';
 	import TagColorEditor from '../../../lib/components/TagColorEditor.svelte';
 	import TagChip from '../../../lib/components/TagChip.svelte';
+	import { t } from '../../../lib/i18n/t.svelte.js';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	const nav = [
-		{ href: '/admin', label: '[01] deck' },
-		{ href: '/admin/posts/new', label: '[02] new record' },
-		{ href: '/', label: '[03] index' }
-	];
+	const nav = $derived([
+		{ href: '/admin', label: `[01] ${t('admin.nav.deck')}` },
+		{ href: '/admin/posts/new', label: `[02] ${t('admin.nav.newRecord')}` },
+		{ href: '/', label: `[03] ${t('admin.nav.index')}` }
+	]);
 </script>
 
 <Seo
-	title="Tags | BenchCore Admin"
-	description="Tag catalog."
+	title={t('admin.tags.title')}
+	description={t('admin.tags.description')}
 	canonical="{data.siteBase}/admin/tags"
 />
 
 <DocShell
 	docId="FORM: BENCHCORE-2026 // REF: TAGS"
-	title="TAG REGISTRY"
-	sub="Assign colors or delete tags. Deletion removes associations, never posts."
+	title={t('admin.tags.heading')}
+	sub={t('admin.tags.sub')}
 	{nav}
-	footerLeft="TAGS: {data.items.length}"
-	footerRight={data.online ? 'API: LINKED' : 'API: OFFLINE'}
+	footerLeft={t('admin.tags.count', { count: data.items.length })}
+	footerRight={data.online ? t('admin.api.linked') : t('admin.api.offline')}
 	activeHref="/admin/tags"
 	wide
 >
@@ -35,20 +36,20 @@
 		{#if data.notice}<p class="summary" role="status">{data.notice}</p>{/if}
 		{#if form?.error}<p class="error-stamp" role="alert">{form.error}</p>{/if}
 		{#if !data.online}
-			<p class="error-stamp" role="alert">Tags are temporarily unavailable.</p>
-			<a class="btn" href="/admin/tags">Try again</a>
+			<p class="error-stamp" role="alert">{t('admin.tags.unavailable')}</p>
+			<a class="btn" href="/admin/tags">{t('admin.tags.retry')}</a>
 		{:else if data.items.length === 0}
-			<p class="summary">No tags yet. Add tags while creating or editing a post.</p>
-			<a class="btn" href="/admin/posts/new">Create a post</a>
+			<p class="summary">{t('admin.tags.empty')}</p>
+			<a class="btn" href="/admin/posts/new">{t('admin.tags.createPost')}</a>
 		{:else}
 			<table class="inventory-table">
 				<thead>
 					<tr>
-						<th>TAG</th>
-						<th>SLUG</th>
-						<th>RECORDS</th>
-						<th>COLOR</th>
-						<th>ACTIONS</th>
+						<th>{t('admin.tags.colTag')}</th>
+						<th>{t('admin.tags.colSlug')}</th>
+						<th>{t('admin.tags.colRecords')}</th>
+						<th>{t('admin.tags.colColor')}</th>
+						<th>{t('admin.tags.colActions')}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -64,11 +65,12 @@
 									method="POST"
 									action="?/delete"
 									onsubmit={(event) => {
-										if (!confirm(`Delete "${tag.name}" from every post?`)) event.preventDefault();
+										if (!confirm(t('admin.tags.confirmDelete', { name: tag.name })))
+											event.preventDefault();
 									}}
 								>
 									<input type="hidden" name="id" value={tag.id} />
-									<button class="btn danger" type="submit">DELETE</button>
+									<button class="btn danger" type="submit">{t('admin.tags.delete')}</button>
 								</form>
 							</td>
 						</tr>

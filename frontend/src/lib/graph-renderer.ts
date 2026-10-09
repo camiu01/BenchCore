@@ -15,6 +15,8 @@ import {
 } from 'd3-force';
 import { select, type Selection } from 'd3-selection';
 import type { GraphData } from './api.js';
+import { DEFAULT_LOCALE } from './i18n/locale.js';
+import { translator } from './i18n/translate.js';
 import { matchesGraphNode, relatedGraphNodes } from './graph-navigation.js';
 import { focusedGraphSlugs } from './graph-viewport.js';
 import { GraphViewport } from './graph-zoom.js';
@@ -51,8 +53,13 @@ export function buildModel(graph: GraphData): { nodes: SimNode[]; links: SimLink
 	};
 }
 
-/** @brief Draws graph primitives. @param svg SVG root. @param nodes Nodes. @param links Edges. @return D3 selections. */
-function drawScene(svg: SVGSVGElement, nodes: SimNode[], links: SimLink[]) {
+/** @brief Draws graph primitives. @param svg SVG root. @param nodes Nodes. @param links Edges. @param tr Message translator. @return D3 selections. */
+function drawScene(
+	svg: SVGSVGElement,
+	nodes: SimNode[],
+	links: SimLink[],
+	tr: ReturnType<typeof translator>
+) {
 	const root = select(svg);
 	const scene = root.append('g').attr('class', 'graph-scene');
 	const link = scene
@@ -71,9 +78,11 @@ function drawScene(svg: SVGSVGElement, nodes: SimNode[], links: SimLink[]) {
 		.attr('fill', (item) => item.tags[0]?.color ?? '#64748B')
 		.attr('tabindex', 0)
 		.attr('role', 'button')
-		.attr(
-			'aria-label',
-			(item) => `${item.title}, ${item.degree} ${item.degree === 1 ? 'connection' : 'connections'}`
+		.attr('aria-label', (item) =>
+			tr(item.degree === 1 ? 'public.graph.nodeOne' : 'public.graph.nodeMany', {
+				title: item.title,
+				n: item.degree
+			})
 		);
 	node.append('title').text((item) => item.title);
 	const label = scene
@@ -222,16 +231,18 @@ function createSelection(
  * @param graph Public graph.
  * @param onSelect Selection callback.
  * @param previews Optional delayed preview coordinator.
+ * @param tr Message translator.
  * @return Graph controls and cleanup.
  */
 export function createGraphRenderer(
 	svg: SVGSVGElement,
 	graph: GraphData,
 	onSelect: (slug: string) => void,
-	previews?: PreviewController
+	previews?: PreviewController,
+	tr: ReturnType<typeof translator> = translator(DEFAULT_LOCALE)
 ): GraphController {
 	const { nodes, links } = buildModel(graph);
-	const { scene, link, node, label } = drawScene(svg, nodes, links);
+	const { scene, link, node, label } = drawScene(svg, nodes, links, tr);
 	const simulation = startSimulation(nodes, links, link, node, label);
 	const viewport = new GraphViewport(svg, scene, nodes);
 	simulation.on('tick.viewport', () => viewport.tick());
