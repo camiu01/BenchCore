@@ -13,6 +13,7 @@ import { flattenIssues } from '../markdown/schema.js';
 import { apiMessage } from '../i18n/index.js';
 import type { ApiDeps, ApiHandler } from './types.js';
 import { readBody, sendJson } from './response.js';
+import { verifyLoginFactor } from '../auth/factor-service.js';
 
 let dummyHash: Promise<string> | undefined;
 
@@ -81,6 +82,9 @@ export const handleLogin: ApiHandler = async (req, res, deps) => {
 	if (!valid || !user || !user.isActive) {
 		sendJson(res, 401, { error: 'unauthorized', message: apiMessage(req, 'auth.invalid_credentials') }); return;
 	}
+	if (!await verifyLoginFactor(deps.security, user, parsed.data.code, deps.totpKey)) {
+		sendJson(res, 401, { error: 'unauthorized', message: apiMessage(req, 'auth.invalid_credentials') }); return;
+	}
 	const session = createSessionToken();
 	await deps.sessions.create({ id: randomUUID(), tokenHash: session.tokenHash, userId: user.id,
 		userVersion: user.sessionVersion, expiresAt: buildSessionExpiry() });
@@ -97,6 +101,14 @@ export const handleLogin: ApiHandler = async (req, res, deps) => {
 export const handleLogout: ApiHandler = async (req, res, deps) => {
 	const token = parseCookies(req.headers.cookie)[SESSION_COOKIE];
 	if (token) { await deps.sessions.deleteByTokenHash(hashToken(token)); }
+	sendJson(res, 200, { ok: true }, { 'set-cookie': clearSessionCookieHeader() });
+};
+
+/** @brief Revokes every device session for the authenticated owner. @param req Request. @param res Response. @param deps Dependencies. @return Completion. */
+export const handleGlobalLogout: ApiHandler = async (req, res, deps) => {
+	const user = await getSessionUser(req, deps);
+	if (!user) { sendJson(res, 401, { error: 'unauthorized' }); return; }
+	await deps.users.revokeSessions(user.id, user.sessionVersion);
 	sendJson(res, 200, { ok: true }, { 'set-cookie': clearSessionCookieHeader() });
 };
 

@@ -19,7 +19,7 @@ export function secureResponse(
 	response.headers.set('referrer-policy', 'strict-origin-when-cross-origin');
 	response.headers.set('permissions-policy', 'camera=(), microphone=(), geolocation=()');
 	const path = event.url.pathname;
-	if (path === '/' || /^\/(?:posts|tags|graph)(?:\/|$)/.test(path)) {
+	if (path === '/' || /^\/(?:posts|tags|graph|about|help|privacy|cookies)(?:\/|$)/.test(path)) {
 		response.headers.set('cache-control', 'private, no-store');
 		const vary = response.headers.get('vary');
 		response.headers.set('vary', vary ? `${vary}, Cookie` : 'Cookie');
@@ -30,7 +30,13 @@ export function secureResponse(
 		path === '/login' ||
 		path === '/logout' ||
 		path === '/account' ||
+		path.startsWith('/account/') ||
 		path === '/register' ||
+		path === '/forgot-password' ||
+		path === '/reset-password' ||
+		path === '/language' ||
+		path.startsWith('/api/') ||
+		response.status >= 400 ||
 		event.request.method !== 'GET'
 	) {
 		response.headers.set('cache-control', 'no-store');

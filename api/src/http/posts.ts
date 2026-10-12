@@ -3,7 +3,7 @@
  * @brief Thin public and administrator post endpoint adapters.
  */
 import { z } from 'zod';
-import { createPost, deletePost, getPublishedPost, listPublishedPosts, PostError, updatePost } from '../posts/post-service.js';
+import { createPost, getPublishedPost, listPublishedPosts, PostError, updatePost } from '../posts/post-service.js';
 import { normalizeSlug } from '../posts/publishing.js';
 import { flattenIssues } from '../markdown/schema.js';
 import { renderMarkdown } from '../markdown/render.js';
@@ -67,7 +67,7 @@ export const handleWritePost: ApiHandler = async (req, res, deps, _url, id) => {
 	if (!user) { return; }
 	if (id && !z.uuid().safeParse(id).success) { sendJson(res, 404, { error: 'not_found' }); return; }
 	if (req.method === 'DELETE') {
-		if (!await deletePost(deps, id)) { sendJson(res, 404, { error: 'not_found' }); return; }
+		if (!await deps.security.deletePosts(user.id, [id])) { sendJson(res, 404, { error: 'not_found' }); return; }
 		res.writeHead(204); res.end(); return;
 	}
 	const body = await readBody(req, res);

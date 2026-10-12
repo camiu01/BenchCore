@@ -12,8 +12,20 @@ import { editorEn } from './editor.en.js';
 import { editorIt } from './editor.it.js';
 import { publicEn } from './public.en.js';
 import { publicIt } from './public.it.js';
+import { securityEn } from './security.en.js';
+import { securityIt } from './security.it.js';
+import { pagesEn } from './pages.en.js';
+import { pagesIt } from './pages.it.js';
 
-export const en = { ...commonEn, ...publicEn, ...authEn, ...adminEn, ...editorEn } as const;
+export const en = {
+	...commonEn,
+	...publicEn,
+	...authEn,
+	...adminEn,
+	...editorEn,
+	...securityEn,
+	...pagesEn
+} as const;
 
 export type MessageKey = keyof typeof en;
 
@@ -22,5 +34,7 @@ export const it: Record<MessageKey, string> = {
 	...publicIt,
 	...authIt,
 	...adminIt,
-	...editorIt
+	...editorIt,
+	...securityIt,
+	...pagesIt
 };

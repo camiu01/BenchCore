@@ -29,14 +29,15 @@ export const userPatchSchema = z.object({
  * @param users Persistence.
  * @param input Validated registration.
  * @param role Server-selected role, never taken from public input.
+ * @param actorId Initiating administrator, absent for public registration.
  * @return Owner or null when identity is unavailable.
  */
 export async function registerUser(users: UserRepository, input: z.infer<typeof registrationSchema>,
-	role: 'reader' | 'admin' = 'reader'): Promise<UserRow | null> {
+	role: 'reader' | 'admin' = 'reader', actorId: string | null = null): Promise<UserRow | null> {
 	if (await users.findByUsername(input.username) || await users.findByEmail(input.email)) { return null; }
 	try {
 		return await users.create({ id: randomUUID(), username: input.username, email: input.email, name: input.name,
-			passwordHash: await hashPassword(input.password), role });
+			passwordHash: await hashPassword(input.password), role }, actorId);
 	} catch (error) {
 		const collision = await users.findByUsername(input.username) ?? await users.findByEmail(input.email);
 		if (collision) { return null; }

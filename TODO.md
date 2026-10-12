@@ -16,7 +16,26 @@ API data only.
 [![pnpm](https://img.shields.io/badge/pnpm-10.15.0-yellow.svg)](https://pnpm.io/)
 [![Vitest](https://img.shields.io/badge/Vitest-5.0.3-green.svg)](https://vitest.dev/)
 
-## What's new in 0.7.0
+## What's new in 0.8.0
+
+Engagement, moderation, authentication hardening and public-site completion.
+
+- Comment submission quotas for IPs and sessions, a first-party honeypot and the
+  existing administrator approval queue.
+- Global device logout, password-confirmed administrator TOTP with encrypted
+  secrets and replay protection, and explicit offline factor recovery.
+- Identifier-only security history at `/admin/audit` and confirmed selected
+  post deletion with transactional audit records.
+- Workspace metadata at 0.8.0 and an offline-generated migration, applied only
+  during a separately authorized local startup. Tags and hosted releases remain
+  separate operator actions; deployment follows the configured CI/CD.
+- Localized 404 recovery, project information, reader guide, privacy and a
+  complete footer, with expanded sitemap and crawler privacy directions.
+
+Setup, recovery and hosting gates are recorded in
+[0.8.0 release preparation](docs/RELEASE_0.8.0.md).
+
+## Previously in 0.7.0
 
 Stable release of the v0.7.0 milestone: knowledge navigation and media refinement.
 
@@ -234,6 +253,29 @@ The full milestone history lives below under Done.
 - **Discovery UX** — topic shortcuts, readable graph labels, related-post
   lists and direct reading links. #graph #ux
 
+### v0.8.0 milestone: Engagement, moderation and auth hardening (prepared locally)
+
+- [x] Comment moderation and anti-spam. #social #security
+	- [x] Independent bounded per-IP/session submission quotas with `Retry-After`.
+	- [x] First-party honeypot, with no external CAPTCHA or Akismet dependency.
+	- [x] Existing paginated approval/rejection workflow at `/admin/comments`,
+	  with moderation events recorded in the security log.
+- [x] Session and authentication hardening. #auth #security
+	- [x] Global logout revokes all sessions atomically; password changes and
+	  recovery retain revocation and invalidate outstanding recovery tokens.
+	- [x] Password-confirmed administrator 2FA/TOTP with encrypted secrets,
+	  owner-bound expiring enrollment, atomic replay protection and audited
+	  offline recovery.
+- [x] Security audit log. #security #admin
+	- [x] Transactional records for account creation/management, password
+	  rotation, global logout, TOTP changes and selected post deletion.
+	- [x] Administrator-only paginated viewer at `/admin/audit`, without
+	  credentials, emails, IP addresses or content bodies.
+	- [x] Explicit `DELETE` confirmation for bounded selected deletion.
+
+Comment quotas remain process-local. Native PostgreSQL concurrency and hosted
+deployment verification remain operator gates, not locally verified results.
+
 ## Milestones
 
 | Version | Focus | Status |
@@ -245,33 +287,22 @@ The full milestone history lives below under Done.
 | 0.6.0-beta.1 | Online beta preparation | Shipped |
 | 0.6.0 | Media management and storage refinement | Shipped |
 | 0.7.0 | Social graph, links and knowledge navigation | Shipped |
-| 0.8.0 | Engagement, moderation and auth hardening | Pending |
+| 0.8.0 | Engagement, moderation and auth hardening | Prepared locally |
 | 0.9.0 | Stabilization, performance and deployment parity | Pending |
 | 1.0.0 | Production readiness and developer experience | Pending |
 
-### Validation anchor (0.7.0)
+### Validation anchor (0.8.0)
 
-160 API + 135 frontend tests, workspace/runtime typechecks, lint and
-production builds pass. Disposable browser tests cover admin creation,
-editing, preview, deletion confirmation/cancellation and cleanup. Image link
-controls pass clipboard success/denial checks with a test double. Selected
-WCAG A/AA checks report no violations. Live PostgreSQL, hosted R2 and
-deployment checks were not run.
+223 API + 198 frontend tests, workspace/runtime typechecks, lint, production
+builds, release metadata and credential-free Vercel API packaging pass.
+Synthetic browser checks cover selected deletion, protected audit/settings,
+global logout, TOTP enrollment/activation and password-only denial. The new
+views fit a 390px viewport. Selected WCAG A/AA checks report no violations;
+the ledger has one contrast check requiring manual review. Changed frontend
+files pass formatting; the full formatting check flags 97 unchanged files.
+Native PostgreSQL, hosted R2/SMTP and deployment checks were not run.
 
 ## Pending
-
-### Version 0.8.0: Engagement, moderation & auth hardening
-
-Focus: make user interaction secure and scalable.
-
-- [ ] Comment moderation and anti-spam. #social #security
-	- [ ] Integrate per-IP/session rate limiting for comments.
-	- [ ] Support anti-spam filters, such as Akismet, a honeypot or an optional configurable CAPTCHA.
-	- [ ] Provide a comment approval workflow in the admin panel (`admin/comments`).
-- [ ] Session and authentication hardening. #auth #security
-	- [ ] Actively revoke session tokens on global logout and password changes.
-	- [ ] Support two-factor authentication (2FA/TOTP) for administrator accounts.
-- [ ] Security audit log: record critical system events, including user creation, bulk post deletion and password rotation, with an administrator-facing viewer. #security #admin
 
 ### Version 0.9.0: Stabilization, performance & deployment parity
 

@@ -8,22 +8,36 @@
 	interface Props {
 		title: string;
 		description: string;
-		canonical: string;
+		canonical?: string;
 		image?: string | null;
+		noindex?: boolean;
+		type?: 'article' | 'website';
 	}
 
-	let { title, description, canonical, image = null }: Props = $props();
+	let {
+		title,
+		description,
+		canonical,
+		image = null,
+		noindex = false,
+		type = 'article'
+	}: Props = $props();
 </script>
 
 <svelte:head>
 	<title>{title}</title>
 	<meta name="description" content={description} />
-	<link rel="canonical" href={canonical} />
-	<meta property="og:type" content="article" />
+	{#if noindex}
+		<meta name="robots" content="noindex, nofollow" />
+	{/if}
+	{#if canonical}
+		<link rel="canonical" href={canonical} />
+		<meta property="og:url" content={canonical} />
+	{/if}
+	<meta property="og:type" content={type} />
 	<meta property="og:site_name" content={PROJECT_NAME} />
 	<meta property="og:title" content={title} />
 	<meta property="og:description" content={description} />
-	<meta property="og:url" content={canonical} />
 	{#if image !== null}
 		<meta property="og:image" content={image} />
 	{/if}

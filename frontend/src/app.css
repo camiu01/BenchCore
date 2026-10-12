@@ -610,3 +610,89 @@ body {
 		grid-template-columns: 1fr;
 	}
 }
+
+@keyframes rise-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+.wrapper {
+	animation: rise-in 0.35s ease-out both;
+}
+
+.doc-header {
+	animation: fade-in 0.5s ease-out 0.1s both;
+}
+
+.record {
+	animation: rise-in 0.4s ease-out both;
+	transition:
+		transform 0.18s ease,
+		border-color 0.18s ease,
+		box-shadow 0.18s ease;
+}
+
+.record:nth-of-type(1) { animation-delay: 0.05s; }
+.record:nth-of-type(2) { animation-delay: 0.1s; }
+.record:nth-of-type(3) { animation-delay: 0.15s; }
+.record:nth-of-type(4) { animation-delay: 0.2s; }
+.record:nth-of-type(n + 5) { animation-delay: 0.25s; }
+
+.record:hover {
+	transform: translateY(-2px);
+	border-color: var(--accent);
+	box-shadow: 4px 4px 0 var(--shadow-ink);
+}
+
+.stamp {
+	transition:
+		background-color 0.18s ease,
+		color 0.18s ease;
+}
+
+a.stamp:hover,
+.record:hover .stamp {
+	background: var(--accent);
+	color: var(--sheet-bg);
+}
+
+.inventory-table tbody tr,
+.spec-table tr {
+	transition: background-color 0.15s ease;
+}
+
+.inventory-table tbody tr:hover,
+.spec-table tr:hover {
+	background: var(--accent-bg);
+}
+
+.record-body a {
+	transition: color 0.15s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation: none !important;
+	}
+
+	.record:hover {
+		transform: none;
+	}
+}

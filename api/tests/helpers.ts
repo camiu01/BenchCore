@@ -23,6 +23,8 @@ import type {
 } from '../src/db/repositories.js';
 import { createLocalStorage, type StorageProvider } from '../src/media/storage.js';
 import type { ApiDeps } from '../src/server.js';
+import { createMemorySecurity } from '../src/db/memory-security.js';
+import type { SecurityEvent, SecurityRepository } from '../src/db/security-repository.js';
 
 /**
  * @brief In-memory repository bundle for tests.
@@ -35,6 +37,7 @@ export interface TestRepos {
 	comments: CommentRepository;
 	likes: LikeRepository;
 	media: StorageProvider;
+	security: SecurityRepository;
 }
 
 /**
@@ -43,13 +46,16 @@ export interface TestRepos {
  */
 export function createTestRepos(): TestRepos {
 	const links = new Map<string, Set<string>>();
-	const users = createMemoryUsers();
+	const events: SecurityEvent[] = [];
+	const users = createMemoryUsers(events);
 	const tags = createMemoryTags(links);
 	const likes = createMemoryLikes();
+	const posts = createMemoryPosts(tags, links, likes);
 	return {
 		users,
 		sessions: createMemorySessions(users),
-		posts: createMemoryPosts(tags, links, likes),
+		posts,
+		security: createMemorySecurity(users, posts, events),
 		tags,
 		comments: createMemoryComments(),
 		likes,

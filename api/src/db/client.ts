@@ -56,4 +56,6 @@ export async function checkDb(): Promise<void> {
 	await db.select().from(schema.tags).limit(0);
 	await db.select().from(schema.postTags).limit(0);
 	await db.select().from(schema.mediaBlobs).limit(0);
+	await db.select().from(schema.administratorTotp).limit(0);
+	await db.select().from(schema.securityEvents).limit(0);
 }

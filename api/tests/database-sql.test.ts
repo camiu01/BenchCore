@@ -7,6 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { createDrizzlePosts, createDrizzleTags, createDrizzleUsers } from '../src/db/drizzle.js';
 import { createDrizzleMedia } from '../src/db/drizzle-media.js';
 import * as schema from '../src/db/schema.js';
+import { createDrizzleSecurity } from '../src/db/drizzle-security.js';
+import { recoverTotp, rotatePassword } from '../src/db/account-maintenance.js';
 
 /** @brief Captured SQL statement and its separately bound parameters. */
 interface Query {
@@ -78,12 +80,16 @@ describe('PostgreSQL groundwork statements', () => {
 	it('rotates credentials with hash compare-and-swap and session revocation in one transaction', async () => {
 		const { db, queries } = database([[['owner']], []]);
 		expect(await createDrizzleUsers(db).changePassword('owner', 'old-hash', 'new-hash')).toBe(true);
-		expect(queries).toHaveLength(2);
+		expect(queries).toHaveLength(4);
 		expect(queries[0]?.sql).toContain('"session_version" + 1');
 		expect(queries[0]?.params).toContain('old-hash');
 		expect(queries[0]?.params).toContain('new-hash');
 		expect(queries[1]?.sql).toContain('delete from "sessions"');
 		expect(queries[1]?.params).toContain('owner');
+		expect(queries[2]?.sql).toContain('delete from "password_reset_tokens"');
+		expect(queries[3]?.sql).toContain('insert into "security_events"');
+		expect(queries[3]?.params).toContain('password.changed');
+		expect(queries[3]?.params).not.toContain('new-hash');
 		const stale = database([[]]);
 		expect(await createDrizzleUsers(stale.db).changePassword('owner', 'stale', 'new')).toBe(false);
 		expect(stale.queries).toHaveLength(1);
@@ -176,5 +182,95 @@ describe('PostgreSQL groundwork statements', () => {
 		expect(queries[1]?.sql).toContain('order by "media_blobs"."filename"');
 		expect(await media.load(`${'b'.repeat(32)}.png`)).toBeNull();
 		expect(await media.remove(`${'b'.repeat(32)}.png`)).toBe(false);
+	});
+});
+
+describe('transactional security persistence', () => {
+	const owner = ['owner', 'owner@example.test', 'owner', 'hash', 'Owner', 'admin', true, 3, '2026-01-01T00:00:00Z'];
+	it('locks account state and consumes a code with a monotonic SQL watermark', async () => {
+		const fixture = database([[owner], [['owner', 'ciphertext', 123]]]);
+		expect(await createDrizzleSecurity(fixture.db).consumeTotp('owner', 3, 123)).toBe(true);
+		expect(fixture.queries[0]?.sql).toContain('for update');
+		expect(fixture.queries[1]?.sql).toContain('"administrator_totp"."last_step" <');
+		expect(fixture.queries[1]?.params).toContain(123);
+		const stale = database([[owner]]);
+		expect(await createDrizzleSecurity(stale.db).consumeTotp('owner', 2, 123)).toBe(false);
+		expect(stale.queries).toHaveLength(1);
+	});
+	it('enables a factor and revokes sessions with a credential-free audit in one transaction', async () => {
+		const fixture = database([[owner], [['owner', 'ciphertext', 123]]]);
+		expect(await createDrizzleSecurity(fixture.db).enableTotp('owner', 3, 'hash', 'ciphertext', 123)).toBe(true);
+		expect(fixture.queries).toHaveLength(5);
+		expect(fixture.queries[0]?.sql).toContain('for update');
+		expect(fixture.queries[1]?.sql).toContain('on conflict do nothing');
+		expect(fixture.queries[2]?.sql).toContain('"session_version" + 1');
+		expect(fixture.queries[3]?.sql).toContain('delete from "sessions"');
+		expect(fixture.queries[4]?.params).toContain('totp.enabled');
+		expect(fixture.queries[4]?.params).not.toContain('ciphertext');
+		expect(fixture.queries[4]?.params).not.toContain('hash');
+		const conflict = database([[owner], []]);
+		expect(await createDrizzleSecurity(conflict.db).enableTotp('owner', 3, 'hash', 'ciphertext', 123)).toBe(false);
+		expect(conflict.queries).toHaveLength(2);
+	});
+	it('disables factors only with a fresh watermark and current credentials', async () => {
+		const fixture = database([[owner], [['owner', 'ciphertext', 122]]]);
+		expect(await createDrizzleSecurity(fixture.db).disableTotp('owner', 3, 'hash', 123)).toBe(true);
+		expect(fixture.queries[1]?.sql).toContain('"administrator_totp"."last_step" <');
+		expect(fixture.queries.at(-1)?.params).toContain('totp.disabled');
+		const stale = database([[owner]]);
+		expect(await createDrizzleSecurity(stale.db).disableTotp('owner', 3, 'different-hash', 123)).toBe(false);
+		expect(stale.queries).toHaveLength(1);
+	});
+	it('audits selected deletion alongside the delete and rechecks administrator state', async () => {
+		const fixture = database([[owner], [['selected-one'], ['selected-two']]]);
+		expect(await createDrizzleSecurity(fixture.db).deletePosts('owner', ['selected-one', 'selected-two'])).toBe(2);
+		expect(fixture.queries[0]?.sql).toContain('for update');
+		expect(fixture.queries[1]?.sql).toContain('where "posts"."id" in');
+		expect(fixture.queries[1]?.params).toEqual(['selected-one', 'selected-two']);
+		expect(fixture.queries[2]?.params).toContain('posts.deleted');
+		expect(fixture.queries[2]?.params).toContain(2);
+		const missing = database([[]]);
+		await expect(createDrizzleSecurity(missing.db).deletePosts('owner', ['selected'])).rejects.toThrow();
+		expect(missing.queries).toHaveLength(1);
+	});
+	it('audits administrator-initiated creation without storing credentials in the event', async () => {
+		const fixture = database([[owner]]);
+		await createDrizzleUsers(fixture.db).create({
+			id: 'owner', username: 'owner', email: 'owner@example.test', name: 'Owner', role: 'admin', passwordHash: 'hash'
+		}, 'actor');
+		expect(fixture.queries).toHaveLength(2);
+		expect(fixture.queries[1]?.params).toContain('user.created');
+		expect(fixture.queries[1]?.params).toContain('actor');
+		expect(fixture.queries[1]?.params).not.toContain('hash');
+		expect(fixture.queries[1]?.params).not.toContain('owner@example.test');
+	});
+	it('uses session-epoch compare-and-swap for global logout', async () => {
+		const fixture = database([[['owner']]]);
+		expect(await createDrizzleUsers(fixture.db).revokeSessions('owner', 3)).toBe(true);
+		expect(fixture.queries).toHaveLength(3);
+		expect(fixture.queries[0]?.sql).toContain('"users"."session_version" =');
+		expect(fixture.queries[0]?.params).toContain(3);
+		expect(fixture.queries[1]?.sql).toContain('delete from "sessions"');
+		expect(fixture.queries[2]?.params).toContain('sessions.revoked');
+	});
+	it('audits offline password and factor recovery while clearing outstanding reset tokens', async () => {
+		const password = database([[['owner']]]);
+		expect(await rotatePassword(password.db, 'owner', 'replacement-hash')).toBe(true);
+		expect(password.queries[2]?.sql).toContain('delete from "password_reset_tokens"');
+		expect(password.queries[3]?.params).toContain('password.changed');
+		expect(password.queries[3]?.params).not.toContain('replacement-hash');
+		const factor = database([[owner], [['owner', 'ciphertext', 123]]]);
+		expect(await recoverTotp(factor.db, 'owner')).toBe(true);
+		expect(factor.queries[0]?.sql).toContain('for update');
+		expect(factor.queries[4]?.sql).toContain('delete from "password_reset_tokens"');
+		expect(factor.queries[5]?.params).toContain('totp.disabled');
+	});
+	it('orders security history deterministically and bounds SQL pages without selecting secrets', async () => {
+		const fixture = database();
+		await createDrizzleSecurity(fixture.db).listEvents(50);
+		expect(fixture.queries[0]?.sql).toContain('order by "security_events"."created_at" desc, "security_events"."id" desc');
+		expect(fixture.queries[0]?.params).toEqual([51, 50]);
+		expect(fixture.queries[0]?.sql).not.toContain('sealed_secret');
+		expect(fixture.queries[0]?.sql).not.toContain('password_hash');
 	});
 });

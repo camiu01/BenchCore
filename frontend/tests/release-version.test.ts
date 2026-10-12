@@ -33,7 +33,7 @@ describe('release metadata', () => {
 	it('keeps every workspace version aligned and release publication behind a tag and approval environment', async () => {
 		expect(
 			(await readReleaseVersion(fileURLToPath(new URL('../../', import.meta.url)))).version
-		).toBe('0.7.0');
+		).toBe('0.8.0');
 		const workflow = await readFile(
 			new URL('../../.github/workflows/cd.yml', import.meta.url),
 			'utf8'

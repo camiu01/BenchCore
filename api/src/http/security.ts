@@ -6,9 +6,21 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { ApiDeps } from './types.js';
 import { sendJson } from './response.js';
 import { apiMessage } from '../i18n/index.js';
+import { createCommentGuard } from './comment-limits.js';
 
 const LOCAL_ORIGINS = ['http://localhost:5173', 'http://localhost:5180', 'http://localhost:5181'];
 const DEFAULT_LIMIT = { windowMs: 60_000, requests: 120, loginRequests: 10, maxClients: 10_000 };
+const CREDENTIAL_PATHS = new Set(['/api/auth/login', '/api/auth/register', '/api/auth/password',
+	'/api/auth/password/forgot', '/api/auth/password/reset']);
+
+interface ClientState { reset: number; requests: number; logins: number; }
+
+/** @brief Prunes expired clients only when admitting new state requires space. @param clients State map. @param key Peer. @param maximum Capacity. @param now Time. @return Whether space remains. */
+function admitClient(clients: Map<string, ClientState>, key: string, maximum: number, now: number): boolean {
+	if (clients.has(key) || clients.size < maximum) { return true; }
+	for (const [address, state] of clients) { if (state.reset <= now) { clients.delete(address); } }
+	return clients.size < maximum;
+}
 
 /**
  * @brief Parses trusted frontend origins, failing closed for malformed configuration.
@@ -55,7 +67,8 @@ export function securityHeaders(res: ServerResponse, secure: boolean): void {
 export function createSecurityGuard(deps: ApiDeps): (req: IncomingMessage, res: ServerResponse, url: URL) => boolean {
 	const limits = { ...DEFAULT_LIMIT, ...deps.rateLimit };
 	const origins = new Set(deps.allowedOrigins ?? LOCAL_ORIGINS);
-	const clients = new Map<string, { reset: number; requests: number; logins: number }>();
+	const clients = new Map<string, ClientState>();
+	const comments = createCommentGuard(deps);
 	/**
 	 * @brief Applies origin and request quotas.
 	 * @param req Request with direct peer address.
@@ -71,31 +84,20 @@ export function createSecurityGuard(deps: ApiDeps): (req: IncomingMessage, res: 
 			return false;
 		}
 		const key = deps.clientAddress?.(req) ?? req.socket.remoteAddress ?? 'unknown';
-		if (!clients.has(key) && clients.size >= limits.maxClients) {
-			for (const [address, state] of clients) {
-				if (state.reset <= now) { clients.delete(address); }
-			}
-			if (clients.size >= limits.maxClients) {
-				sendJson(res, 429, { error: 'rate_limited' }, { 'retry-after': String(Math.ceil(limits.windowMs / 1000)) });
-				return false;
-			}
+		if (!admitClient(clients, key, limits.maxClients, now)) {
+			sendJson(res, 429, { error: 'rate_limited' }, { 'retry-after': String(Math.ceil(limits.windowMs / 1000)) });
+			return false;
 		}
 		const existing = clients.get(key);
 		const state = existing && existing.reset > now ? existing : { reset: now + limits.windowMs, requests: 0, logins: 0 };
 		state.requests += 1;
-		const credentials = [
-			'/api/auth/login',
-			'/api/auth/register',
-			'/api/auth/password',
-			'/api/auth/password/forgot',
-			'/api/auth/password/reset'
-		].includes(url.pathname);
+		const credentials = CREDENTIAL_PATHS.has(url.pathname) || url.pathname.startsWith('/api/auth/totp/');
 		if (credentials) { state.logins += 1; }
 		clients.set(key, state);
 		if (state.requests > limits.requests || state.logins > limits.loginRequests && credentials) {
 			sendJson(res, 429, { error: 'rate_limited' }, { 'retry-after': String(Math.max(1, Math.ceil((state.reset - now) / 1000))) });
 			return false;
 		}
-		return true;
+		return req.method !== 'POST' || !/^\/api\/posts\/[^/]+\/comments$/.test(url.pathname) || comments(req, res);
 	};
 }

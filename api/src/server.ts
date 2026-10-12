@@ -6,7 +6,9 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { ApiDeps, ApiHandler } from './http/types.js';
 import { sendJson } from './http/response.js';
 import { createSecurityGuard, securityHeaders } from './http/security.js';
-import { handleLogin, handleLogout, handleMe } from './http/auth.js';
+import { handleGlobalLogout, handleLogin, handleLogout, handleMe } from './http/auth.js';
+import { handleFactorDisable, handleFactorEnable, handleFactorEnrollment, handleFactorStatus } from './http/factors.js';
+import { handleAudit, handleBulkDeletePosts } from './http/audit.js';
 import { handleAdminPostSuggestions, handleAdminPosts, handleAdminTags, handleGetPost, handleListPosts, handleListTags,
 	handleRenderPreview, handleWritePost } from './http/posts.js';
 import { handleMedia, handleUploadMedia } from './http/media.js';
@@ -46,6 +48,11 @@ const routes: { path: RegExp; handlers: Record<string, ApiHandler> }[] = [
 	{ path: /^\/api\/auth\/password\/forgot$/, handlers: { POST: handlePasswordResetRequest } },
 	{ path: /^\/api\/auth\/password\/reset$/, handlers: { POST: handlePasswordReset } },
 	{ path: /^\/api\/auth\/logout$/, handlers: { POST: handleLogout } },
+	{ path: /^\/api\/auth\/logout\/all$/, handlers: { POST: handleGlobalLogout } },
+	{ path: /^\/api\/auth\/totp$/, handlers: { GET: handleFactorStatus } },
+	{ path: /^\/api\/auth\/totp\/enroll$/, handlers: { POST: handleFactorEnrollment } },
+	{ path: /^\/api\/auth\/totp\/enable$/, handlers: { POST: handleFactorEnable } },
+	{ path: /^\/api\/auth\/totp\/disable$/, handlers: { POST: handleFactorDisable } },
 	{ path: /^\/api\/auth\/me$/, handlers: { GET: handleMe } },
 	{ path: /^\/api\/posts$/, handlers: { GET: handleListPosts, POST: handleWritePost } },
 	{ path: /^\/api\/posts\/([^/]+)$/, handlers: { GET: handleGetPost, PUT: handleWritePost, DELETE: handleWritePost } },
@@ -55,6 +62,8 @@ const routes: { path: RegExp; handlers: Record<string, ApiHandler> }[] = [
 	{ path: /^\/api\/tags$/, handlers: { GET: handleListTags } },
 	{ path: /^\/api\/graph$/, handlers: { GET: handleGraph } },
 	{ path: /^\/api\/admin\/posts\/suggestions$/, handlers: { GET: handleAdminPostSuggestions } },
+	{ path: /^\/api\/admin\/posts\/delete$/, handlers: { POST: handleBulkDeletePosts } },
+	{ path: /^\/api\/admin\/audit$/, handlers: { GET: handleAudit } },
 	{ path: /^\/api\/admin\/posts(?:\/([^/]+))?$/, handlers: { GET: handleAdminPosts } },
 	{ path: /^\/api\/admin\/tags$/, handlers: { GET: handleAdminTags } },
 	{ path: /^\/api\/admin\/tags\/([^/]+)$/, handlers: { PATCH: handleAdminTags, DELETE: handleAdminTags } },

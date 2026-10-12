@@ -6,7 +6,7 @@ import { and, count, eq, gt, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { AppDb } from './client.js';
 import type { UserCreate, UserPatch, UserRepository } from './repositories.js';
-import { passwordResetTokens, sessions, users } from './schema.js';
+import { passwordResetTokens, securityEvents, sessions, users } from './schema.js';
 
 /** @brief SQL-backed account operations. */
 class DrizzleUsers implements UserRepository {
@@ -24,11 +24,14 @@ class DrizzleUsers implements UserRepository {
 	async findById(id: string) {
 		return (await this.db.select().from(users).where(eq(users.id, id)).limit(1))[0] ?? null;
 	}
-	/** @brief Creates an account. @param input Fields. @return Row. */
-	async create(input: UserCreate) {
-		const row = (await this.db.insert(users).values({ ...input, username: input.username?.toLowerCase() ?? null }).returning())[0];
-		if (!row) { throw new Error('user insert returned no row'); }
-		return row;
+	/** @brief Creates an audited account. @param input Fields. @param actorId Initiating admin or operator. @return Row. */
+	async create(input: UserCreate, actorId: string | null = null) {
+		return this.db.transaction(async (tx) => {
+			const row = (await tx.insert(users).values({ ...input, username: input.username?.toLowerCase() ?? null }).returning())[0];
+			if (!row) { throw new Error('user insert returned no row'); }
+			await tx.insert(securityEvents).values({ id: randomUUID(), action: 'user.created', actorId, targetId: row.id });
+			return row;
+		});
 	}
 	/** @brief Lists accounts. @param limit Page size. @param offset Offset. @return Page. */
 	async listPage(limit: number, offset: number) {
@@ -43,6 +46,19 @@ class DrizzleUsers implements UserRepository {
 				.where(and(eq(users.id, id), eq(users.passwordHash, currentHash), eq(users.isActive, true))).returning({ id: users.id });
 			if (!rows[0]) { return false; }
 			await tx.delete(sessions).where(eq(sessions.userId, id));
+			await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, id));
+			await tx.insert(securityEvents).values({ id: randomUUID(), action: 'password.changed', actorId: id, targetId: id });
+			return true;
+		});
+	}
+	/** @brief Revokes every session with an epoch compare-and-swap. @param id Owner. @param version Epoch. @return Whether revoked. */
+	async revokeSessions(id: string, version: number) {
+		return this.db.transaction(async (tx) => {
+			const rows = await tx.update(users).set({ sessionVersion: sql`${users.sessionVersion} + 1` })
+				.where(and(eq(users.id, id), eq(users.sessionVersion, version), eq(users.isActive, true))).returning({ id: users.id });
+			if (!rows[0]) { return false; }
+			await tx.delete(sessions).where(eq(sessions.userId, id));
+			await tx.insert(securityEvents).values({ id: randomUUID(), action: 'sessions.revoked', actorId: id, targetId: id });
 			return true;
 		});
 	}
@@ -67,6 +83,7 @@ class DrizzleUsers implements UserRepository {
 			if (!changed) { return false; }
 			await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, token.userId));
 			await tx.delete(sessions).where(eq(sessions.userId, token.userId));
+			await tx.insert(securityEvents).values({ id: randomUUID(), action: 'password.reset', actorId: null, targetId: token.userId });
 			return true;
 		});
 	}
@@ -86,6 +103,7 @@ class DrizzleUsers implements UserRepository {
 			const result = (await tx.update(users).set({ ...patch, sessionVersion: sql`${users.sessionVersion} + 1` })
 				.where(eq(users.id, id)).returning())[0] ?? null;
 			await tx.delete(sessions).where(eq(sessions.userId, id));
+			await tx.insert(securityEvents).values({ id: randomUUID(), action: 'user.changed', actorId, targetId: id });
 			return result;
 		});
 	}

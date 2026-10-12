@@ -1,6 +1,6 @@
 <!-- @file +page.svelte @brief Engineering-log page and presentation component. -->
 <script lang="ts">
-	import type { LayoutData, PageData } from './$types';
+	import type { ActionData, LayoutData, PageData } from './$types';
 	import DocShell from '../../lib/components/DocShell.svelte';
 	import Seo from '../../lib/components/Seo.svelte';
 	import { adminPageHref, type AdminStatus } from '../../lib/admin-pagination.js';
@@ -9,7 +9,7 @@
 	import type { MessageKey } from '../../lib/i18n/translate.js';
 	import { publicationDate } from '../../lib/presentation.js';
 
-	let { data }: { data: PageData & LayoutData } = $props();
+	let { data, form = null }: { data: PageData & LayoutData; form?: ActionData } = $props();
 	const filters = [
 		{ value: 'all', key: 'admin.deck.filter.all' },
 		{ value: 'draft', key: 'admin.deck.filter.draft' },
@@ -23,7 +23,8 @@
 		{ href: '/admin/tags', label: `[03] ${t('admin.nav.tags')}` },
 		{ href: '/admin/comments', label: `[04] ${t('admin.nav.comments')}` },
 		{ href: '/admin/users', label: `[05] ${t('admin.nav.users')}` },
-		{ href: '/account', label: `[06] ${t('admin.nav.account')}` }
+		{ href: '/account', label: `[06] ${t('admin.nav.account')}` },
+		{ href: '/admin/audit', label: `[07] ${t('security.audit')}` }
 	]);
 </script>
 
@@ -47,6 +48,10 @@
 	wide
 >
 	<main>
+		{#if form?.error}<p class="error-stamp" role="alert">{form.error}</p>{/if}
+		{#if form?.deleted !== undefined}<p class="summary" role="status">
+				{t('security.deleted', { count: form.deleted })}
+			</p>{/if}
 		<div class="workspace-heading">
 			<div>
 				<h2>{t('admin.deck.yourPosts')}</h2>
@@ -123,6 +128,16 @@
 							{#if post.tags.length}<p class="field-help">{post.tags.join(' · ')}</p>{/if}
 						</div>
 						<div class="admin-post-actions">
+							<label class="field-help">
+								<input
+									type="checkbox"
+									name="ids"
+									value={post.id}
+									form="bulk-delete"
+									aria-label={t('security.selectPost', { title: post.title })}
+								/>
+								{t('security.selectPost', { title: post.title })}
+							</label>
 							<span class="stamp status-{post.status}">{t(postStatusKeys[post.status])}</span>
 							<a
 								class="btn"
@@ -145,6 +160,28 @@
 					</li>
 				{/each}
 			</ul>
+			{#if data.items.length}
+				<article class="record">
+					<h3>{t('security.bulkTitle')}</h3>
+					<p class="summary" id="bulk-delete-help">{t('security.bulkHelp')}</p>
+					<form id="bulk-delete" method="POST" action="?/deleteSelected" class="form-grid">
+						<label class="field-label" for="bulk-confirmation">{t('security.confirmDelete')}</label>
+						<input
+							class="field-input"
+							id="bulk-confirmation"
+							name="confirmation"
+							required
+							pattern="DELETE"
+							maxlength="6"
+							autocomplete="off"
+							aria-describedby="bulk-delete-help"
+						/>
+						<div class="btn-row">
+							<button class="btn" type="submit">{t('security.deleteSelected')}</button>
+						</div>
+					</form>
+				</article>
+			{/if}
 			{#if data.totalPages > 1 || data.page > 1}
 				<nav class="btn-row" aria-label={t('admin.deck.postPages')}>
 					{#if data.page > 1}<a

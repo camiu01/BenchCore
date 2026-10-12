@@ -3,12 +3,14 @@
  * @brief Backward-compatible email or username credentials, never stored as plaintext.
  */
 import { z } from 'zod';
+import { totpCodeSchema } from './totp.js';
 
 export const usernameField = z.string().trim().regex(/^[a-z][a-z0-9_-]{2,31}$/i).transform((value) => value.toLowerCase());
 export const loginSchema = z.object({
 	email: z.union([z.email().max(254), usernameField]).optional(),
 	username: usernameField.optional(),
-	password: z.string().min(1).max(200)
+	password: z.string().min(1).max(200),
+	code: totpCodeSchema.optional()
 }).refine((value) => (value.email === undefined) !== (value.username === undefined), {
 	message: 'provide either email or username'
 });

@@ -13,7 +13,8 @@ Reading paths behind BENCHCORE. Every guide below is implemented in
 
 | Goal | Read |
 |---|---|
-| Deliver a Node release | [Node deployment and CI/CD](BETA_DEPLOYMENT.md), [0.7.0 preparation](RELEASE_0.7.0.md) |
+| Deliver a Node release | [Node deployment and CI/CD](BETA_DEPLOYMENT.md), [0.8.0 preparation](RELEASE_0.8.0.md) |
+| Configure two-factor authentication | [0.8.0 setup and recovery](RELEASE_0.8.0.md) |
 | Run the project | [Development](DEVELOPMENT.md), [Troubleshooting](TROUBLESHOOTING.md) |
 | Write and publish | [Authoring](AUTHORING.md), [Admin & themes](ADMIN_AND_THEMES.md) |
 | Build an API client | [API](API.md), [Threat model](THREAT_MODEL.md) |
@@ -23,8 +24,11 @@ Reading paths behind BENCHCORE. Every guide below is implemented in
 
 ## Version and scope
 
-Documentation targets **0.7.0**, with linked-post previews, fuzzy editor completion,
-multi-tag archive filters, safe media maintenance and stable release gates.
+Documentation targets **0.8.0**, with comment anti-spam, administrator TOTP,
+global session revocation and security history, alongside knowledge navigation
+and safe media maintenance. Public information, a reader guide, privacy and
+cookie inventory, localized error recovery and XML discovery complete the
+public navigation.
 The unified Node runtime and Vercel/private-R2 target retain their documented
 operational differences. Version bumps do not publish packages, tags,
 releases, or a hosted service automatically.

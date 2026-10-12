@@ -80,6 +80,7 @@
 				</div>
 			</form>
 		</article>
+		<a class="btn" href="/account/security">{t('security.title')}</a>
 		<form method="POST" action="/logout">
 			<button class="btn" type="submit">{t('auth.account.signOut')}</button>
 		</form>

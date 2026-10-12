@@ -53,6 +53,7 @@ const handlePage: Handle = async ({ event, resolve }) => {
 	event.locals.user = await resolveSessionUser(event.request.headers.get('cookie'));
 	if (
 		(event.url.pathname === '/account' ||
+			event.url.pathname.startsWith('/account/') ||
 			event.url.pathname === '/admin' ||
 			event.url.pathname.startsWith('/admin/')) &&
 		event.locals.user === null

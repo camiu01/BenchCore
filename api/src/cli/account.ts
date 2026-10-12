@@ -8,7 +8,7 @@ import { createAdministrator } from '../auth/user-service.js';
 import { hashPassword } from '../auth/password.js';
 import { closeDb, getDb } from '../db/client.js';
 import { createDrizzleUsers } from '../db/drizzle.js';
-import { rotatePassword } from '../db/account-maintenance.js';
+import { recoverTotp, rotatePassword } from '../db/account-maintenance.js';
 
 const inputSchema = z.object({
 	username: usernameField,
@@ -39,6 +39,13 @@ async function readInput(): Promise<unknown> {
  */
 async function main(): Promise<void> {
 	const mode = process.argv[2];
+	if (mode === 'totp-reset') {
+		const input = z.object({ username: usernameField, confirmation: z.literal('DISABLE_TOTP') }).strict().parse(await readInput());
+		const removed = await recoverTotp(getDb(), input.username);
+		process.stdout.write(`factor recovery: ${removed ? 'removed' : 'not found'}; sessions revoked on removal\n`);
+		if (!removed) { process.exitCode = 1; }
+		return;
+	}
 	if (mode !== 'create' && mode !== 'password') { throw new Error('select create or password'); }
 	const input = inputSchema.parse(await readInput());
 	const db = getDb();

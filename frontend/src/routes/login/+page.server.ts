@@ -46,9 +46,13 @@ export const actions: Actions = {
 		const input = z
 			.object({
 				email: z.union([z.email().max(254), z.string().regex(/^[a-z][a-z0-9_-]{2,31}$/i)]),
-				password: z.string().min(1).max(200)
+				password: z.string().min(1).max(200),
+				code: z
+					.string()
+					.regex(/^\d{6}$/)
+					.optional()
 			})
-			.safeParse({ email, password });
+			.safeParse({ email, password, code: form.get('code') || undefined });
 		if (!input.success) {
 			return fail(400, { error: serverT('auth.login.error.invalidInput'), email });
 		}

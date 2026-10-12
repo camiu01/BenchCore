@@ -19,12 +19,15 @@ async function main() {
 	const { createHandler } = await import(new URL('../api/dist/server.js', import.meta.url).href);
 	const { configuredStorage } = await import(new URL('../api/dist/media/configured.js', import.meta.url).href);
 	const { startPublishingJob } = await import(new URL('../api/dist/posts/scheduler.js', import.meta.url).href);
+	const { configuredTotpKey } = await import(new URL('../api/dist/auth/totp.js', import.meta.url).href);
 	await dbModule.checkDb();
 	const db = dbModule.getDb();
 	const repos = createDrizzleRepos(db);
 	const bridge = createBridge();
 	const media = configuredStorage(db, process.env);
-	const common = { ...repos, media, cookieSecure: settings.origin.protocol === 'https:', allowedOrigins: [settings.origin.origin] };
+	const totpKey = configuredTotpKey(process.env);
+	const common = { ...repos, media, ...(totpKey ? { totpKey } : {}),
+		cookieSecure: settings.origin.protocol === 'https:', allowedOrigins: [settings.origin.origin] };
 	const internal = createServer(createHandler({ ...common, clientAddress: bridge.address }));
 	internal.requestTimeout = 30_000;
 	internal.headersTimeout = 15_000;

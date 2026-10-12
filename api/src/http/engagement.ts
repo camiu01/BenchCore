@@ -39,7 +39,7 @@ export const handleComments: ApiHandler = async (req, res, deps, url, slug) => {
 	if (!body) { return; }
 	const parsed = commentSchema.safeParse(body.data);
 	if (!parsed.success) { sendJson(res, 400, { error: 'validation' }); return; }
-	await createComment(deps.comments, post.id, parsed.data);
+	if (!parsed.data.website) { await createComment(deps.comments, post.id, parsed.data); }
 	sendJson(res, 202, { ok: true, message: apiMessage(req, 'comment.submitted') });
 };
 
@@ -108,11 +108,13 @@ export const handleAdminComments: ApiHandler = async (req, res, deps, url) => {
  * @return Completion.
  */
 export const handleAdminComment: ApiHandler = async (req, res, deps, _url, id) => {
-	if (!await requireUser(req, res, deps)) { return; }
+	const actor = await requireUser(req, res, deps);
+	if (!actor) { return; }
 	if (!z.uuid().safeParse(id).success) { sendJson(res, 404, { error: 'not_found' }); return; }
 	if (req.method === 'DELETE') {
 		const removed = await deps.comments.remove(id);
 		if (!removed) { sendJson(res, 404, { error: 'not_found' }); return; }
+		await deps.security.record({ action: 'comment.deleted', actorId: actor.id, targetId: id });
 		res.writeHead(204); res.end(); return;
 	}
 	const body = await readBody(req, res);
@@ -120,6 +122,7 @@ export const handleAdminComment: ApiHandler = async (req, res, deps, _url, id) =
 	const parsed = moderationSchema.safeParse(body.data);
 	if (!parsed.success) { sendJson(res, 400, { error: 'validation' }); return; }
 	const updated = await deps.comments.setStatus(id, parsed.data.status);
+	if (updated) { await deps.security.record({ action: 'comment.moderated', actorId: actor.id, targetId: id }); }
 	sendJson(res, updated ? 200 : 404, updated
 		? { ...publicComment(updated), postId: updated.postId, status: updated.status }
 		: { error: 'not_found' });

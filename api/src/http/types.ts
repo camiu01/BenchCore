@@ -13,6 +13,7 @@ import type {
 } from '../db/repositories.js';
 import type { PasswordResetDelivery } from '../auth/password-reset-delivery.js';
 import type { StorageProvider } from '../media/storage.js';
+import type { SecurityRepository } from '../db/security-repository.js';
 
 export interface ApiDeps {
 	users: UserRepository;
@@ -21,12 +22,14 @@ export interface ApiDeps {
 	tags: TagRepository;
 	comments: CommentRepository;
 	likes: LikeRepository;
+	security: SecurityRepository;
+	totpKey?: string;
 	media: StorageProvider;
 	passwordReset?: { delivery: PasswordResetDelivery; siteUrl: string };
 	cookieSecure: boolean;
 	allowedOrigins?: string[];
 	clientAddress?: (req: IncomingMessage) => string;
-	rateLimit?: { windowMs: number; requests: number; loginRequests: number; maxClients?: number };
+	rateLimit?: { windowMs: number; requests: number; loginRequests: number; commentRequests?: number; maxClients?: number };
 }
 
 export interface ErrorPayload {

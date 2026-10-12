@@ -7,6 +7,7 @@ import { createDrizzleRepos } from './db/drizzle.js';
 import { configuredStorage } from './media/configured.js';
 import { configuredOrigins } from './http/security.js';
 import { configuredPasswordReset } from './auth/password-reset-delivery.js';
+import { configuredTotpKey } from './auth/totp.js';
 import { startPublishingJob } from './posts/scheduler.js';
 import { DEFAULT_PORT, MEDIA_PREFIX, createHandler, parsePort, startServer } from './server.js';
 
@@ -14,8 +15,10 @@ const db = getDb();
 const repos = createDrizzleRepos(db);
 const backend = process.env['MEDIA_STORAGE'] ?? 'local';
 const passwordReset = configuredPasswordReset(process.env);
+const totpKey = configuredTotpKey(process.env);
 const handler = createHandler({
 	...repos,
+	...(totpKey ? { totpKey } : {}),
 	media: configuredStorage(db, process.env),
 	...(passwordReset ? { passwordReset } : {}),
 	cookieSecure: process.env['NODE_ENV'] === 'production',

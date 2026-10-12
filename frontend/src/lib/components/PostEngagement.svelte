@@ -98,7 +98,8 @@
 			headers: { 'content-type': 'application/json' },
 			body: JSON.stringify({
 				authorName: fields.get('authorName'),
-				content: fields.get('content')
+				content: fields.get('content'),
+				website: fields.get('website') ?? ''
 			})
 		}).catch(() => null);
 		submitting = false;
@@ -154,6 +155,10 @@
 			</button>
 		{/if}
 		<form class="form-grid comment-form" onsubmit={submitComment}>
+			<div hidden aria-hidden="true">
+				<label for="comment-website">Website</label>
+				<input id="comment-website" name="website" tabindex="-1" autocomplete="off" />
+			</div>
 			<label class="field-label" for="comment-author">{t('public.engagement.name')}</label>
 			<input
 				class="field-input"

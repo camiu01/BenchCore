@@ -10,7 +10,8 @@ import { isPublic, normalizeSlug } from './publishing.js';
 
 export const commentSchema = z.object({
 	authorName: z.string().trim().min(2).max(80),
-	content: z.string().trim().min(2).max(2_000)
+	content: z.string().trim().min(2).max(2_000),
+	website: z.string().max(200).optional()
 }).strict();
 export const moderationSchema = z.object({
 	status: z.enum(['pending', 'approved', 'rejected'])
@@ -57,5 +58,5 @@ export function publicComment(row: CommentRow): PublicComment {
  */
 export function createComment(comments: CommentRepository, postId: string,
 	input: z.infer<typeof commentSchema>): Promise<CommentRow> {
-	return comments.create({ id: randomUUID(), postId, ...input });
+	return comments.create({ id: randomUUID(), postId, authorName: input.authorName, content: input.content });
 }

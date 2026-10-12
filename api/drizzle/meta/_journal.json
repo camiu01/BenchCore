@@ -50,6 +50,13 @@
       "when": 1791214516628,
       "tag": "0006_faithful_pestilence",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791791108963,
+      "tag": "0007_faithful_darkhawk",
+      "breakpoints": true
     }
   ]
 }

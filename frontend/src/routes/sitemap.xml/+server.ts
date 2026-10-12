@@ -5,6 +5,7 @@
 import { getPostsPage, getTags } from '../../lib/api.js';
 import { siteBase } from '../../lib/site.js';
 import { escapeXml } from '../../lib/server/xml.js';
+import { PUBLIC_SITE_PATHS } from '../../lib/site-pages.js';
 import type { RequestHandler } from './$types';
 
 /**
@@ -26,7 +27,9 @@ export const GET: RequestHandler = async () => {
 	const base = siteBase();
 	let body = '<?xml version="1.0" encoding="UTF-8"?>\n';
 	body += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
-	body += entry(base) + entry(`${base}/posts`) + entry(`${base}/tags`);
+	for (const path of PUBLIC_SITE_PATHS) {
+		body += entry(path === '/' ? base : `${base}${path}`);
+	}
 	let offset = 0;
 	while (true) {
 		const page = await getPostsPage(100, offset);

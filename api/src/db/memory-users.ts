@@ -4,11 +4,19 @@
  */
 import type { UserCreate, UserPatch, UserRepository } from './repositories.js';
 import type { UserRow } from './schema.js';
+import { randomUUID } from 'node:crypto';
+import type { SecurityAction, SecurityEvent } from './security-repository.js';
 
 /** @brief Synchronous account mutations emulate atomic database operations. */
 class MemoryUsers implements UserRepository {
 	private readonly rows = new Map<string, UserRow>();
 	private readonly resetTokens = new Map<string, { userId: string; expiresAt: Date }>();
+	/** @brief Shares safe history with the memory security repository. @param events Event store. @return Instance. */
+	constructor(private readonly events: SecurityEvent[]) {}
+	/** @brief Appends an allowlisted account event. @param action Event. @param targetId Owner. @param actorId Actor. @return Nothing. */
+	private audit(action: SecurityAction, targetId: string, actorId: string | null) {
+		this.events.unshift({ id: randomUUID(), action, targetId, actorId, count: 1, createdAt: new Date() });
+	}
 	/** @brief Finds a username. @param username Login. @return Owner or null. */
 	async findByUsername(username: string) {
 		return [...this.rows.values()].find((row) => row.username === username.toLowerCase()) ?? null;
@@ -19,14 +27,15 @@ class MemoryUsers implements UserRepository {
 	}
 	/** @brief Finds an owner. @param id Owner. @return Row or null. */
 	async findById(id: string) { return this.rows.get(id) ?? null; }
-	/** @brief Creates a unique owner. @param input Fields. @return Created owner. */
-	async create(input: UserCreate): Promise<UserRow> {
+	/** @brief Creates a unique owner. @param input Fields. @param actorId Initiating administrator. @return Created owner. */
+	async create(input: UserCreate, actorId: string | null = null): Promise<UserRow> {
 		const username = input.username?.toLowerCase() ?? null;
 		if ([...this.rows.values()].some((row) => row.email.toLowerCase() === input.email.toLowerCase()
 			|| username !== null && row.username === username)) { throw new Error('user already exists'); }
 		const row: UserRow = { ...input, username, isActive: input.isActive ?? true,
 			sessionVersion: input.sessionVersion ?? 0, createdAt: new Date() };
 		this.rows.set(row.id, row);
+		this.audit('user.created', row.id, actorId);
 		return row;
 	}
 	/** @brief Lists owners. @param limit Size. @param offset Offset. @return Page. */
@@ -39,6 +48,18 @@ class MemoryUsers implements UserRepository {
 		const row = this.rows.get(id);
 		if (!row || !row.isActive || row.passwordHash !== currentHash) { return false; }
 		this.rows.set(id, { ...row, passwordHash: newHash, sessionVersion: row.sessionVersion + 1 });
+		this.audit('password.changed', id, id);
+		for (const [hash, token] of this.resetTokens) {
+			if (token.userId === id) { this.resetTokens.delete(hash); }
+		}
+		return true;
+	}
+	/** @brief Invalidates all sessions by advancing the epoch. @param id Owner. @param version Expected epoch. @return Whether revoked. */
+	async revokeSessions(id: string, version: number) {
+		const row = this.rows.get(id);
+		if (!row?.isActive || row.sessionVersion !== version) { return false; }
+		this.rows.set(id, { ...row, sessionVersion: row.sessionVersion + 1 });
+		this.audit('sessions.revoked', id, id);
 		return true;
 	}
 	/** @brief Replaces an owner's reset token. @param userId Owner. @param tokenHash Digest. @param expiresAt Expiry. @return Completion. */
@@ -59,6 +80,7 @@ class MemoryUsers implements UserRepository {
 			if (candidate.userId === row.id) { this.resetTokens.delete(hash); }
 		}
 		this.rows.set(row.id, { ...row, passwordHash: newHash, sessionVersion: row.sessionVersion + 1 });
+		this.audit('password.reset', row.id, null);
 		return true;
 	}
 	/** @brief Applies protected admin changes. @param actorId Admin. @param id Target. @param patch Fields. @return Result. */
@@ -73,9 +95,10 @@ class MemoryUsers implements UserRepository {
 			return 'last_admin' as const;
 		}
 		this.rows.set(id, next);
+		this.audit('user.changed', id, actorId);
 		return next;
 	}
 }
 
-/** @brief Creates account persistence. @return Repository. */
-export function createMemoryUsers(): UserRepository { return new MemoryUsers(); }
+/** @brief Creates account persistence. @param events Optional shared history. @return Repository. */
+export function createMemoryUsers(events: SecurityEvent[] = []): UserRepository { return new MemoryUsers(events); }

@@ -225,6 +225,6 @@ export const publicIt: Record<keyof typeof publicEn, string> = {
 	'public.cookies.untilCleared': 'Fino a quando cancelli i dati del sito',
 	'public.cookies.controlTitle': 'Il controllo è tuo',
 	'public.cookies.control':
-		'I cookie di accesso e di lingua sono HttpOnly e SameSite, quindi gli script della pagina non possono leggerli, e su HTTPS sono contrassegnati come Secure. Uscendo, il cookie di accesso viene eliminato. Puoi rimuovere tutti e quattro gli elementi in qualsiasi momento dalle impostazioni del browser; il sito continua a funzionare, dovrai solo accedere di nuovo, scegliere di nuovo la lingua e rivedere questo avviso.',
+		'I cookie di accesso, lingua e mi piace sono HttpOnly e SameSite, quindi gli script della pagina non possono leggerli, e su HTTPS sono contrassegnati come Secure. Uscendo, il cookie di accesso viene eliminato. Puoi rimuovere questi elementi dalle impostazioni del browser; dovrai accedere e scegliere di nuovo le preferenze. Cancellare il cookie dei mi piace non elimina quelli già registrati dal server.',
 	'public.cookies.back': 'Torna all\u2019indice'
 };

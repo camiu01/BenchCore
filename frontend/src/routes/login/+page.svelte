@@ -93,6 +93,22 @@
 							</button>
 						</div>
 					</div>
+					<div>
+						<label class="field-label" for="code">{t('security.code')}</label>
+						<input
+							class="field-input"
+							id="code"
+							name="code"
+							type="text"
+							inputmode="numeric"
+							pattern="[0-9]{6}"
+							minlength="6"
+							maxlength="6"
+							autocomplete="one-time-code"
+							aria-describedby="code-help"
+						/>
+						<p class="field-help" id="code-help">{t('security.loginCodeHelp')}</p>
+					</div>
 				</div>
 				<div class="btn-row">
 					<button class="btn btn-accent" type="submit">{t('auth.login.submit')}</button>

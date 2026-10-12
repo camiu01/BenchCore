@@ -144,6 +144,23 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 }, (t) => [index('password_reset_user_idx').on(t.userId)]);
 
+/** @brief Encrypted administrator TOTP credentials with an atomic replay watermark. */
+export const administratorTotp = pgTable('administrator_totp', {
+	userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+	sealedSecret: text('sealed_secret').notNull(),
+	lastStep: integer('last_step').notNull()
+});
+
+/** @brief Append-only security records containing identifiers, never credentials or content. */
+export const securityEvents = pgTable('security_events', {
+	id: uuid('id').primaryKey(),
+	action: text('action').notNull(),
+	actorId: uuid('actor_id'),
+	targetId: uuid('target_id'),
+	count: integer('count').notNull().default(1),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+}, (t) => [index('security_events_created_idx').on(t.createdAt, t.id)]);
+
 /**
  * @brief Comment moderation states.
  */

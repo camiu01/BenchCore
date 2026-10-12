@@ -19,6 +19,8 @@ import { postTags, sessions, tags, users, type TagRow } from './schema.js';
 
 export { createDrizzlePosts } from './drizzle-posts.js';
 import { createDrizzleUsers } from './drizzle-users.js';
+import { createDrizzleSecurity } from './drizzle-security.js';
+import type { SecurityRepository } from './security-repository.js';
 export { createDrizzleUsers } from './drizzle-users.js';
 
 /**
@@ -146,6 +148,7 @@ export function createDrizzleRepos(db: AppDb): {
 	tags: TagRepository;
 	comments: CommentRepository;
 	likes: LikeRepository;
+	security: SecurityRepository;
 } {
 	const users = createDrizzleUsers(db);
 	const sessions = createDrizzleSessions(db);
@@ -156,6 +159,7 @@ export function createDrizzleRepos(db: AppDb): {
 		posts: createDrizzlePosts(db, tags),
 		tags,
 		comments: createDrizzleComments(db),
-		likes: createDrizzleLikes(db)
+		likes: createDrizzleLikes(db),
+		security: createDrizzleSecurity(db)
 	};
 }

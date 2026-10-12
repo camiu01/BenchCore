@@ -29,6 +29,12 @@
 			duration: t('public.cookies.langLasts')
 		},
 		{
+			code: t('public.cookies.typeCookie'),
+			name: 'like_voter',
+			purpose: t('pages.cookies.likePurpose'),
+			duration: t('pages.cookies.likeDuration')
+		},
+		{
 			code: t('public.cookies.typeLocal'),
 			name: 'site-theme',
 			purpose: t('public.cookies.themePurpose'),
@@ -47,6 +53,7 @@
 	title={t('public.cookies.seoTitle')}
 	description={t('public.cookies.seoDescription')}
 	canonical="{data.siteBase}/cookies"
+	type="website"
 />
 
 <DocShell

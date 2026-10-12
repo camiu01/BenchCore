@@ -216,6 +216,6 @@ export const publicEn = {
 	'public.cookies.untilCleared': 'Until you clear site data',
 	'public.cookies.controlTitle': 'Your control',
 	'public.cookies.control':
-		'The login and language cookies are HttpOnly and SameSite, so page scripts cannot read them, and they are marked Secure on HTTPS. Logging out deletes the login cookie. You can remove all four items at any time from your browser settings; the site keeps working, you just sign in again, pick your language again and see this notice again.',
+		'The login, language and like cookies are HttpOnly and SameSite, so page scripts cannot read them, and they are marked Secure on HTTPS. Logging out deletes the login cookie. You can remove these items at any time from your browser settings; you will need to sign in and choose your preferences again. Clearing the like cookie does not remove likes already recorded by the server.',
 	'public.cookies.back': 'Back to index'
 } as const;

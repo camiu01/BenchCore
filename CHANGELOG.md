@@ -1,9 +1,33 @@
 # Changelog
 
 Changes follow [Conventional Commits](https://www.conventionalcommits.org/).
-Version 0.7.0 is prepared locally. No tag, hosted release or deployment is created.
+Version 0.8.0 is prepared locally. No tag, hosted release or deployment is created.
 
-## Unreleased
+## 0.8.0 — 2026-10-12
+
+### Engagement and moderation
+
+- Add independent, bounded per-IP and per-session comment submission quotas with
+  `Retry-After`, plus a first-party honeypot. Legitimate comments remain pending
+  until approved in the existing paginated `/admin/comments` queue.
+- Record moderation and deletion events without storing comment bodies.
+
+### Authentication and security history
+
+- Add authenticated global logout with atomic session-epoch advancement and
+  session deletion. Password changes and operator rotation also invalidate
+  outstanding recovery tokens.
+- Add password-confirmed administrator TOTP setup at `/account/security`.
+  Verify six-digit RFC 6238 codes with bounded clock skew and an atomic replay
+  watermark. Encrypt factor secrets with an operator-configured AES-GCM key.
+  Activation/removal revoke sessions; password recovery does not remove 2FA.
+- Add explicit, audited offline factor recovery through private stdin.
+- Persist transactional audit records for account creation/changes, password
+  rotation, global logout, factor changes and selected post deletion.
+- Add `/admin/audit` and typed-confirmation bulk deletion of up to 100 selected
+  posts. Logs contain identifiers and counts, never credentials or post content.
+- Add the offline-generated `0007_faithful_darkhawk.sql` migration and align
+  workspace metadata at 0.8.0. No live migration or publication runs automatically.
 
 ### Interface language
 
@@ -23,6 +47,19 @@ Version 0.7.0 is prepared locally. No tag, hosted release or deployment is creat
 - Cut public page latency: batched author lookups, a targeted backlink query,
   parallel list and count queries, and a 15-second guest-only API read cache.
 - Add a non-blocking cookie notice and a `/cookies` page.
+- Center breadcrumb separators without shrinking touch targets.
+- Preserve the existing interface animations and reduced-motion support.
+
+### Public pages and discovery
+
+- Add a localized root error page with a real HTTP 404, archive search and
+  recovery links. Other errors show safe text without upstream diagnostics.
+- Add `/about`, `/help` and `/privacy`, with shared footer navigation.
+- Extend the existing sitemap with public information pages and the graph.
+  Exclude accounts, recovery and API routes from crawler directions and add
+  RSS autodiscovery.
+- Mark failed responses and password-recovery pages noindex and no-store.
+  Document the existing `like_voter` cookie alongside login and preferences.
 
 ## 0.7.0 — 2026-10-06
 

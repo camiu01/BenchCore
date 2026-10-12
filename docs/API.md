@@ -37,6 +37,11 @@ not accept a slug for mutation even though the public route shares the prefix.
 | POST | `/api/auth/password/forgot` | Trusted Origin | Send a password recovery link |
 | POST | `/api/auth/password/reset` | Trusted Origin + reset token | Reset password and revoke all sessions |
 | POST | `/api/auth/logout` | Trusted Origin | Revoke session and clear cookie |
+| POST | `/api/auth/logout/all` | Session + trusted Origin | Revoke all device sessions and clear cookie |
+| GET | `/api/auth/totp` | Administrator session | Nonsecret factor state and enrollment availability |
+| POST | `/api/auth/totp/enroll` | Administrator + current password + trusted Origin | Ten-minute manual key and encrypted setup ticket |
+| POST | `/api/auth/totp/enable` | Administrator + password + setup ticket + TOTP + trusted Origin | Activate factor and revoke all sessions |
+| POST | `/api/auth/totp/disable` | Administrator + password + fresh TOTP + trusted Origin | Remove factor and revoke all sessions |
 | GET | `/api/auth/me` | Session | Current user |
 | GET | `/api/posts` | Public | Published-only page |
 | GET | `/api/posts/:slug` | Public | Published detail and backlinks |
@@ -49,6 +54,8 @@ not accept a slug for mutation even though the public route shares the prefix.
 | GET | `/api/graph` | Public | Published posts connected by wikilinks or shared tags |
 | GET | `/api/admin/posts` | Administrator session | Bounded, searchable page including unpublished posts |
 | GET | `/api/admin/posts/suggestions` | Administrator session | Up to 200 recently updated identifiers, titles, slugs and tags |
+| POST | `/api/admin/posts/delete` | Administrator + trusted Origin | Confirmed selected deletion with atomic audit |
+| GET | `/api/admin/audit` | Administrator session | Identifier-only security history, 50 per page |
 | GET | `/api/admin/posts/:id` | Session | Editable post, including Markdown |
 | GET | `/api/admin/tags` | Administrator session | Full tag registry, including draft-only names |
 | PATCH | `/api/admin/tags/:id` | Administrator + trusted Origin | Change a tag HEX color |
@@ -167,6 +174,9 @@ is stored. Sessions expire after 30 days. Never log or publish cookie values.
 Accounts may have an optional unique username. Login accepts either
 `{ "email": "...", "password": "..." }` or
 `{ "username": "...", "password": "..." }`, never both identifiers.
+Both shapes accept an optional six-digit string `code`, required when a factor
+is enabled. Factor login consumes the code once, even under concurrent requests;
+missing encryption configuration never bypasses the factor.
 Usernames are case-insensitive, 3–32 characters, start with a letter, and contain
 letters, digits, underscores or dashes. Legacy email-only accounts keep working.
 

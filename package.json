@@ -1,6 +1,6 @@
 {
 	"name": "benchcore",
-	"version": "0.7.0",
+	"version": "0.8.0",
 	"private": true,
 	"license": "AGPL-3.0-or-later",
 	"author": "Camiu (https://github.com/camiu01)",
@@ -16,6 +16,7 @@
 		"beta:migrate": "node --env-file-if-exists=.env api/dist/cli/migrate.js",
 		"beta:user:create": "node --env-file-if-exists=.env api/dist/cli/account.js create",
 		"user:password": "node --env-file-if-exists=.env api/dist/cli/account.js password",
+		"user:totp:reset": "node --env-file-if-exists=.env api/dist/cli/account.js totp-reset",
 		"media:cleanup": "pnpm --filter benchcore-api media:cleanup",
 		"media:cleanup:production": "node --env-file-if-exists=.env api/dist/cli/media.js cleanup",
 		"beta:package": "node scripts/package-beta.mjs",

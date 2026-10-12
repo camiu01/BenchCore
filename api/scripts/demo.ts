@@ -21,9 +21,13 @@ import { randomUUID } from 'node:crypto';
 import { hashPassword } from '../src/auth/password.js';
 import { usernameField } from '../src/auth/credentials.js';
 import { createHandler, parsePort, startServer } from '../src/server.js';
+import { createMemorySecurity } from '../src/db/memory-security.js';
+import { configuredTotpKey } from '../src/auth/totp.js';
+import type { SecurityEvent } from '../src/db/security-repository.js';
 
 const links = new Map<string, Set<string>>();
-const users = createMemoryUsers();
+const events: SecurityEvent[] = [];
+const users = createMemoryUsers(events);
 const tags = createMemoryTags(links);
 const likes = createMemoryLikes();
 const repos = {
@@ -34,6 +38,8 @@ const repos = {
 	comments: createMemoryComments(),
 	likes
 };
+const security = createMemorySecurity(users, repos.posts, events);
+const totpKey = configuredTotpKey(process.env);
 const adminUsername = process.env['ADMIN_USERNAME'];
 const adminPassword = process.env['ADMIN_PASSWORD'];
 if (adminUsername && adminPassword) {
@@ -63,7 +69,8 @@ for (const sample of samples) {
 }
 const media = createLocalStorage(await mkdtemp(join(tmpdir(), 'blog-preview-')));
 const server = startServer(parsePort(process.env['DEMO_PORT']), createHandler({
-	...repos, media, cookieSecure: false,
+	...repos, security, media, cookieSecure: false,
+	...(totpKey ? { totpKey } : {}),
 	allowedOrigins: ['http://localhost:5173', 'http://localhost:5180']
 }), '127.0.0.1');
 server.on('listening', () => {

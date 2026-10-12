@@ -101,7 +101,7 @@ export const handleUsers: ApiHandler = async (req, res, deps, url, key) => {
 	if (req.method === 'POST') {
 		const parsed = registrationSchema.extend({ role: z.enum(['admin', 'reader']) }).safeParse(body.data);
 		if (!parsed.success) { sendJson(res, 400, { error: 'validation' }); return; }
-		const user = await registerUser(deps.users, parsed.data, parsed.data.role);
+		const user = await registerUser(deps.users, parsed.data, parsed.data.role, actor.id);
 		sendJson(res, user ? 201 : 409, user ? { user: userDto(user) } : { error: 'conflict' }); return;
 	}
 	const parsed = userPatchSchema.safeParse(body.data);

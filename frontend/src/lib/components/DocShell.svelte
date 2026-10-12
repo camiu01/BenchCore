@@ -5,6 +5,7 @@
 	import ThemePicker from './ThemePicker.svelte';
 	import { currentLocale, t } from '../i18n/t.svelte.js';
 	import { navigationLabel } from '../presentation.js';
+	import { FOOTER_LINKS } from '../site-pages.js';
 
 	/**
 	 * Shared engineering-log sheet: meta bar, header, nav, footer.
@@ -67,17 +68,46 @@
 	</div>
 
 	<footer class="doc-footer">
-		<span>{footerLeft}</span>
-		<span class="license-note">
-			<a href="https://github.com/camiu01/BenchCore">{t('common.footer.license')}</a> ·
-			<a href="https://www.gnu.org/licenses/agpl-3.0.html">{t('common.footer.licenseText')}</a> ·
-			<a href="/cookies">{t('common.footer.cookies')}</a>
-		</span>
-		<span>{footerRight}</span>
+		<div class="footer-meta">
+			<span>{footerLeft}</span>
+			<span class="license-note">
+				<a href="https://github.com/camiu01/BenchCore">{t('common.footer.license')}</a> ·
+				<a href="https://www.gnu.org/licenses/agpl-3.0.html">{t('common.footer.licenseText')}</a>
+			</span>
+			<span>{footerRight}</span>
+		</div>
+		<nav class="site-links" aria-label={t('pages.footer.navigation')}>
+			{#each FOOTER_LINKS as link (link.href)}
+				<a href={link.href} aria-current={link.href === activeHref ? 'page' : undefined}
+					>{t(link.label)}</a
+				>
+			{/each}
+		</nav>
 	</footer>
 </div>
 
 <style>
+	.doc-footer {
+		flex-direction: column;
+		gap: 12px;
+	}
+	.footer-meta {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 8px 16px;
+	}
+	.site-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px 16px;
+		font-size: 12px;
+	}
+	.site-links a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+	}
 	.meta-controls {
 		display: flex;
 		flex-wrap: wrap;

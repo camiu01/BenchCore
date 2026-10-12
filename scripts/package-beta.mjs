@@ -111,6 +111,7 @@ async function main() {
 			'db:migrate': 'node --env-file-if-exists=.env api/dist/cli/migrate.js',
 			'user:create': 'node --env-file-if-exists=.env api/dist/cli/account.js create',
 			'user:password': 'node --env-file-if-exists=.env api/dist/cli/account.js password',
+			'user:totp:reset': 'node --env-file-if-exists=.env api/dist/cli/account.js totp-reset',
 			'media:cleanup': 'node --env-file-if-exists=.env api/dist/cli/media.js cleanup'
 		};
 		await writeFile(join(bundle, 'package.json'), JSON.stringify({

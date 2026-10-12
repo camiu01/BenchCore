@@ -19,7 +19,26 @@ reads the database or the authoring directory.
 [![pnpm](https://img.shields.io/badge/pnpm-10.15.0-yellow.svg)](https://pnpm.io/)
 [![Vitest](https://img.shields.io/badge/Vitest-5.0.3-green.svg)](https://vitest.dev/)
 
-## What's new in 0.7.0
+## What's new in 0.8.0
+
+Engagement, authentication hardening and public-site completion:
+
+- Per-IP/session comment quotas and a first-party honeypot, with administrator approval.
+- Global device logout and password-confirmed administrator TOTP with replay protection.
+- Encrypted factor secrets, explicit offline recovery and `/admin/audit`.
+- Confirmed selected post deletion with transactional security records.
+- Localized 404 recovery, project information, reader guide and privacy pages.
+- Complete footer navigation, RSS discovery and an expanded public sitemap.
+
+Apply the new migration explicitly before deployment. TOTP enrollment needs an
+operator-configured `AUTH_TOTP_KEY`; missing keys never bypass existing factors.
+See [0.8.0 setup, recovery and release gates](docs/RELEASE_0.8.0.md).
+Version tags and hosted releases remain separate operator actions.
+Deployment follows the configured CI/CD.
+The configured database received migration 0007 during a separately authorized
+local startup, not automatically on application boot.
+
+## Previously in 0.7.0
 
 Stable release of the v0.7.0 milestone: knowledge navigation and media refinement.
 
@@ -108,6 +127,8 @@ The full checklist lives in [TODO.md](TODO.md).
   limits, response security headers, and frontend Content Security Policy in
   the 0.5.0 milestone.
 - **SEO & feeds** — canonical URLs, metadata, sitemap, RSS, and robots routes.
+- **Site information** — project overview, reader guide, privacy and cookie
+  inventory, with localized error recovery and footer navigation.
 - **Three themes** — light, dark, and OLED; CSS tokens, persisted preference,
   and a pre-paint script to reduce theme flashes.
 - **Self-hosting** — one Node service for frontend and API, with PostgreSQL;
@@ -117,11 +138,11 @@ The full checklist lives in [TODO.md](TODO.md).
 - **No application telemetry** — no built-in analytics, tracking SDKs, or
   third-party trackers. Hosts and reverse proxies can still log requests.
 
-**Scope:** 0.7.0 is prepared locally, not a published package or a
+**Scope:** 0.8.0 is implemented, not a published package or a
 promise of a hosted service. Revision storage is groundwork only: no automatic
 revision capture, history browser, diff, or restore workflow is claimed.
 Basic moderated comments and anonymous likes are implemented. Advanced anti-spam,
-MFA, revision workflows and other deferred features are not claimed.
+additional second-factor methods, revision workflows and other deferred features are not claimed.
 See [TODO.md](TODO.md) for milestone status.
 
 ## One origin
@@ -169,17 +190,21 @@ Re-importing a file can overwrite later admin edits.
 | 0.6.0-beta.1 | Online beta preparation | Shipped |
 | 0.6.0 | Media management and storage refinement | Shipped |
 | 0.7.0 | Social graph, links and knowledge navigation | Shipped |
-| 0.8.0 | Engagement, moderation and auth hardening | Pending |
+| 0.8.0 | Engagement, moderation and auth hardening | Implemented; release pending |
 | 0.9.0 | Stabilization, performance and deployment parity | Pending |
 | 1.0.0 | Production readiness and developer experience | Pending |
 
-### Validation anchor (0.7.0)
+### Validation anchor (0.8.0)
 
-160 API + 135 frontend tests, workspace/runtime typechecks, lint and
-production builds pass. Disposable browser tests cover admin creation,
-editing, preview, deletion confirmation/cancellation and cleanup. Selected
-WCAG A/AA checks report no violations. Live PostgreSQL, hosted R2 and
-deployment checks were not run.
+223 API + 224 frontend tests, workspace/runtime typechecks, lint, production
+builds and credential-free Vercel API packaging pass. Synthetic browser checks
+cover the new security settings, selected deletion and audit viewer at 390px.
+Public-page checks cover real 404 responses, IT/EN information pages, crawler
+directions, XML discovery and narrow-screen recovery.
+Feature-authored frontend files pass formatting. An earlier full check flagged
+97 files with baseline style differences; user-authored animations were not
+reformatted.
+Native PostgreSQL concurrency and hosted deployment checks remain operator gates.
 
 ## Run it
 
