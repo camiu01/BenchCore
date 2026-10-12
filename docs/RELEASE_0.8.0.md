@@ -33,15 +33,21 @@ re-encryption procedure; changing the variable alone is not rotation.
 ## Administrator two-factor authentication
 
 1. Sign in and open **Account > Account security** (`/account/security`).
-2. Enter the current password to obtain a manual setup key. Add it to a trusted
-   authenticator: TOTP, SHA-1, six digits, 30-second period.
+2. Enter the current password to obtain a QR and manual setup key. In Google
+   Authenticator or another TOTP app, add an account and scan the QR. You can
+   instead enter the manual key: TOTP, SHA-1, six digits, 30-second period.
 3. Confirm with the current password and an authenticator code within ten minutes.
 4. Sign in again with password and a new code. Activation signs out every device.
 
 The setup ticket is encrypted, owner-bound, time-limited and tied to the account's
-session epoch. No unconfirmed factor is persisted. The manual key appears only
-in the private setup response, not in a URL, public API DTO or browser storage.
-Save any needed backup in a secure password manager, not in this repository.
+session epoch. No unconfirmed factor is persisted. The key and QR appear only
+in the private password-confirmed setup response, not in public HTTP URLs,
+public DTOs or browser storage. The QR encodes the same secret and standard
+`otpauth://totp` settings as the manual key. It contains no password or setup
+ticket. It is generated locally on the frontend server and rendered as inline
+SVG, with no external QR service or additional image request.
+Do not share the QR or include it in public screenshots. Save any needed backup
+in a secure password manager, not in this repository.
 
 Codes allow one 30-second step of clock skew. Successful enrollment, login and
 factor removal consume the step through a serialized database operation.
@@ -163,7 +169,7 @@ and session quotas, role isolation, pagination, confirmed deletion, safe browser
 actions and generated transaction SQL. These do not prove native PostgreSQL
 concurrency, SMTP delivery or a hosted deployment.
 
-Local verification passed 223 API and 224 frontend tests, workspace/runtime
+Local verification passed 223 API and 252 frontend tests, workspace/runtime
 typechecks, lint, production builds, release metadata and credential-free Vercel
 API packaging. Synthetic browser checks covered selected deletion, audit/settings
 access, global logout and TOTP activation followed by password-only denial.
@@ -177,11 +183,22 @@ The 404, project overview, guide and privacy screens had no horizontal overflow
 at the browser pane's 356px viewport. Their selected WCAG A/AA checks reported
 no violations or incomplete checks. Recovery search reached the real archive.
 
-Feature-authored frontend files pass Prettier. Existing user-authored animations
-in `app.css` were preserved without reformatting. An earlier full `pnpm format`
-audit reported 97 files with baseline style differences; unrelated files were
-not reformatted. An earlier production build reported Vite's warning about
-`NODE_ENV` in a local environment file. Builds and API packaging still passed.
+The QR follow-up adds 21 regressions, including independent decoding of the SVG
+geometry, otpauth setting/secret validation and protected setup rendering.
+No live account was enrolled or modified for these tests.
+
+The layout and code-input follow-up adds seven regressions. Synthetic pages
+rendered from the real components and production CSS had no horizontal overflow
+at 320, 390, 760 and 1280px. Post selection remained connected to the bulk form.
+Native browser validation accepted six-digit codes, including leading zeros,
+and rejected shorter or nonnumeric values in enrollment, removal and login.
+The login code remains optional until the server requires a factor.
+
+The full `pnpm format` check passes. The CSS animation rules were reformatted
+without changing behavior. Windows-only CRLF checkout differences were normalized
+locally; unrelated tracked content did not change. The production build reports
+Vite's existing warning about `NODE_ENV` in a local environment file.
+Builds and API packaging still passed.
 
 Before deploying, run the database integration checks against a dedicated
 `*_test` database, test multiple API replicas with one key, and exercise actual

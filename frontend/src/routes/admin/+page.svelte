@@ -117,7 +117,16 @@
 			<ul class="admin-post-list" aria-label={t('admin.deck.yourPosts')}>
 				{#each data.items as post (post.id)}
 					<li class="admin-post-card">
-						<div>
+						<label class="admin-post-selection">
+							<input
+								type="checkbox"
+								name="ids"
+								value={post.id}
+								form="bulk-delete"
+								aria-label={t('security.selectPost', { title: post.title })}
+							/>
+						</label>
+						<div class="admin-post-content">
 							<a class="admin-post-title" href="/admin/posts/{post.id}">{post.title}</a>
 							<p class="field-help">
 								{t('admin.deck.updated', {
@@ -128,16 +137,6 @@
 							{#if post.tags.length}<p class="field-help">{post.tags.join(' · ')}</p>{/if}
 						</div>
 						<div class="admin-post-actions">
-							<label class="field-help">
-								<input
-									type="checkbox"
-									name="ids"
-									value={post.id}
-									form="bulk-delete"
-									aria-label={t('security.selectPost', { title: post.title })}
-								/>
-								{t('security.selectPost', { title: post.title })}
-							</label>
 							<span class="stamp status-{post.status}">{t(postStatusKeys[post.status])}</span>
 							<a
 								class="btn"
@@ -164,7 +163,12 @@
 				<article class="record">
 					<h3>{t('security.bulkTitle')}</h3>
 					<p class="summary" id="bulk-delete-help">{t('security.bulkHelp')}</p>
-					<form id="bulk-delete" method="POST" action="?/deleteSelected" class="form-grid">
+					<form
+						id="bulk-delete"
+						method="POST"
+						action="?/deleteSelected"
+						class="form-grid admin-bulk-form"
+					>
 						<label class="field-label" for="bulk-confirmation">{t('security.confirmDelete')}</label>
 						<input
 							class="field-input"

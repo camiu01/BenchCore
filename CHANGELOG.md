@@ -21,6 +21,11 @@ Version 0.8.0 is prepared locally. No tag, hosted release or deployment is creat
   Verify six-digit RFC 6238 codes with bounded clock skew and an atomic replay
   watermark. Encrypt factor secrets with an operator-configured AES-GCM key.
   Activation/removal revoke sessions; password recovery does not remove 2FA.
+- Add a locally generated, theme-independent authenticator QR next to the
+  manual setup key. Validate its otpauth payload against the enrollment secret;
+  no external image service receives factor material.
+- Preserve the literal six-digit HTML pattern in enrollment, removal and login
+  so Svelte does not interpolate the regex quantifier.
 - Add explicit, audited offline factor recovery through private stdin.
 - Persist transactional audit records for account creation/changes, password
   rotation, global logout, factor changes and selected post deletion.
@@ -44,6 +49,8 @@ Version 0.8.0 is prepared locally. No tag, hosted release or deployment is creat
 - Restyle the site as paper-and-engineering neo-brutalism with hard offset
   shadows, square controls and filled active states. Improve the archive filter
   panel, breadcrumbs and card actions.
+- Separate post selection from ledger actions, give titles their own flexible
+  column and wrap long metadata and the translated bulk-delete button on mobile.
 - Cut public page latency: batched author lookups, a targeted backlink query,
   parallel list and count queries, and a 15-second guest-only API read cache.
 - Add a non-blocking cookie notice and a `/cookies` page.

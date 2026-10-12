@@ -22,8 +22,11 @@ export const securityEn = {
 	'security.loginCodeHelp': 'Required only if you have enabled two-factor authentication.',
 	'security.enroll': 'Set up authenticator',
 	'security.manualKey': 'Manual setup key',
+	'security.qrLabel': 'QR code for authenticator setup',
+	'security.qrHelp':
+		'In Google Authenticator or another TOTP app, add an account and scan this QR. The QR contains your secret: do not share it or save it in a public screenshot.',
 	'security.setupHelp':
-		'Add this key to your authenticator, then enter a code and your password below. This setup expires in ten minutes. Keep your device and the setup key private.',
+		'Scan the QR or enter the manual key in your authenticator, then enter a code and your password below. This setup expires in ten minutes. Keep your device and the setup key private.',
 	'security.enable': 'Confirm and enable',
 	'security.disable': 'Disable two-factor authentication',
 	'security.freshCode': 'Wait for a new code after signing in. Each code can be used only once.',

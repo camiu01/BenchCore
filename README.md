@@ -196,14 +196,14 @@ Re-importing a file can overwrite later admin edits.
 
 ### Validation anchor (0.8.0)
 
-223 API + 224 frontend tests, workspace/runtime typechecks, lint, production
+223 API + 245 frontend tests, workspace/runtime typechecks, lint, production
 builds and credential-free Vercel API packaging pass. Synthetic browser checks
 cover the new security settings, selected deletion and audit viewer at 390px.
 Public-page checks cover real 404 responses, IT/EN information pages, crawler
 directions, XML discovery and narrow-screen recovery.
-Feature-authored frontend files pass formatting. An earlier full check flagged
-97 files with baseline style differences; user-authored animations were not
-reformatted.
+The full formatting check passes. Existing animations were preserved; only their
+CSS layout was reformatted. QR regressions independently decode the local SVG
+and validate Google Authenticator-compatible settings and private enrollment.
 Native PostgreSQL concurrency and hosted deployment checks remain operator gates.
 
 ## Run it

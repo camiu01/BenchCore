@@ -6,6 +6,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import { accountError, accountRequest } from '../../../lib/server/account-api.js';
 import { enrollmentSchema, factorStatus } from '../../../lib/server/security-api.js';
+import { createTotpQr } from '../../../lib/server/totp-qr.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /** @brief Loads nonsecret factor state. @param event Session and request. @return Safe settings. */
@@ -61,7 +62,8 @@ export const actions: Actions = {
 				error: accountError(result.status)
 			});
 		}
-		return { enrollment: enrollment.data };
+		const { secret, ticket, uri } = enrollment.data;
+		return { enrollment: { secret, ticket, qr: createTotpQr(uri) } };
 	},
 	/** @brief Confirms the authenticator and clears revoked session state. @param event Form. @return Redirect or safe failure. */
 	enable: async ({ locals, request, cookies }) => {

@@ -6,10 +6,46 @@ import { z } from 'zod';
 import { accountRequest } from './account-api.js';
 
 export const factorStatusSchema = z.object({ enabled: z.boolean(), available: z.boolean() });
-export const enrollmentSchema = z.object({
-	secret: z.string().regex(/^[A-Z2-7]{32}$/),
-	ticket: z.string().min(1).max(2048)
-});
+export const enrollmentSchema = z
+	.object({
+		secret: z.string().regex(/^[A-Z2-7]{32}$/),
+		ticket: z.string().min(1).max(2048),
+		uri: z
+			.string()
+			.min(1)
+			.max(1024)
+			.regex(/^[\x21-\x7e]+$/)
+	})
+	.refine(validAuthenticatorUri, { message: 'Invalid authenticator enrollment URI' });
+
+/**
+ * @brief Rejects mismatched secrets, external URLs and unsupported authenticator settings.
+ * @param enrollment Validated secret and proposed otpauth URI.
+ * @return Whether the URI encodes the same six-digit, thirty-second BenchCore factor.
+ */
+function validAuthenticatorUri(enrollment: { secret: string; uri: string }): boolean {
+	try {
+		const uri = new URL(enrollment.uri);
+		return (
+			uri.protocol === 'otpauth:' &&
+			uri.hostname === 'totp' &&
+			!uri.username &&
+			!uri.password &&
+			!uri.port &&
+			!uri.hash &&
+			decodeURIComponent(uri.pathname).startsWith('/BenchCore:') &&
+			decodeURIComponent(uri.pathname).length > '/BenchCore:'.length &&
+			uri.searchParams.size === 5 &&
+			uri.searchParams.get('secret') === enrollment.secret &&
+			uri.searchParams.get('issuer') === 'BenchCore' &&
+			uri.searchParams.get('algorithm') === 'SHA1' &&
+			uri.searchParams.get('digits') === '6' &&
+			uri.searchParams.get('period') === '30'
+		);
+	} catch {
+		return false;
+	}
+}
 const auditSchema = z.object({
 	items: z
 		.array(

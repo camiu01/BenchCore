@@ -1,7 +1,8 @@
-<!-- @file +page.svelte @brief Device sessions and manual administrator authenticator setup. -->
+<!-- @file +page.svelte @brief Device sessions and private QR/manual administrator authenticator setup. -->
 <script lang="ts">
 	import DocShell from '../../../lib/components/DocShell.svelte';
 	import Seo from '../../../lib/components/Seo.svelte';
+	import AuthenticatorQr from '../../../lib/components/AuthenticatorQr.svelte';
 	import { t } from '../../../lib/i18n/t.svelte.js';
 	import type { ActionData, PageData } from './$types';
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -65,7 +66,7 @@
 							id="disable-code"
 							name="code"
 							inputmode="numeric"
-							pattern="[0-9]{6}"
+							pattern={'[0-9]{6}'}
 							minlength="6"
 							maxlength="6"
 							required
@@ -77,6 +78,7 @@
 					</form>
 				{:else if form?.enrollment}
 					<p class="summary">{t('security.setupHelp')}</p>
+					<AuthenticatorQr qr={form.enrollment.qr} />
 					<label class="field-label" for="setup-key">{t('security.manualKey')}</label>
 					<input
 						class="field-input"
@@ -103,7 +105,7 @@
 							id="enable-code"
 							name="code"
 							inputmode="numeric"
-							pattern="[0-9]{6}"
+							pattern={'[0-9]{6}'}
 							minlength="6"
 							maxlength="6"
 							required

@@ -9,6 +9,7 @@ import { actions as deck } from '../src/routes/admin/+page.server.js';
 import { auditPage, factorStatus } from '../src/lib/server/security-api.js';
 import { handle } from '../src/hooks.server.js';
 import { secureResponse } from '../src/lib/server/security.js';
+import { createTotpQr } from '../src/lib/server/totp-qr.js';
 
 const admin = {
 	id: '00000000-0000-4000-8000-000000000001',
@@ -67,6 +68,7 @@ describe('account security browser actions', () => {
 			Response.json({
 				secret: 'A'.repeat(32),
 				ticket: 'encrypted-ticket',
+				uri: 'otpauth://totp/BenchCore%3Aoperator%40example.test?secret=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&issuer=BenchCore&algorithm=SHA1&digits=6&period=30',
 				password: 'private-password',
 				diagnostic: 'private'
 			})
@@ -76,7 +78,15 @@ describe('account security browser actions', () => {
 			locals: { user: admin },
 			request: request({ password: 'private-password' })
 		} as unknown as Parameters<NonNullable<typeof security.enroll>>[0]);
-		expect(result).toEqual({ enrollment: { secret: 'A'.repeat(32), ticket: 'encrypted-ticket' } });
+		expect(result).toEqual({
+			enrollment: {
+				secret: 'A'.repeat(32),
+				ticket: 'encrypted-ticket',
+				qr: createTotpQr(
+					'otpauth://totp/BenchCore%3Aoperator%40example.test?secret=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA&issuer=BenchCore&algorithm=SHA1&digits=6&period=30'
+				)
+			}
+		});
 		expect(JSON.stringify(result)).not.toContain('private');
 		expect(fetcher.mock.calls[0]![1].headers.origin).toBe('https://canonical.example.test');
 	});

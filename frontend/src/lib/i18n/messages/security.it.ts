@@ -25,8 +25,11 @@ export const securityIt: Record<keyof typeof securityEn, string> = {
 	'security.loginCodeHelp': 'Richiesto solo se hai attivato l’autenticazione a due fattori.',
 	'security.enroll': 'Configura l’app di autenticazione',
 	'security.manualKey': 'Chiave di configurazione manuale',
+	'security.qrLabel': 'Codice QR per configurare l’app di autenticazione',
+	'security.qrHelp':
+		'In Google Authenticator o in un’altra app TOTP, aggiungi un account e scansiona questo QR. Il QR contiene la tua chiave segreta: non condividerlo e non salvarlo in uno screenshot pubblico.',
 	'security.setupHelp':
-		'Aggiungi questa chiave alla tua app, poi inserisci un codice e la password qui sotto. La configurazione scade dopo dieci minuti. Tieni privati il dispositivo e la chiave.',
+		'Scansiona il QR oppure inserisci la chiave manuale nella tua app, poi inserisci un codice e la password qui sotto. La configurazione scade dopo dieci minuti. Tieni privati il dispositivo e la chiave.',
 	'security.enable': 'Conferma e attiva',
 	'security.disable': 'Disattiva l’autenticazione a due fattori',
 	'security.freshCode':

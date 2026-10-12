@@ -76,6 +76,28 @@ describe('admin usability', () => {
 		expect(body).not.toContain('loaded posts');
 	});
 
+	it('keeps selection labels out of the action row without losing accessible names or form ownership', () => {
+		const { body } = render(Admin, { props: { data } });
+		expect(body).toContain('class="admin-post-content"');
+		const selections = [
+			...body.matchAll(/<label class="admin-post-selection">([\s\S]*?)<\/label>/g)
+		];
+		expect(selections).toHaveLength(data.items.length);
+		for (const [index, selection] of selections.entries()) {
+			expect(selection[1]).toContain('type="checkbox"');
+			expect(selection[1]).toContain('form="bulk-delete"');
+			expect(selection[1]).toContain(`aria-label="Select ${data.items[index]?.title}"`);
+			expect(selection[1]?.replace(/<[^>]*>/g, '').trim()).toBe('');
+		}
+		const actions = [...body.matchAll(/<div class="admin-post-actions">([\s\S]*?)<\/div>/g)];
+		expect(actions).toHaveLength(data.items.length);
+		for (const action of actions) {
+			expect(action[1]).not.toContain('checkbox');
+			expect(action[1]).toContain('class="stamp');
+			expect(action[1]).toContain('class="btn"');
+		}
+	});
+
 	it('does not render a destructive submit button before confirmation', () => {
 		const { body } = render(PostEditor, {
 			props: {

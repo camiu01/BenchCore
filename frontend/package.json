@@ -26,6 +26,7 @@
 		"d3-selection": "3.0.0",
 		"d3-zoom": "3.0.0",
 		"marked": "18.0.14",
+		"qrcode": "1.5.4",
 		"zod": "4.6.5"
 	},
 	"devDependencies": {
@@ -40,10 +41,12 @@
 		"@types/d3-selection": "3.0.11",
 		"@types/d3-zoom": "3.0.8",
 		"@types/node": "26.6.3",
+		"@types/qrcode": "1.5.5",
 		"eslint": "10.11.0",
 		"eslint-config-prettier": "10.1.8",
 		"eslint-plugin-svelte": "3.23.0",
 		"globals": "17.13.0",
+		"jsqr": "1.4.0",
 		"prettier": "3.9.9",
 		"prettier-plugin-svelte": "4.1.1",
 		"svelte": "5.57.1",

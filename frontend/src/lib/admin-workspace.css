@@ -63,6 +63,9 @@
 }
 
 .admin-post-card {
+	display: grid;
+	grid-template-columns: 44px minmax(0, 1fr) auto;
+	gap: 16px;
 	padding: 24px;
 	margin-top: 16px;
 	border: 2px solid var(--border);
@@ -70,8 +73,26 @@
 	box-shadow: 4px 4px 0 var(--shadow-ink);
 }
 
-.admin-post-card > div:first-child {
+.admin-post-content {
 	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.admin-post-selection {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	align-self: start;
+	width: 44px;
+	min-height: 44px;
+	cursor: pointer;
+}
+
+.admin-post-selection input {
+	width: 20px;
+	height: 20px;
+	margin: 0;
+	accent-color: var(--accent);
 }
 
 .admin-post-title {
@@ -83,7 +104,14 @@
 
 .admin-post-actions {
 	flex-shrink: 0;
+	flex-wrap: wrap;
+	min-width: 0;
 	gap: 16px;
+}
+
+.admin-bulk-form .btn {
+	max-width: 100%;
+	overflow-wrap: anywhere;
 }
 
 .wrapper .stamp.status-draft,
@@ -124,6 +152,10 @@
 		padding: 16px;
 	}
 	.admin-post-actions {
-		justify-content: space-between;
+		grid-column: 2;
+		justify-content: flex-start;
+	}
+	.admin-post-card {
+		grid-template-columns: 44px minmax(0, 1fr);
 	}
 }
