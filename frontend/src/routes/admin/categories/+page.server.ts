@@ -18,10 +18,23 @@ export const actions: Actions = {
 	/** @brief Renames or clears assignments after explicit form confirmation. @param event Admin form. @return Failure or redirect. */
 	default: async ({ request }) => {
 		const form = await request.formData();
-		const parsed = z.object({ name: z.string().trim().min(1).max(80),
-			replacement: z.string().trim().max(80), confirm: z.literal('yes') }).safeParse(Object.fromEntries(form));
-		if (!parsed.success) { return fail(400, { error: serverT('publishing.failed') }); }
-		if (!await replaceCategory(request.headers.get('cookie'), parsed.data.name, parsed.data.replacement || null)) {
+		const parsed = z
+			.object({
+				name: z.string().trim().min(1).max(80),
+				replacement: z.string().trim().max(80),
+				confirm: z.literal('yes')
+			})
+			.safeParse(Object.fromEntries(form));
+		if (!parsed.success) {
+			return fail(400, { error: serverT('publishing.failed') });
+		}
+		if (
+			!(await replaceCategory(
+				request.headers.get('cookie'),
+				parsed.data.name,
+				parsed.data.replacement || null
+			))
+		) {
 			return fail(502, { error: serverT('publishing.failed') });
 		}
 		throw redirect(303, '/admin/categories');

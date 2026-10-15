@@ -75,8 +75,14 @@
 			</div>
 			<table class="spec-table">
 				<tbody>
-					{#if data.post.category}<tr><td class="label">{t('publishing.category')}</td>
-						<td><a href="/posts?category={encodeURIComponent(data.post.category)}">{data.post.category}</a></td></tr>{/if}
+					{#if data.post.category}<tr
+							><td class="label">{t('publishing.category')}</td>
+							<td
+								><a href="/posts?category={encodeURIComponent(data.post.category)}"
+									>{data.post.category}</a
+								></td
+							></tr
+						>{/if}
 					<tr>
 						<td class="label">{t('public.published')}</td>
 						<td

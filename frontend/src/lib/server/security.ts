@@ -16,8 +16,12 @@ export function secureResponse(
 ): Response {
 	response.headers.set('x-content-type-options', 'nosniff');
 	response.headers.set('x-frame-options', 'DENY');
-	response.headers.set('referrer-policy', event.url.pathname.startsWith('/newsletter/')
-		? 'no-referrer' : 'strict-origin-when-cross-origin');
+	response.headers.set(
+		'referrer-policy',
+		event.url.pathname.startsWith('/newsletter/')
+			? 'no-referrer'
+			: 'strict-origin-when-cross-origin'
+	);
 	response.headers.set('permissions-policy', 'camera=(), microphone=(), geolocation=()');
 	const path = event.url.pathname;
 	if (path === '/' || /^\/(?:posts|tags|graph|about|help|privacy|cookies)(?:\/|$)/.test(path)) {

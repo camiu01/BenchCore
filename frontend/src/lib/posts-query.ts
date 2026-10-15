@@ -33,7 +33,10 @@ export function archiveQuery(query: URLSearchParams): ArchiveQuery {
 }
 
 /** @brief Builds a safe link which preserves all current archive filters. @param query Current filters. @param page Target page. @return Local archive URL. */
-export function archiveHref(query: Omit<ArchiveQuery, 'category'> & { category?: string }, page = query.page): string {
+export function archiveHref(
+	query: Omit<ArchiveQuery, 'category'> & { category?: string },
+	page = query.page
+): string {
 	const params = new URLSearchParams();
 	if (page > 1) params.set('page', String(page));
 	if (query.search) params.set('search', query.search);

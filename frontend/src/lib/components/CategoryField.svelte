@@ -6,7 +6,13 @@
 
 <div>
 	<label class="field-label" for="category">{t('publishing.category')}</label>
-	<input class="field-input" id="category" name="category" value={value} maxlength="80"
-		aria-describedby="category-help" />
+	<input
+		class="field-input"
+		id="category"
+		name="category"
+		{value}
+		maxlength="80"
+		aria-describedby="category-help"
+	/>
 	<p class="field-help" id="category-help">{t('publishing.categoryHelp')}</p>
 </div>

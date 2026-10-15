@@ -61,9 +61,11 @@
 			</div>
 			<a class="btn btn-accent" href="/admin/posts/new">{t('admin.deck.newPost')}</a>
 		</div>
-		<p><a class="btn" href="/admin/import">{t('vault.title')}</a>
+		<p>
+			<a class="btn" href="/admin/import">{t('vault.title')}</a>
 			<a class="btn" href="/admin/categories">{t('publishing.categories')}</a>
-			<a class="btn" href="/admin/newsletter">{t('newsletter.title')}</a></p>
+			<a class="btn" href="/admin/newsletter">{t('newsletter.title')}</a>
+		</p>
 		{#if !data.online}
 			<article class="record">
 				<div class="record-header">

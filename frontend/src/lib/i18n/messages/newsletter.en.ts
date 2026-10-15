@@ -4,36 +4,47 @@
  */
 export const newsletterEn = {
 	'newsletter.title': 'Newsletter',
-	'newsletter.data': 'Newsletter consent is separate from accounts. When you explicitly subscribe, the application stores your email address, consent and request timestamps, a hashed confirmation token and its expiry. Only confirmed explicit opt-ins receive messages. Unsubscribing removes your subscriber record and skips queued messages; already in-flight messages may still arrive. Campaign delivery records retain identifiers and outcomes, not recipient addresses.',
+	'newsletter.data':
+		'Newsletter consent is separate from accounts. When you explicitly subscribe, the application stores your email address, consent and request timestamps, a hashed confirmation token and its expiry. Only confirmed explicit opt-ins receive messages. Unsubscribing removes your subscriber record and skips queued messages; already in-flight messages may still arrive. Campaign delivery records retain identifiers and outcomes, not recipient addresses.',
 	'newsletter.intro': 'Occasional updates, only with your permission.',
 	'newsletter.noAccount': 'No account required',
 	'newsletter.subscribe': 'Subscribe',
 	'newsletter.email': 'Email address',
-	'newsletter.consent': 'I agree to receive the BenchCore newsletter by email. I can unsubscribe at any time.',
-	'newsletter.privacy': 'Your address is used to deliver the newsletter. Confirm the email link within 24 hours to activate your subscription. Creating an account does not subscribe you. Each newsletter includes an unsubscribe link.',
-	'newsletter.requested': 'If your address can be subscribed, a confirmation email will arrive. Check your inbox and spam folder. An existing confirmed subscription does not receive another confirmation.',
+	'newsletter.consent':
+		'I agree to receive the BenchCore newsletter by email. I can unsubscribe at any time.',
+	'newsletter.privacy':
+		'Your address is used to deliver the newsletter. Confirm the email link within 24 hours to activate your subscription. Creating an account does not subscribe you. Each newsletter includes an unsubscribe link.',
+	'newsletter.requested':
+		'If your address can be subscribed, a confirmation email will arrive. Check your inbox and spam folder. An existing confirmed subscription does not receive another confirmation.',
 	'newsletter.failed': 'The request could not be completed. Check the fields and try again.',
 	'newsletter.disabled': 'Email delivery is not configured. No newsletter emails can be sent.',
 	'newsletter.confirmTitle': 'Confirm subscription',
 	'newsletter.unsubscribeTitle': 'Unsubscribe',
 	'newsletter.confirmHelp': 'Press the button to activate the subscription you requested.',
-	'newsletter.unsubscribeHelp': 'Press the button to remove your address from the newsletter. Your account is not affected.',
+	'newsletter.unsubscribeHelp':
+		'Press the button to remove your address from the newsletter. Your account is not affected.',
 	'newsletter.confirmed': 'Your newsletter subscription is confirmed.',
 	'newsletter.unsubscribed': 'You are unsubscribed from the newsletter.',
-	'newsletter.invalidToken': 'This link is invalid, expired, already used, or temporarily unavailable. You can request a new subscription from the newsletter page.',
-	'newsletter.adminIntro': 'Save a preview, review the message, then explicitly approve each send batch.',
+	'newsletter.invalidToken':
+		'This link is invalid, expired, already used, or temporarily unavailable. You can request a new subscription from the newsletter page.',
+	'newsletter.adminIntro':
+		'Save a preview, review the message, then explicitly approve each send batch.',
 	'newsletter.recipients': 'Confirmed explicit opt-ins: {count}',
 	'newsletter.draft': 'New draft',
 	'newsletter.subject': 'Subject',
 	'newsletter.body': 'Message (plain text)',
-	'newsletter.draftHelp': 'Saving never sends email. Paste any public article links you want to include. Campaign content cannot change after saving.',
+	'newsletter.draftHelp':
+		'Saving never sends email. Paste any public article links you want to include. Campaign content cannot change after saving.',
 	'newsletter.preview': 'Save preview without sending',
 	'newsletter.footerPreview': 'Every recipient also receives a personal unsubscribe link.',
-	'newsletter.approve': 'I have reviewed this preview and approve sending it to confirmed subscribers.',
+	'newsletter.approve':
+		'I have reviewed this preview and approve sending it to confirmed subscribers.',
 	'newsletter.typeSend': 'Type SEND to approve this batch',
 	'newsletter.sendBatch': 'Send next batch (up to 5)',
-	'newsletter.counts': 'Queued: {queued} · In flight: {sending} · Sent: {sent} · Failed: {failed} · Skipped: {skipped}',
-	'newsletter.inflight': 'Some deliveries are in flight or were interrupted. They are not automatically retried, to avoid duplicates.',
+	'newsletter.counts':
+		'Queued: {queued} · In flight: {sending} · Sent: {sent} · Failed: {failed} · Skipped: {skipped}',
+	'newsletter.inflight':
+		'Some deliveries are in flight or were interrupted. They are not automatically retried, to avoid duplicates.',
 	'newsletter.saved': 'Action completed. Review the preview and delivery counts below.',
 	'newsletter.empty': 'No campaigns yet. Save a draft to preview your first newsletter.',
 	'newsletter.status.draft': 'Draft',

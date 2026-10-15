@@ -223,7 +223,8 @@ export function getPostsPage(
 	offset: number,
 	search = '',
 	cookie: string | null = null,
-	filters?: Pick<ArchiveQuery, 'tags' | 'tagMode' | 'sort'> & Partial<Pick<ArchiveQuery, 'category'>>
+	filters?: Pick<ArchiveQuery, 'tags' | 'tagMode' | 'sort'> &
+		Partial<Pick<ArchiveQuery, 'category'>>
 ): Promise<PostsPage | null> {
 	const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
 	if (search !== '') {

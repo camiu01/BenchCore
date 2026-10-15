@@ -10,7 +10,10 @@ describe('Obsidian ZIP reader', () => {
 	it('bounds multipart uploads without trusting Content-Length', async () => {
 		const form = new FormData();
 		form.set('visibility', 'private');
-		form.set('vault', new File([new Uint8Array(zipSync({ 'Note.md': strToU8('Body') }))], 'vault.zip'));
+		form.set(
+			'vault',
+			new File([new Uint8Array(zipSync({ 'Note.md': strToU8('Body') }))], 'vault.zip')
+		);
 		const request = new Request('http://localhost/admin/import', { method: 'POST', body: form });
 		expect((await readVaultForm(request)).get('visibility')).toBe('private');
 		await expect(

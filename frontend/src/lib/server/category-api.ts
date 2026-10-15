@@ -15,21 +15,38 @@ const categoriesSchema = z.object({
 export async function getCategories(cookie: string | null = null, admin = false) {
 	try {
 		const response = await apiFetch(`${apiBase()}/api/${admin ? 'admin/' : ''}categories`, {
-			headers: cookie ? { cookie } : {}, signal: AbortSignal.timeout(5000)
+			headers: cookie ? { cookie } : {},
+			signal: AbortSignal.timeout(5000)
 		});
-		if (!response.ok) { return null; }
+		if (!response.ok) {
+			return null;
+		}
 		const parsed = categoriesSchema.safeParse(await response.json());
 		return parsed.success ? parsed.data.items : null;
-	} catch { return null; }
+	} catch {
+		return null;
+	}
 }
 
 /** @brief Renames or clears category assignments. @param cookie Admin session. @param name Existing category. @param replacement Replacement or null. @return Whether accepted. */
-export async function replaceCategory(cookie: string | null, name: string, replacement: string | null) {
+export async function replaceCategory(
+	cookie: string | null,
+	name: string,
+	replacement: string | null
+) {
 	try {
 		const response = await apiFetch(`${apiBase()}/api/admin/categories`, {
-			method: 'POST', headers: { cookie: cookie ?? '', origin: mutationOrigin(), 'content-type': 'application/json' },
-			body: JSON.stringify({ name, replacement }), signal: AbortSignal.timeout(10000)
+			method: 'POST',
+			headers: {
+				cookie: cookie ?? '',
+				origin: mutationOrigin(),
+				'content-type': 'application/json'
+			},
+			body: JSON.stringify({ name, replacement }),
+			signal: AbortSignal.timeout(10000)
 		});
 		return response.ok;
-	} catch { return false; }
+	} catch {
+		return false;
+	}
 }

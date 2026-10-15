@@ -9,9 +9,16 @@ import AdminNewsletter from '../src/routes/admin/newsletter/+page.svelte';
 import { load } from '../src/routes/newsletter/[action]/+page.server.js';
 import { secureResponse } from '../src/lib/server/security.js';
 
-const base = { locale: 'en' as const, siteBase: 'https://example.test',
-	sessionRole: null, directUploads: false, schedulerEnabled: false };
-afterEach(() => { vi.unstubAllGlobals(); });
+const base = {
+	locale: 'en' as const,
+	siteBase: 'https://example.test',
+	sessionRole: null,
+	directUploads: false,
+	schedulerEnabled: false
+};
+afterEach(() => {
+	vi.unstubAllGlobals();
+});
 
 describe('newsletter consent UI', () => {
 	it('requires an unchecked consent checkbox independently of accounts', () => {
@@ -28,9 +35,19 @@ describe('newsletter consent UI', () => {
 		expect(body).toMatch(/<button[^>]*disabled/);
 	});
 	it('makes saving a draft explicitly separate from approving delivery', () => {
-		const { body } = render(AdminNewsletter, { props: { data: { ...base, user: null, dashboard: {
-			enabled: false, confirmed: 0, items: []
-		} } } });
+		const { body } = render(AdminNewsletter, {
+			props: {
+				data: {
+					...base,
+					user: null,
+					dashboard: {
+						enabled: false,
+						confirmed: 0,
+						items: []
+					}
+				}
+			}
+		});
 		expect(body).toContain('Save preview without sending');
 		expect(body).not.toContain('action="?/send"');
 	});
@@ -38,7 +55,11 @@ describe('newsletter consent UI', () => {
 		const fetcher = vi.fn();
 		vi.stubGlobal('fetch', fetcher);
 		const url = new URL(`https://example.test/newsletter/confirm?token=${'a'.repeat(43)}`);
-		const result = await load({ params: { action: 'confirm' }, url, setHeaders: vi.fn() } as unknown as Parameters<typeof load>[0]);
+		const result = await load({
+			params: { action: 'confirm' },
+			url,
+			setHeaders: vi.fn()
+		} as unknown as Parameters<typeof load>[0]);
 		expect(result).toMatchObject({ action: 'confirm' });
 		expect(fetcher).not.toHaveBeenCalled();
 		const response = secureResponse(new Response(''), { url, request: new Request(url) });
