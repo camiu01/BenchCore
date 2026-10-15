@@ -16,8 +16,11 @@ import { securityEn } from './security.en.js';
 import { securityIt } from './security.it.js';
 import { pagesEn } from './pages.en.js';
 import { pagesIt } from './pages.it.js';
+import { vaultEn } from './vault.en.js';
+import { vaultIt } from './vault.it.js';
 
 export const en = {
+	...vaultEn,
 	...commonEn,
 	...publicEn,
 	...authEn,
@@ -30,6 +33,7 @@ export const en = {
 export type MessageKey = keyof typeof en;
 
 export const it: Record<MessageKey, string> = {
+	...vaultIt,
 	...commonIt,
 	...publicIt,
 	...authIt,

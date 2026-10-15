@@ -23,6 +23,7 @@ import {
 import { handlePrepareUpload, handleCompleteUpload } from './http/direct-media.js';
 import { handleGraph } from './http/graph.js';
 import { handlePostPreview } from './http/post-preview.js';
+import { handleObsidianImport } from './http/obsidian.js';
 import {
 	handleAdminComment,
 	handleAdminComments,
@@ -42,6 +43,7 @@ export interface HealthPayload {
 export const DEFAULT_PORT = 5181;
 
 const routes: { path: RegExp; handlers: Record<string, ApiHandler> }[] = [
+	{ path: /^\/api\/admin\/imports\/obsidian$/, handlers: { POST: handleObsidianImport } },
 	{ path: /^\/api\/auth\/login$/, handlers: { POST: handleLogin } },
 	{ path: /^\/api\/auth\/register$/, handlers: { POST: handleRegister } },
 	{ path: /^\/api\/auth\/password$/, handlers: { POST: handleChangePassword } },

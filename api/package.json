@@ -18,6 +18,7 @@
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "tsx --env-file-if-exists=../.env scripts/migrate.ts",
 		"content:import": "tsx --env-file-if-exists=../.env scripts/import.ts",
+		"obsidian:import": "tsx --env-file-if-exists=../.env scripts/import-obsidian.ts",
 		"seed": "tsx --env-file-if-exists=../.env scripts/seed.ts",
 		"user:create": "tsx --env-file-if-exists=../.env scripts/create-user.ts"
 	},
@@ -30,6 +31,7 @@
 		"postgres": "3.4.9",
 		"sanitize-html": "2.18.0",
 		"smol-toml": "1.9.0",
+		"yaml": "2.8.2",
 		"zod": "4.6.5"
 	},
 	"devDependencies": {

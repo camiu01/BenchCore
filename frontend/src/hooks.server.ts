@@ -3,7 +3,7 @@
  * @brief Resolves validated sessions, guards admin access and hardens frontend responses.
  */
 import type { Handle } from '@sveltejs/kit/hooks';
-import { isRedirect } from '@sveltejs/kit';
+import { isRedirect, redirect } from '@sveltejs/kit';
 import { resolveSessionUser } from './lib/server/session.js';
 import { secureResponse } from './lib/server/security.js';
 import { LOCALE_COOKIE, resolveLocale } from './lib/i18n/locale.js';
@@ -58,6 +58,9 @@ const handlePage: Handle = async ({ event, resolve }) => {
 			event.url.pathname.startsWith('/admin/')) &&
 		event.locals.user === null
 	) {
+		if (event.isDataRequest) {
+			throw redirect(303, '/login');
+		}
 		return secureResponse(
 			new Response(null, {
 				status: 303,
@@ -76,6 +79,9 @@ const handlePage: Handle = async ({ event, resolve }) => {
 		return secureResponse(await resolveWithLanguage(event, resolve), event);
 	} catch (cause) {
 		if (!isRedirect(cause)) {
+			throw cause;
+		}
+		if (event.isDataRequest) {
 			throw cause;
 		}
 		return secureResponse(

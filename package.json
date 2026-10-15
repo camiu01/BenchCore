@@ -33,6 +33,7 @@
 		"db:generate": "pnpm --filter benchcore-api db:generate",
 		"db:migrate": "pnpm --filter benchcore-api db:migrate",
 		"content:import": "pnpm --filter benchcore-api content:import",
+		"obsidian:import": "pnpm --filter benchcore-api obsidian:import",
 		"seed": "pnpm --filter benchcore-api seed",
 		"user:create": "pnpm --filter benchcore-api user:create"
 	},

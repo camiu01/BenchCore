@@ -84,6 +84,57 @@ files before writing them, so a wikilink can target a later source file.
 
 ## Import
 
+### Obsidian vaults
+
+From the admin panel, choose **Import Obsidian vault** (`/admin/import`) and upload
+a ZIP of the vault or a selected folder. Review the contents before confirming.
+The original vault is never modified. Markdown notes in nested folders are supported;
+hidden folders (including `.obsidian` and `.trash`) and attachments are skipped.
+
+You can also select multiple `.md` files directly in the same file picker
+(Ctrl/Shift selection), without making a ZIP. Choose either one ZIP or a Markdown
+batch, never a mixture. Direct uploads use filenames as note paths, require unique
+filenames, and share the same visibility choice and Markdown limits. Use ZIP when
+you need to preserve folder paths or distinguish notes with the same filename.
+
+Choose one visibility for the whole import:
+
+- **Private** (default): administrator-only drafts, excluded from public and reader views.
+- **Authenticated readers**: published immediately with reader-only content. Titles
+  and descriptions may still appear in public listings, following normal reader-post rules.
+- **Public**: published immediately for everyone.
+
+Private means all BenchCore administrators can manage these drafts, not a personal,
+owner-only encrypted vault. Change a note's status/audience later in the post editor.
+Source YAML cannot override the selected visibility or schedule publication.
+
+Local CLI alternative (requires `DATABASE_URL` and existing migrations):
+
+```powershell
+pnpm obsidian:import "C:\Users\LorenzoCamuso\Documents\Obsidian" private
+pnpm obsidian:import "C:\path\to\selected-folder" readers
+pnpm obsidian:import "C:\path\to\selected-folder" public
+```
+
+Both modes accept up to 500 notes, 200 KB per note and 2 MB of Markdown;
+ZIP uploads also have a 2 MB compressed limit. Split larger vaults into folders.
+Only UTF-8 Markdown is supported. CLI imports do not upload attachments.
+
+Optional YAML `title`, `description` and `tags` properties are supported.
+Without a title, the filename is used. Slugs come from normalized vault-relative
+paths, so importing a differently rooted folder or ZIP can produce different slugs.
+Existing slugs and duplicate normalized paths produce per-file errors and are
+never overwritten, including when importing again with another visibility.
+Other valid files can still be imported; the CLI returns nonzero if any file fails.
+
+Wikilinks resolve paths, relative paths and unique filenames across the import.
+Aliases are preserved. Section/block links open the target note, not a specific
+anchor, and produce a warning. Missing or ambiguous wikilinks and embeds become
+readable labels with warnings. Standard Markdown links are kept as written,
+so vault-relative Markdown links and images may need manual correction.
+Code is left unchanged by the conversion. The normal sanitized renderer remains
+responsible for HTML output.
+
 ```sh
 pnpm content:import
 ```

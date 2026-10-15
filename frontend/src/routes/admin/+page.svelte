@@ -61,6 +61,7 @@
 			</div>
 			<a class="btn btn-accent" href="/admin/posts/new">{t('admin.deck.newPost')}</a>
 		</div>
+		<p><a class="btn" href="/admin/import">{t('vault.title')}</a></p>
 		{#if !data.online}
 			<article class="record">
 				<div class="record-header">
