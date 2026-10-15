@@ -33,6 +33,8 @@ const posts = {
 	search: 'missing',
 	tags: [],
 	availableTags: [],
+	availableCategories: [],
+	category: '',
 	tagMode: 'and' as const,
 	sort: 'published' as const,
 	online: true

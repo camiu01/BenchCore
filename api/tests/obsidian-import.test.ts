@@ -23,9 +23,9 @@ describe('Obsidian vault import', () => {
 		expect(result.errors).toEqual([]);
 		expect(result.created).toHaveLength(3);
 		const index = await repos.posts.findBySlug('theory-index');
-		expect(index?.contentMarkdown).toBe('[[theory-caffe|Coffee]] [[glossary|NPN]] missing');
+		expect(index?.contentMarkdown).toBe('[[theory-caffe|Coffee]] [[glossary#npn|NPN]] missing');
 		expect(index?.contentHtml).toContain('/posts/theory-caffe');
-		expect(result.warnings).toHaveLength(2);
+		expect(result.warnings).toHaveLength(1);
 	});
 
 	it('defaults to private and ignores source publication fields', async () => {

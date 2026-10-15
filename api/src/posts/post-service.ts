@@ -34,6 +34,7 @@ export const createPostSchema = z.object({
 	description: z.string().max(500).default(''),
 	status: z.enum(['draft', 'published', 'archived']).default('draft'),
 	audience: z.enum(['public', 'readers']).default('public'),
+	category: z.string().trim().min(1).max(80).nullable().optional(),
 	tags: z.array(z.string().trim().min(1).max(60)).max(20).default([]),
 	publishedAt: z.iso.datetime({ offset: true }).nullable().optional(),
 	publishAt: z.iso.datetime({ offset: true }).nullable().optional(),
@@ -55,6 +56,7 @@ export const updatePostSchema = createPostSchema.partial().extend({
  * @brief A public list item DTO.
  */
 export interface PostListItem {
+	category: string | null;
 	id: string;
 	slug: string;
 	title: string;
@@ -119,7 +121,7 @@ async function findBacklinks(
 	now: Date
 ): Promise<{ slug: string; title: string }[]> {
 	const all = await deps.posts.listBacklinkCandidates(slug);
-	const pattern = new RegExp(`\\[\\[\\s*${slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(?:\\|[^\\]]+)?\\]\\]`, 'i');
+	const pattern = new RegExp(`\\[\\[\\s*${slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(?:#[^\\]|]+)?(?:\\|[^\\]]+)?\\]\\]`, 'i');
 	return all
 		.filter((row) => row.slug !== slug && isPublic(row.status, row.publishedAt, now)
 			&& (!row.publishAt || row.publishAt <= now)
@@ -149,6 +151,7 @@ async function toListItem(
 		audience: row.audience,
 		locked: !canReadPost(row.audience, deps.viewerRole),
 		tags: row.tags,
+		category: row.category,
 		authorName,
 		publishedAt: row.publishedAt?.toISOString() ?? null,
 		updatedAt: row.updatedAt.toISOString(),
@@ -178,13 +181,13 @@ export async function listPublishedPosts(
 	deps: PostServiceDeps,
 	options: { limit?: number | undefined; offset?: number | undefined; tag?: string | undefined;
 		tags?: string[] | undefined; tagMode?: 'and' | 'or' | undefined; sort?: 'published' | 'updated' | 'popular' | undefined;
-		search?: string | undefined; now?: Date | undefined } = {}
+		search?: string | undefined; category?: string | undefined; now?: Date | undefined } = {}
 ): Promise<{ items: PostListItem[]; total: number }> {
 	const limit = Math.min(Math.max(options.limit ?? 10, 1), 200);
 	const offset = Math.max(options.offset ?? 0, 0);
 	const now = options.now ?? new Date();
 	const page = await deps.posts.listPublished({
-		limit, offset, tag: options.tag, tags: options.tags, tagMode: options.tagMode, sort: options.sort, search: options.search, now,
+		limit, offset, tag: options.tag, tags: options.tags, tagMode: options.tagMode, sort: options.sort, search: options.search, category: options.category, now,
 		includeReaderContent: deps.viewerRole === 'reader' || deps.viewerRole === 'admin'
 	});
 	const authors = await loadAuthors(deps, page.items);
@@ -250,6 +253,7 @@ export async function createPost(
 		title: parsed.title,
 		description: parsed.description,
 		audience: parsed.audience,
+		category: parsed.category ?? null,
 		contentMarkdown: parsed.contentMarkdown,
 		contentHtml: rendered.html,
 		coverImage: parsed.coverImage ?? null,
@@ -344,6 +348,7 @@ async function buildUpdatePatch(deps: PostServiceDeps, row: PostRow,
 	return {
 		title: parsed.title ?? row.title, slug, description: parsed.description ?? row.description,
 		audience: parsed.audience ?? row.audience,
+		category: parsed.category === undefined ? row.category : parsed.category,
 		contentMarkdown: parsed.contentMarkdown ?? row.contentMarkdown,
 		contentHtml: rendered?.html ?? row.contentHtml,
 		coverImage: parsed.coverImage === undefined ? row.coverImage : parsed.coverImage,

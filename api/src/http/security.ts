@@ -11,7 +11,8 @@ import { createCommentGuard } from './comment-limits.js';
 const LOCAL_ORIGINS = ['http://localhost:5173', 'http://localhost:5180', 'http://localhost:5181'];
 const DEFAULT_LIMIT = { windowMs: 60_000, requests: 120, loginRequests: 10, maxClients: 10_000 };
 const CREDENTIAL_PATHS = new Set(['/api/auth/login', '/api/auth/register', '/api/auth/password',
-	'/api/auth/password/forgot', '/api/auth/password/reset']);
+	'/api/auth/password/forgot', '/api/auth/password/reset', '/api/newsletter/subscribe',
+	'/api/newsletter/confirm', '/api/newsletter/unsubscribe']);
 
 interface ClientState { reset: number; requests: number; logins: number; }
 

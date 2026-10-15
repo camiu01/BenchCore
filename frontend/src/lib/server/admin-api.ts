@@ -25,6 +25,7 @@ const rowSchema = z.object({
 	updatedAt: z.iso.datetime({ offset: true })
 });
 const detailSchema = z.object({
+	category: z.string().nullable().default(null),
 	id: z.string().uuid(),
 	title: z.string(),
 	slug: z.string(),

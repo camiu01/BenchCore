@@ -8,6 +8,8 @@ import { configuredStorage } from './media/configured.js';
 import { configuredOrigins } from './http/security.js';
 import { configuredPasswordReset } from './auth/password-reset-delivery.js';
 import { configuredTotpKey } from './auth/totp.js';
+import { configuredNewsletter } from './newsletter/delivery.js';
+import { createDrizzleNewsletter } from './db/drizzle-newsletter.js';
 import { startPublishingJob } from './posts/scheduler.js';
 import { DEFAULT_PORT, MEDIA_PREFIX, createHandler, parsePort, startServer } from './server.js';
 
@@ -16,7 +18,9 @@ const repos = createDrizzleRepos(db);
 const backend = process.env['MEDIA_STORAGE'] ?? 'local';
 const passwordReset = configuredPasswordReset(process.env);
 const totpKey = configuredTotpKey(process.env);
+const newsletterMail = configuredNewsletter(process.env);
 const handler = createHandler({
+	newsletter: { repository: createDrizzleNewsletter(db), ...(newsletterMail ? { mail: newsletterMail } : {}) },
 	...repos,
 	...(totpKey ? { totpKey } : {}),
 	media: configuredStorage(db, process.env),

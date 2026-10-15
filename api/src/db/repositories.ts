@@ -131,6 +131,10 @@ export type PostCreate = Omit<PostRow, 'createdAt' | 'updatedAt' | 'publishAt' |
  * @brief Post persistence contract.
  */
 export interface PostRepository {
+	/** @brief Lists assigned categories without exposing draft-only names publicly. @param admin Include drafts. @return Category counts. */
+	listCategories(admin?: boolean): Promise<{ name: string; count: number }[]>;
+	/** @brief Renames or clears an assigned category without deleting posts. @param name Existing name. @param replacement New name or null. @return Changed post count. */
+	replaceCategory(name: string, replacement: string | null): Promise<number>;
 	/** @brief Searches the complete protected ledger with bounded pagination. @param options Page and filters. @return Page and search-wide status counts. */
 	listAdmin(options: AdminPageQuery): Promise<AdminPostPage>;
 	/**
@@ -176,6 +180,7 @@ export interface PostRepository {
 	 * @return The page items plus the total count.
 	 */
 	listPublished(options: {
+		category?: string | undefined;
 		limit: number;
 		offset: number;
 		tag?: string | undefined;

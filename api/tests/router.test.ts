@@ -311,7 +311,8 @@ describe('admin and render endpoints', () => {
 		});
 		expect(preview.status).toBe(200);
 		const html = ((await preview.json()) as { html: string }).html;
-		expect(html).toContain('<h1>Hi</h1>');
+		expect(html).toContain('<h1 id="hi">');
+		expect(html).toContain('Hi</h1>');
 		expect(html).not.toContain('<script>');
 		const denied = await apiFetch('/api/render', {
 			method: 'POST',

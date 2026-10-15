@@ -5,7 +5,7 @@ export const vaultEn = {
 	'vault.limits':
 		'Upload a vault ZIP or select multiple Markdown files. Up to 500 notes, 200 KB per note, 2 MB ZIP and 2 MB Markdown total. Existing posts are never overwritten.',
 	'vault.attachments':
-		'Only Markdown notes are imported. Settings, hidden folders and attachments are skipped. Embedded files are not uploaded. Section links open the target note.',
+		'Only Markdown notes are imported. Settings, hidden folders and attachments are skipped. Embedded files are not uploaded. Section links open the matching heading in the target note.',
 	'vault.file': 'Vault ZIP or Markdown files',
 	'vault.selectionHelp':
 		'Select multiple .md files with Ctrl or Shift, or one ZIP. Do not mix ZIP and Markdown. Use ZIP to preserve subfolders.',

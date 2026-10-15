@@ -67,9 +67,25 @@ before importing over admin edits.
   rendered through the API's Markdown pipeline.
 - HTML is sanitized. Scripts, event handlers, unsafe schemes, and arbitrary
   embedded widgets are not a supported authoring feature.
+- LaTeX math uses `$V = IR$` inline and `$$P = VI$$` for display equations,
+  including multiline display blocks. The API renders native MathML with KaTeX,
+  without browser scripts, external fonts or CDN requests. Code spans/fences
+  remain literal. Invalid formulas fall back to readable source. HTML, external
+  resources and trusted TeX commands are disabled; each formula is capped at
+  4096 characters and 100 macro expansions. Existing posts render math on reads
+  without requiring reimport or database updates.
 - `[[slug]]` uses the slug as its label.
 - `[[slug|Human-readable label]]` uses a custom label.
-- Targets should be post slugs, not filesystem paths or Obsidian vault URLs.
+- `[[glossario-rapido#Baud Rate]]` opens the `Baud Rate` heading in that post.
+  `[[Glossario Rapido#Baud Rate|UART speed]]` normalizes the note name to
+  `glossario-rapido` and preserves the custom label. `[[#Baud Rate]]` links
+  within the current note. The target post and its heading must exist.
+- Prefer canonical post slugs. Plain note names normalize spaces and accents
+  to slug syntax; they are not a lookup by arbitrary edited post titles.
+  Vault import resolves folder paths and filenames before storing canonical links.
+- Heading IDs derive from their text, ignore case/accents/punctuation and support
+  all six heading levels. Duplicate headings receive `-2`, `-3` suffixes.
+  Existing numeric `#post-section-N` links remain supported.
 - Backlinks contain only publicly eligible posts. A draft linking a public
   note must not reveal the draft in that note's backlinks.
 - Broken-link decoration is advisory; it can depend on known slugs at render
@@ -128,12 +144,17 @@ never overwritten, including when importing again with another visibility.
 Other valid files can still be imported; the CLI returns nonzero if any file fails.
 
 Wikilinks resolve paths, relative paths and unique filenames across the import.
-Aliases are preserved. Section/block links open the target note, not a specific
-anchor, and produce a warning. Missing or ambiguous wikilinks and embeds become
+Aliases and section references are preserved. Heading links such as
+`[[Glossario Rapido#Baud Rate]]` open the matching section. Obsidian block IDs
+(`^block-id`) are not supported. Missing or ambiguous wikilinks and embeds become
 readable labels with warnings. Standard Markdown links are kept as written,
 so vault-relative Markdown links and images may need manual correction.
 Code is left unchanged by the conversion. The normal sanitized renderer remains
 responsible for HTML output.
+
+Earlier imports may have removed unresolved links or section fragments. Those
+cannot be reconstructed from the stored labels: restore the original wikilinks
+in the editor. Import remains create-only and never overwrites existing notes.
 
 ```sh
 pnpm content:import

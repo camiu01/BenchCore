@@ -5,6 +5,7 @@
 import { z } from 'zod';
 
 export interface EditorValues {
+	category?: string;
 	title: string;
 	slug: string;
 	description: string;
@@ -18,6 +19,7 @@ export interface EditorValues {
 }
 
 const payloadSchema = z.object({
+	category: z.string().trim().min(1).max(80).nullable(),
 	title: z.string().min(1),
 	slug: z.string().min(1),
 	description: z.string(),
@@ -36,6 +38,7 @@ const payloadSchema = z.object({
  */
 export function blankValues(): EditorValues {
 	return {
+		category: '',
 		title: '',
 		slug: '',
 		description: '',
@@ -94,6 +97,7 @@ export function editorDate(value: string): string | null {
  */
 export function payloadFromValues(values: EditorValues): z.infer<typeof payloadSchema> {
 	return payloadSchema.parse({
+		category: values.category?.trim() || null,
 		title: values.title,
 		slug: values.slug,
 		description: values.description,

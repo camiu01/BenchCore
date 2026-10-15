@@ -37,6 +37,7 @@
 		<div class="btn-row browse-actions">
 			<a class="btn btn-accent" href="/posts">{t('public.home.browseAll')}</a>
 			<a class="btn" href="/tags">{t('public.home.exploreTopics')}</a>
+			<a class="btn" href="/newsletter">{t('newsletter.title')}</a>
 		</div>
 		{#if data.posts === null}
 			<article class="record">

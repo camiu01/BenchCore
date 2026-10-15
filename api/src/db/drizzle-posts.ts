@@ -23,6 +23,19 @@ function publicPostFilter(now: Date) {
 
 /** @brief SQL implementation of the post repository contract. */
 class DrizzlePosts implements PostRepository {
+	/** @brief Aggregates assigned categories with publication privacy. @param admin Include all statuses. @return Category counts. */
+	async listCategories(admin = false) {
+		const rows = await this.db.select({ name: posts.category, count: count() }).from(posts)
+			.where(and(sql`${posts.category} is not null`, admin ? undefined : publicPostFilter(new Date())))
+			.groupBy(posts.category).orderBy(posts.category).limit(1000);
+		return rows.flatMap((row) => row.name ? [{ name: row.name, count: row.count }] : []);
+	}
+	/** @brief Renames or clears categories atomically. @param name Existing category. @param replacement Replacement. @return Changed count. */
+	async replaceCategory(name: string, replacement: string | null) {
+		const rows = await this.db.update(posts).set({ category: replacement, updatedAt: new Date() })
+			.where(eq(posts.category, name)).returning({ id: posts.id });
+		return rows.length;
+	}
 	/**
 	 * @brief Retains the database handle.
 	 * @param db The database handle.
@@ -140,6 +153,7 @@ class DrizzlePosts implements PostRepository {
 		const vector = options.includeReaderContent ? posts.searchVector
 			: sql`case when ${posts.audience} = 'readers' then to_tsvector('simple', ${posts.title}) else ${posts.searchVector} end`;
 		const visible = and(publicPostFilter(options.now), tagFilter,
+			options.category ? eq(posts.category, options.category) : undefined,
 			search ? sql`${vector} @@ websearch_to_tsquery('simple', ${search})` : undefined);
 		const actualLikes = sql<number>`(select count(*)::integer from ${likes} where ${likes.postId} = ${posts.id})`;
 		const likesCount = (options.includeReaderContent ? actualLikes

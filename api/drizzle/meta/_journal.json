@@ -57,6 +57,13 @@
       "when": 1791791108963,
       "tag": "0007_faithful_darkhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792074819779,
+      "tag": "0008_legal_moira_mactaggert",
+      "breakpoints": true
     }
   ]
 }

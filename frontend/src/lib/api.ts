@@ -14,6 +14,7 @@ import type { ArchiveQuery } from './posts-query.js';
  * @brief A public post list item DTO.
  */
 export const postListItemSchema = z.object({
+	category: z.string().nullable().default(null),
 	id: z.string().uuid(),
 	slug: z.string(),
 	title: z.string(),
@@ -222,13 +223,14 @@ export function getPostsPage(
 	offset: number,
 	search = '',
 	cookie: string | null = null,
-	filters?: Pick<ArchiveQuery, 'tags' | 'tagMode' | 'sort'>
+	filters?: Pick<ArchiveQuery, 'tags' | 'tagMode' | 'sort'> & Partial<Pick<ArchiveQuery, 'category'>>
 ): Promise<PostsPage | null> {
 	const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
 	if (search !== '') {
 		query.set('search', search);
 	}
 	if (filters) {
+		if (filters.category) query.set('category', filters.category);
 		for (const tag of filters.tags) query.append('tag', tag);
 		query.set('tagMode', filters.tagMode);
 		query.set('sort', filters.sort);

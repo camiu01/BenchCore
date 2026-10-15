@@ -57,6 +57,7 @@ async function importEntry(entry: ImportEntry, deps: PostServiceDeps,
 	const payload = {
 		title: value.title, slug: value.slug, description: value.description, status: value.status,
 		audience: value.audience,
+		category: value.category ?? null,
 		tags: value.tags, publishedAt: value.published_at, publishAt: value.publish_at ?? null,
 		contentMarkdown: body, coverImage: value.cover_image ?? null
 	};

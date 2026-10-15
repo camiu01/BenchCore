@@ -8,6 +8,20 @@ import { postOutline } from '../src/lib/post-outline.js';
 import PostOutline from '../src/lib/components/PostOutline.svelte';
 
 describe('post outline', () => {
+	it('preserves semantic API anchors and their legacy aliases', () => {
+		const html =
+			'<h4 id="baud-rate"><span id="post-section-1" aria-hidden="true"></span>Baud Rate</h4><h5 id="details">Details</h5><h6 id="more">More</h6>';
+		const outline = postOutline(html);
+		expect(outline.html).toBe(html);
+		expect(outline.headings).toEqual([
+			{ id: 'baud-rate', title: 'Baud Rate', level: 4 },
+			{ id: 'details', title: 'Details', level: 5 },
+			{ id: 'more', title: 'More', level: 6 }
+		]);
+		expect(render(PostOutline, { props: { headings: outline.headings } }).body).toContain(
+			'href="#baud-rate"'
+		);
+	});
 	it('creates unique stable anchors for duplicate and non-Latin headings', () => {
 		const html = '<h2>Setup</h2><p>Body.</p><h3>Setup</h3><h2>日本語</h2>';
 		const outline = postOutline(html);

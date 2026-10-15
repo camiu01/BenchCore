@@ -4,6 +4,7 @@
  */
 import { getPostsPage, getTags } from '../../lib/api.js';
 import { archiveQuery } from '../../lib/posts-query.js';
+import { getCategories } from '../../lib/server/category-api.js';
 import type { PageServerLoad } from './$types';
 
 /** Number of records per index page. */
@@ -16,7 +17,7 @@ const PER_PAGE = 10;
  */
 export const load: PageServerLoad = async ({ url, request }) => {
 	const query = archiveQuery(url.searchParams);
-	const [result, tags] = await Promise.all([
+	const [result, tags, categories] = await Promise.all([
 		getPostsPage(
 			PER_PAGE,
 			(query.page - 1) * PER_PAGE,
@@ -24,7 +25,8 @@ export const load: PageServerLoad = async ({ url, request }) => {
 			request.headers.get('cookie'),
 			query
 		),
-		getTags()
+		getTags(),
+		getCategories()
 	]);
 	const total = result?.total ?? 0;
 	return {
@@ -32,6 +34,7 @@ export const load: PageServerLoad = async ({ url, request }) => {
 		total,
 		...query,
 		availableTags: tags?.items ?? [],
+		availableCategories: categories ?? [],
 		perPage: PER_PAGE,
 		totalPages: Math.max(1, Math.ceil(total / PER_PAGE)),
 		online: result !== null

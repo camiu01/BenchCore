@@ -14,8 +14,10 @@ import type {
 import type { PasswordResetDelivery } from '../auth/password-reset-delivery.js';
 import type { StorageProvider } from '../media/storage.js';
 import type { SecurityRepository } from '../db/security-repository.js';
+import type { NewsletterDeps } from '../newsletter/service.js';
 
 export interface ApiDeps {
+	newsletter?: NewsletterDeps;
 	users: UserRepository;
 	sessions: SessionRepository;
 	posts: PostRepository;

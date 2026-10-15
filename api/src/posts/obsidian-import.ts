@@ -54,10 +54,7 @@ function convertLinks(note: VaultNote, notes: VaultNote[], result: VaultImportRe
 				result.warnings.push({ file: note.path, message: `unsupported or unresolved reference: ${reference}` });
 				return label;
 			}
-			if (fragment) {
-				result.warnings.push({ file: note.path, message: `section link targets the note: ${reference}` });
-			}
-			return `[[${destination.slug}|${label}]]`;
+			return `[[${destination.slug}${fragment ? `#${fragment}` : ''}|${label}]]`;
 		});
 	}).join('');
 }

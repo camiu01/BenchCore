@@ -93,6 +93,19 @@ The full milestone history lives below under Done.
 
 ## Done
 
+### Categories and manual opt-in newsletter (implemented, activation pending)
+
+- Optional main post category, independent of tags, with editor assignment,
+  admin rename/clear confirmation and shareable public archive filters.
+  #publishing #categories
+- Explicit unchecked newsletter consent, expiring single-use email confirmation,
+  account-independent unsubscribe, private counts and manual preview-first
+  five-recipient batches with durable claims. No automatic enrollment or sends.
+  #newsletter #privacy
+- Offline migration `0008` generated, not applied. Real SMTP verification and
+  operator activation remain pending; see [delivery guide](docs/NEWSLETTER.md).
+  #operations #pending
+
 ### Bootstrap — monorepo, themes and health (shipped)
 
 - **Monorepo scaffold** — `frontend/` (SvelteKit 3, strict TS) + `api/`

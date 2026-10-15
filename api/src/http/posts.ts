@@ -152,6 +152,7 @@ export const handleAdminPosts: ApiHandler = async (req, res, deps, url, id) => {
 		items.push({
 			id: row.id, slug: row.slug, title: row.title, description: row.description, status: row.status,
 			audience: row.audience,
+			category: row.category,
 			tags: pageTags.get(row.id) ?? await deps.tags.getPostTagNames(row.id),
 			authorName: row.authorId ? authors.get(row.authorId) ?? null : null,
 			publishedAt: row.publishedAt?.toISOString() ?? null, publishAt: row.publishAt?.toISOString() ?? null,

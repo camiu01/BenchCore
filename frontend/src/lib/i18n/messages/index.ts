@@ -18,8 +18,14 @@ import { pagesEn } from './pages.en.js';
 import { pagesIt } from './pages.it.js';
 import { vaultEn } from './vault.en.js';
 import { vaultIt } from './vault.it.js';
+import { publishingEn } from './publishing.en.js';
+import { publishingIt } from './publishing.it.js';
+import { newsletterEn } from './newsletter.en.js';
+import { newsletterIt } from './newsletter.it.js';
 
 export const en = {
+	...newsletterEn,
+	...publishingEn,
 	...vaultEn,
 	...commonEn,
 	...publicEn,
@@ -33,6 +39,8 @@ export const en = {
 export type MessageKey = keyof typeof en;
 
 export const it: Record<MessageKey, string> = {
+	...newsletterIt,
+	...publishingIt,
 	...vaultIt,
 	...commonIt,
 	...publicIt,

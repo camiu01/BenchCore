@@ -2,8 +2,9 @@
  * @file render.ts
  * @brief Markdown rendering: Obsidian-style [[wikilinks]], sanitized HTML, metadata.
  */
-import { marked } from 'marked';
+import { parseMathMarkdown } from './math.js';
 import sanitizeHtml from 'sanitize-html';
+import { anchorHeadings, sectionId } from './headings.js';
 
 /**
  * @brief Options controlling Markdown rendering.
@@ -37,12 +38,26 @@ const RELATIVE_IMG_PATTERN = /<img([^>]*?)src="(?!https?:|data:|\/)([^"]+)"([^>]
 export function extractWikiLinks(markdown: string): string[] {
 	const links: string[] = [];
 	for (const match of markdown.matchAll(WIKILINK_PATTERN)) {
-		const slug = (match[1] ?? '').trim().toLowerCase();
+		const slug = wikiTarget(match[1] ?? '').slug;
 		if (slug !== '' && !links.includes(slug)) {
 			links.push(slug);
 		}
 	}
 	return links;
+}
+
+/**
+ * @brief Splits a note title or slug from its optional section reference.
+ * @param raw Original wikilink target.
+ * @return Normalized post slug and safe section fragment.
+ */
+function wikiTarget(raw: string): { slug: string; fragment: string } {
+	const separator = raw.indexOf('#');
+	const target = (separator < 0 ? raw : raw.slice(0, separator)).trim();
+	const heading = separator < 0 ? '' : raw.slice(separator + 1).trim();
+	const slug = target.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()
+		.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+	return { slug, fragment: heading ? sectionId(heading) : '' };
 }
 
 /**
@@ -67,10 +82,10 @@ function escapeHtml(value: string): string {
 function tokenizeWikiLinks(markdown: string): { source: string; links: string[] } {
 	const links: string[] = [];
 	const source = markdown.replace(WIKILINK_PATTERN, (_whole, rawTarget: string, rawLabel?: string) => {
-		const slug = String(rawTarget).trim().toLowerCase();
-		const label = (rawLabel ?? slug).trim() || slug;
+		const target = String(rawTarget).trim();
+		const label = (rawLabel ?? target).trim() || target;
 		const index = links.length;
-		links.push(slug);
+		links.push(target);
 		return `[${label}](wikilink:${index})`;
 	});
 	return { source, links };
@@ -92,10 +107,12 @@ function resolveWikiLinks(
 ): string {
 	let output = html;
 	for (let index = 0; index < slugs.length; index += 1) {
-		const slug = slugs[index] ?? '';
-		const label = labels[index] ?? slug;
-		const broken = knownSlugs !== undefined && !knownSlugs.has(slug);
-		const anchor = `<a href="/posts/${encodeURIComponent(slug)}" class="wikilink${broken ? ' broken' : ''}">${escapeHtml(label)}</a>`;
+		const target = slugs[index] ?? '';
+		const { slug, fragment } = wikiTarget(target);
+		const label = labels[index] ?? target;
+		const broken = slug !== '' && knownSlugs !== undefined && !knownSlugs.has(slug);
+		const href = `${slug ? `/posts/${encodeURIComponent(slug)}` : ''}${fragment ? `#${encodeURIComponent(fragment)}` : ''}`;
+		const anchor = `<a href="${href}" class="wikilink${broken ? ' broken' : ''}">${escapeHtml(label)}</a>`;
 		output = output.replace(`<a href="wikilink:${index}">${escapeHtml(label)}</a>`, anchor);
 	}
 	return output;
@@ -121,11 +138,11 @@ export async function renderMarkdown(
 	options: RenderOptions = {}
 ): Promise<RenderedContent> {
 	const tokenized = tokenizeWikiLinks(markdown);
-	const rawHtml = await marked.parse(tokenized.source);
-	const clean = sanitizeHtml(typeof rawHtml === 'string' ? rawHtml : String(rawHtml), {
+	const parsed = await parseMathMarkdown(tokenized.source);
+	const clean = sanitizeHtml(parsed.html, {
 		allowedSchemes: ['http', 'https', 'mailto', 'wikilink'],
 		allowedTags: [
-			'h1', 'h2', 'h3', 'h4', 'p', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code',
+			'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code',
 			'em', 'strong', 'a', 'hr', 'br', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'img'
 		],
 		allowedAttributes: {
@@ -142,10 +159,11 @@ export async function renderMarkdown(
 		options.mediaPrefix !== undefined
 			? linked.replace(RELATIVE_IMG_PATTERN, `<img$1src="${options.mediaPrefix}/$2"$3>`)
 			: linked;
-	const text = stripTags(prefixed);
+	const html = anchorHeadings(parsed.restore(prefixed));
+	const text = stripTags(html.replace(/<annotation\b[^>]*>[\s\S]*?<\/annotation>/g, ''));
 	const words = text === '' ? 0 : text.split(' ').length;
 	return {
-		html: prefixed,
+		html,
 		excerpt: text.slice(0, 200),
 		readingMinutes: Math.max(1, Math.ceil(words / 200)),
 		links: extractWikiLinks(markdown)

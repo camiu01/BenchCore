@@ -1,5 +1,6 @@
 <!-- @file +page.svelte @brief Engineering-log page and presentation component. -->
 <script lang="ts">
+	import CategoryFilter from '../../lib/components/CategoryFilter.svelte';
 	import type { PageData } from './$types';
 	import DocShell from '../../lib/components/DocShell.svelte';
 	import Seo from '../../lib/components/Seo.svelte';
@@ -52,6 +53,7 @@
 				/>
 				<button class="btn btn-accent" type="submit">{t('public.posts.searchButton')}</button>
 			</div>
+			<CategoryFilter selected={data.category} items={data.availableCategories} />
 			<details class="filter-panel" open={data.tags.length > 0 || data.sort !== 'published'}>
 				<summary>
 					{t('public.posts.filters')}{#if data.tags.length > 0 || data.sort !== 'published'}

@@ -536,6 +536,18 @@ body {
 	font-size: 11px;
 }
 
+.record-body math {
+	color: inherit;
+}
+
+.record-body math[display='block'] {
+	max-width: 100%;
+	overflow-x: auto;
+	overflow-y: hidden;
+	margin: 12px 0;
+	padding: 8px 0;
+}
+
 .record-body table {
 	width: 100%;
 	border-collapse: collapse;

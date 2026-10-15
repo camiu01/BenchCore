@@ -49,9 +49,9 @@ export function postOutline(
 ): { html: string; headings: PostHeading[] } {
 	const headings: PostHeading[] = [];
 	const html = sanitizedHtml.replace(
-		/<h([1-4])>([\s\S]*?)<\/h\1>/g,
-		(_match: string, level: string, content: string) => {
-			const id = `post-section-${headings.length + 1}`;
+		/<h([1-6])(?: id="([\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*)")?>([\s\S]*?)<\/h\1>/gu,
+		(_match: string, level: string, existingId: string | undefined, content: string) => {
+			const id = existingId ?? `post-section-${headings.length + 1}`;
 			headings.push({
 				id,
 				title: headingText(content) || tr('public.outline.section', { n: headings.length + 1 }),

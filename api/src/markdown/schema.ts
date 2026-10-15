@@ -22,6 +22,7 @@ export const frontmatterSchema = z.object({
 	description: z.string().max(500).default(''),
 	status: z.enum(['draft', 'published', 'archived']).default('draft'),
 	audience: z.enum(['public', 'readers']).optional(),
+	category: z.string().trim().min(1).max(80).optional(),
 	tags: z.array(z.string().trim().min(1).max(60)).max(20).default([]),
 	published_at: z.iso.datetime({ offset: true }).optional(),
 	publish_at: z.iso.datetime({ offset: true }).optional(),

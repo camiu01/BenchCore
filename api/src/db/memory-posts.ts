@@ -32,6 +32,26 @@ function isPublic(row: PostRow, now: Date): boolean {
 class MemoryPosts implements PostRepository {
 	private readonly rows = new Map<string, PostRow>();
 
+	/** @brief Aggregates category names while masking unpublished assignments. @param admin Include drafts. @return Counts. */
+	async listCategories(admin = false) {
+		const counts = new Map<string, number>();
+		for (const row of this.rows.values()) {
+			if (row.category && (admin || isPublic(row, new Date()))) {
+				counts.set(row.category, (counts.get(row.category) ?? 0) + 1);
+			}
+		}
+		return [...counts].sort(([a], [b]) => a.localeCompare(b)).map(([name, count]) => ({ name, count }));
+	}
+	/** @brief Renames or clears assigned categories. @param name Existing name. @param replacement Replacement. @return Changed count. */
+	async replaceCategory(name: string, replacement: string | null) {
+		let count = 0;
+		for (const row of this.rows.values()) {
+			if (row.category !== name) { continue; }
+			this.rows.set(row.id, { ...row, category: replacement, updatedAt: new Date() });
+			count += 1;
+		}
+		return count;
+	}
 	/**
 	 * @brief Retains tag and link stores.
 	 * @param tags The tag repository.
@@ -127,7 +147,7 @@ class MemoryPosts implements PostRepository {
 	 */
 	async listPublished(options: Parameters<PostRepository['listPublished']>[0]) {
 		const visible = newestFirst([...this.rows.values()].filter((row) =>
-			isPublic(row, options.now) && matchesSearch(
+			isPublic(row, options.now) && (!options.category || row.category === options.category) && matchesSearch(
 				row.audience === 'readers' && !options.includeReaderContent
 					? { ...row, description: '', contentMarkdown: '', searchVector: row.title } : row,
 				options.search)));

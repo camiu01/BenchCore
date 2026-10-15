@@ -9,6 +9,7 @@ import { translator } from './i18n/translate.js';
 const archiveSchema = z.object({
 	page: z.coerce.number().int().min(1).max(100001).catch(1),
 	search: z.string().trim().max(200).catch(''),
+	category: z.string().trim().max(80).catch(''),
 	tags: z
 		.array(z.string().trim().min(1).max(60))
 		.max(20)
@@ -24,6 +25,7 @@ export function archiveQuery(query: URLSearchParams): ArchiveQuery {
 	return archiveSchema.parse({
 		page: query.get('page'),
 		search: query.get('search') ?? '',
+		category: query.get('category') ?? '',
 		tags: [...query.getAll('tag'), ...query.getAll('tags')],
 		tagMode: query.get('tagMode'),
 		sort: query.get('sort')
@@ -31,10 +33,11 @@ export function archiveQuery(query: URLSearchParams): ArchiveQuery {
 }
 
 /** @brief Builds a safe link which preserves all current archive filters. @param query Current filters. @param page Target page. @return Local archive URL. */
-export function archiveHref(query: ArchiveQuery, page = query.page): string {
+export function archiveHref(query: Omit<ArchiveQuery, 'category'> & { category?: string }, page = query.page): string {
 	const params = new URLSearchParams();
 	if (page > 1) params.set('page', String(page));
 	if (query.search) params.set('search', query.search);
+	if (query.category) params.set('category', query.category);
 	for (const tag of query.tags) params.append('tag', tag);
 	if (query.tagMode === 'or') params.set('tagMode', 'or');
 	if (query.sort !== 'published') params.set('sort', query.sort);

@@ -5,7 +5,7 @@ export const vaultIt = {
 	'vault.limits':
 		'Carica uno ZIP del vault oppure seleziona più file Markdown. Massimo 500 note, 200 KB per nota, 2 MB per lo ZIP e 2 MB totali di Markdown. I post esistenti non vengono sovrascritti.',
 	'vault.attachments':
-		'Vengono importate solo le note Markdown. Impostazioni, cartelle nascoste e allegati vengono ignorati. I file incorporati non vengono caricati. I link alle sezioni aprono la nota di destinazione.',
+		'Vengono importate solo le note Markdown. Impostazioni, cartelle nascoste e allegati vengono ignorati. I file incorporati non vengono caricati. I link alle sezioni aprono direttamente il titolo corrispondente nella nota di destinazione.',
 	'vault.file': 'ZIP del vault o file Markdown',
 	'vault.selectionHelp':
 		'Seleziona più file .md con Ctrl o Maiusc, oppure un solo ZIP. Non mescolare ZIP e Markdown. Per mantenere le sottocartelle usa lo ZIP.',

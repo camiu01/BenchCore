@@ -227,8 +227,13 @@ export const subscribers = pgTable('subscribers', {
 	email: text('email').notNull().unique(),
 	tokenHash: text('token_hash').notNull().unique(),
 	confirmed: boolean('confirmed').notNull().default(false),
+	consentedAt: timestamp('consented_at', { withTimezone: true }),
+	confirmExpiresAt: timestamp('confirm_expires_at', { withTimezone: true }),
+	requestedAt: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 });
+
+export { newsletterCampaigns, newsletterDeliveries } from './newsletter-schema.js';
 
 /**
  * @brief API token scopes.

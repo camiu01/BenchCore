@@ -8,6 +8,7 @@
 	import PostDeleteConfirmation from './PostDeleteConfirmation.svelte';
 	import EditorStatus from './EditorStatus.svelte';
 	import WikilinkOptions from './WikilinkOptions.svelte';
+	import CategoryField from './CategoryField.svelte';
 	import { removeImageFromEditor } from '../image-manager.js';
 	import { insertUploadedImage } from '../image-batch.js';
 	import { selectImageCover } from '../image-details.js';
@@ -234,6 +235,7 @@
 					</select>
 				</div>
 				<div>
+					<CategoryField value={values.category ?? ''} />
 					<label class="field-label" for="tags">{t('editor.field.tags')}</label>
 					<input class="field-input" id="tags" name="tags" value={values.tags} />
 				</div>

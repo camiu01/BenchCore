@@ -104,6 +104,8 @@ export const INFO_PAGES = {
 				paragraphs: ['pages.privacy.browser'],
 				links: [{ href: '/cookies', label: 'pages.cookies.label' }]
 			},
+			{ heading: 'newsletter.title', paragraphs: ['newsletter.data'],
+				links: [{ href: '/newsletter', label: 'newsletter.title' }] },
 			{ heading: 'pages.privacy.providersTitle', paragraphs: ['pages.privacy.providers'] },
 			{
 				heading: 'pages.privacy.controlTitle',

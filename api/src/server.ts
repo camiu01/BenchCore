@@ -24,6 +24,8 @@ import { handlePrepareUpload, handleCompleteUpload } from './http/direct-media.j
 import { handleGraph } from './http/graph.js';
 import { handlePostPreview } from './http/post-preview.js';
 import { handleObsidianImport } from './http/obsidian.js';
+import { handleCategories, handleAdminCategories } from './http/categories.js';
+import { handleNewsletterStatus, handleNewsletterConsent, handleNewsletterAdmin, handleNewsletterSend } from './http/newsletter.js';
 import {
 	handleAdminComment,
 	handleAdminComments,
@@ -43,6 +45,12 @@ export interface HealthPayload {
 export const DEFAULT_PORT = 5181;
 
 const routes: { path: RegExp; handlers: Record<string, ApiHandler> }[] = [
+	{ path: /^\/api\/newsletter$/, handlers: { GET: handleNewsletterStatus } },
+	{ path: /^\/api\/newsletter\/(?:subscribe|confirm|unsubscribe)$/, handlers: { POST: handleNewsletterConsent } },
+	{ path: /^\/api\/admin\/newsletter$/, handlers: { GET: handleNewsletterAdmin, POST: handleNewsletterAdmin } },
+	{ path: /^\/api\/admin\/newsletter\/send$/, handlers: { POST: handleNewsletterSend } },
+	{ path: /^\/api\/categories$/, handlers: { GET: handleCategories } },
+	{ path: /^\/api\/admin\/categories$/, handlers: { GET: handleAdminCategories, POST: handleAdminCategories } },
 	{ path: /^\/api\/admin\/imports\/obsidian$/, handlers: { POST: handleObsidianImport } },
 	{ path: /^\/api\/auth\/login$/, handlers: { POST: handleLogin } },
 	{ path: /^\/api\/auth\/register$/, handlers: { POST: handleRegister } },

@@ -10,6 +10,8 @@ import { configuredOrigins } from '../http/security.js';
 import { nodeHandlerFetch } from '../http/web.js';
 import { configuredPasswordReset } from '../auth/password-reset-delivery.js';
 import { configuredTotpKey } from '../auth/totp.js';
+import { configuredNewsletter } from '../newsletter/delivery.js';
+import { createDrizzleNewsletter } from '../db/drizzle-newsletter.js';
 
 /**
  * @brief Validates Vercel configuration and wires the same API services as Node delivery.
@@ -28,7 +30,9 @@ export function createServerlessApp(env: NodeJS.ProcessEnv) {
 	const db = getDb();
 	const passwordReset = configuredPasswordReset(env);
 	const totpKey = configuredTotpKey(env);
+	const mail = configuredNewsletter(env);
 	const handler = createHandler({ ...createDrizzleRepos(db), media: configuredStorage(db, env),
+		newsletter: { repository: createDrizzleNewsletter(db), ...(mail ? { mail } : {}) },
 		...(passwordReset ? { passwordReset } : {}),
 		...(totpKey ? { totpKey } : {}),
 		cookieSecure: env['NODE_ENV'] === 'production', allowedOrigins: origins });

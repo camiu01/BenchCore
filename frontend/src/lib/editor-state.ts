@@ -5,6 +5,7 @@
 import type { EditorValues } from './server/editor-values.js';
 
 const fields = {
+	category: 'category',
 	title: 'title',
 	slug: 'slug',
 	description: 'description',

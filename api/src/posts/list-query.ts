@@ -11,7 +11,8 @@ export const publishedQuerySchema = z.object({
 		.transform((tags) => [...new Set(tags)]),
 	tagMode: z.enum(['and', 'or']).default('and'),
 	sort: z.enum(['published', 'updated', 'popular']).default('published'),
-	search: z.string().trim().max(200).optional()
+	search: z.string().trim().max(200).optional(),
+	category: z.string().trim().min(1).max(80).optional()
 });
 
 /** @brief Parses both the legacy tag and repeated tag(s) query fields. @param query URL parameters. @return Validated query result. */

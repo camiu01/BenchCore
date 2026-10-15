@@ -65,7 +65,9 @@ export function linkedPostPreviews(node: HTMLElement, controller: PreviewControl
 		if (!(target instanceof Element)) return null;
 		const anchor = target.closest('a.wikilink');
 		if (!anchor || !node.contains(anchor)) return null;
-		const match = /^\/posts\/([a-z0-9]+(?:-[a-z0-9]+)*)$/.exec(anchor.getAttribute('href') ?? '');
+		const match = /^\/posts\/([a-z0-9]+(?:-[a-z0-9]+)*)(?:#[^\s]*)?$/.exec(
+			anchor.getAttribute('href') ?? ''
+		);
 		return match ? { anchor, slug: match[1]! } : null;
 	}
 	/** @brief Opens a pointer or keyboard target without intercepting navigation. @param event Event. @return Nothing. */

@@ -105,7 +105,8 @@ describe('validateFrontmatter', () => {
 describe('renderMarkdown', () => {
 	it('renders headings and paragraphs', async () => {
 		const rendered = await renderMarkdown('# Hi\n\nHello.');
-		expect(rendered.html).toContain('<h1>Hi</h1>');
+		expect(rendered.html).toContain('<h1 id="hi">');
+		expect(rendered.html).toContain('Hi</h1>');
 		expect(rendered.readingMinutes).toBe(1);
 		expect(rendered.links).toEqual([]);
 	});

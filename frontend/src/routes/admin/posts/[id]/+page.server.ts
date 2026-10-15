@@ -32,6 +32,7 @@ export const load: PageServerLoad = async ({ params, request }) => {
 		throw error(404, serverT('admin.error.recordNotFound'));
 	}
 	const values: EditorValues = {
+		category: post.category ?? '',
 		title: post.title,
 		slug: post.slug,
 		description: post.description,
