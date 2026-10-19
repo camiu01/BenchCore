@@ -42,6 +42,8 @@ jobs:
         run: pnpm --filter benchcore-frontend exec playwright install --with-deps chromium
       - name: Build production Node frontend and API fixture
         run: pnpm build
+      - name: Typecheck compiled-artifact browser fixtures
+        run: pnpm --filter benchcore-api exec tsc -p ../runtime/tsconfig.browser.json
       - name: Browser journeys, accessibility, SSR metadata and XML
         run: pnpm test:e2e
       - name: Save failure traces

@@ -12,5 +12,6 @@
 		"types": ["node"],
 		"skipLibCheck": true
 	},
-	"include": ["*.mjs", "../scripts/*.mjs"]
+	"include": ["*.mjs", "../scripts/*.mjs"],
+	"exclude": ["../scripts/browser-fixture.mjs", "../scripts/fixture-fetch.mjs"]
 }

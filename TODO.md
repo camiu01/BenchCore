@@ -317,7 +317,7 @@ Native PostgreSQL, hosted R2/SMTP and deployment checks were not run.
 
 ### Validation anchor (0.9.0 work in progress)
 
-284 API + 313 frontend unit tests pass, along with workspace/runtime typechecks
+284 API + 314 frontend unit tests pass, along with workspace/runtime typechecks
 and lint. Chromium passes 96 browser checks against each local API transport:
 Node HTTP and the Vercel Node handler through its Fetch adapter. The production
 Node frontend is used in both fixture modes; this is not a hosted Vercel E2E

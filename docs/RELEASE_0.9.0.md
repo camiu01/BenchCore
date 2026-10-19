@@ -9,7 +9,7 @@ The source of truth for milestone scope is [TODO.md](../TODO.md).
 
 ## Verified locally
 
-- 284 API and 313 frontend unit tests pass.
+- 284 API and 314 frontend unit tests pass.
 - Workspace/runtime typechecks, frontend lint and formatting pass.
 - Node and Vercel production builds and credential-free Vercel API packaging pass.
 - Chromium passes 96 checks per local API transport, Node HTTP and the Vercel

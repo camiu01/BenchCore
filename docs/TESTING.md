@@ -40,6 +40,7 @@ useful for a focused check. Passing a build alone is not a substitute for all ga
 ```sh
 pnpm --filter benchcore-frontend exec playwright install chromium
 pnpm build
+pnpm --filter benchcore-api exec tsc -p ../runtime/tsconfig.browser.json
 pnpm test:e2e
 ```
 
@@ -50,6 +51,11 @@ the application's `.env` or a live PostgreSQL/SMTP/R2 service.
 `E2E_TARGET=serverless` selects the Vercel API handler plus Fetch adapter; CI
 runs both transports. The frontend uses the Node adapter in both fixture modes,
 not a hosted Vercel deployment.
+
+`pnpm check` checks runtime/operator scripts without requiring compiled output.
+Browser fixtures intentionally import `api/dist`; their separate typecheck
+runs after `pnpm build` in the browser CI job. A regression test checks the
+runtime configuration in an isolated tree without API/frontend build artifacts.
 
 After `pnpm build`, run both modes in a POSIX shell:
 
