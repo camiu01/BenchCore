@@ -42,7 +42,7 @@ export const GET: RequestHandler = async () => {
 		for (const post of page.items) {
 			body += entry(
 				`${base}/posts/${encodeURIComponent(post.slug)}`,
-				post.publishedAt === null ? undefined : post.publishedAt.slice(0, 10)
+				(post.updatedAt ?? post.publishedAt)?.slice(0, 10)
 			);
 		}
 		offset += page.items.length;

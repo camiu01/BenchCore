@@ -3,6 +3,35 @@
 Changes follow [Conventional Commits](https://www.conventionalcommits.org/).
 Version 0.8.0 is prepared locally. No tag, hosted release or deployment is created.
 
+## Unreleased — 0.9.0 in progress
+
+### Runtime and regression checks
+
+- Validate bounded PostgreSQL pool settings for Node and Vercel, with explicit
+  session/transaction modes and shared concurrent serverless readiness probes.
+- Add local Node HTTP/Fetch API parity tests and a Chromium CI matrix with
+  disposable memory repositories. Both browser modes use the Node frontend;
+  hosted Vercel routing, scaling and cold starts remain unverified.
+
+### Accessibility, navigation and editing
+
+- Audit reader/admin page templates in light, dark and OLED themes with axe,
+  keyboard skip-link and narrow-viewport checks. Improve control contrast,
+  forced-colors styles, page titles and cookie-table keyboard scrolling.
+- Improve skip-link visibility, cookie-notice placement, login form behavior,
+  cover-image layout and browser theme-color updates.
+- Preserve graph search, selection and neighborhood state in shareable URLs.
+  Add accessible editor wikilink suggestion relationships.
+- Keep unsaved editor fields when body changes trigger reactive updates.
+
+### Discovery and release status
+
+- Validate RSS/sitemap XML and safe Unicode, use current sitemap modification
+  dates, and test SSR Open Graph/Twitter metadata and paginated tag canonicals.
+- Record verified local results and remaining release gates in
+  `docs/RELEASE_0.9.0.md`. No version bump, migration or release is included.
+  Backup/restore tooling and manual/hosted checks remain pending.
+
 ## 0.8.0 — 2026-10-12
 
 ### Engagement and moderation

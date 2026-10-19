@@ -1,12 +1,20 @@
 <!-- @file +page.svelte @brief Email consent confirmation without account or GET-side effects. -->
 <script lang="ts">
 	import DocShell from '../../../lib/components/DocShell.svelte';
+	import Seo from '../../../lib/components/Seo.svelte';
 	import { t } from '../../../lib/i18n/t.svelte.js';
 	import type { PageData, ActionData } from './$types';
 	let { data, form }: { data: PageData; form?: ActionData } = $props();
 	const nav = $derived([{ href: '/newsletter', label: t('newsletter.title') }]);
 	const confirming = $derived(data.action === 'confirm');
 </script>
+
+<Seo
+	title={t(confirming ? 'newsletter.confirmTitle' : 'newsletter.unsubscribeTitle')}
+	description={t('newsletter.noAccount')}
+	type="website"
+	noindex
+/>
 
 <DocShell
 	title={t(confirming ? 'newsletter.confirmTitle' : 'newsletter.unsubscribeTitle')}

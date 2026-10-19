@@ -6,6 +6,38 @@ import type { GraphData } from './api.js';
 import { DEFAULT_LOCALE } from './i18n/locale.js';
 import { translator } from './i18n/translate.js';
 
+/** @brief Reads shareable filters and selection, accepting legacy focus links. @param url Current page URL. @param fallback Initial selection outside the graph route. @return Graph presentation state. */
+export function graphLocation(
+	url: { pathname: string; searchParams: Pick<URLSearchParams, 'get'> },
+	fallback: string | null = null
+) {
+	const requested = url.searchParams.get('focus');
+	const slug = requested && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(requested) ? requested : null;
+	const selected = url.pathname === '/graph' ? slug : fallback;
+	return {
+		query: url.searchParams.get('q') ?? '',
+		slug: selected,
+		focused: selected !== null && url.searchParams.get('view') !== 'all'
+	};
+}
+
+/** @brief Updates only graph parameters without changing unrelated URL state. @param current Current URL. @param state Graph presentation state. @return Shareable graph URL. */
+export function graphLocationUrl(
+	current: Pick<URL, 'href'>,
+	state: ReturnType<typeof graphLocation>
+): URL {
+	const url = new URL(current.href);
+	for (const [key, value] of [
+		['q', state.query],
+		['focus', state.slug ?? ''],
+		['view', state.slug && !state.focused ? 'all' : '']
+	] as const) {
+		if (value) url.searchParams.set(key, value);
+		else url.searchParams.delete(key);
+	}
+	return url;
+}
+
 /** @brief Matches a post title or tag. @param node Graph post. @param query Search text. @return Whether the post matches. */
 export function matchesGraphNode(node: GraphData['nodes'][number], query: string): boolean {
 	const needle = query.trim().toLowerCase();

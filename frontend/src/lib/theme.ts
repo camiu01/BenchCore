@@ -51,6 +51,12 @@ export function applyTheme(theme: Theme): void {
 		return;
 	}
 	document.documentElement.setAttribute('data-theme', theme);
+	document
+		.querySelector('meta[name="theme-color"]')
+		?.setAttribute(
+			'content',
+			theme === 'light' ? '#f5f2ea' : theme === 'dark' ? '#15181c' : '#000000'
+		);
 	try {
 		localStorage.setItem(STORAGE_KEY, theme);
 	} catch {

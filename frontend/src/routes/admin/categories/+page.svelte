@@ -1,11 +1,19 @@
 <!-- @file +page.svelte @brief Main category management, without deleting the assigned posts. -->
 <script lang="ts">
 	import DocShell from '../../../lib/components/DocShell.svelte';
+	import Seo from '../../../lib/components/Seo.svelte';
 	import { t } from '../../../lib/i18n/t.svelte.js';
 	import type { PageData, ActionData } from './$types';
 	let { data, form }: { data: PageData; form?: ActionData } = $props();
 	const nav = $derived([{ href: '/admin', label: t('vault.back') }]);
 </script>
+
+<Seo
+	title={t('publishing.categories')}
+	description={t('publishing.categoryHelp')}
+	type="website"
+	noindex
+/>
 
 <DocShell
 	title={t('publishing.categories')}

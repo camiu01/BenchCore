@@ -11,6 +11,25 @@ import { createTestDeps, createTestRepos } from './helpers.js';
 import service from '../src/vercel.js';
 
 describe('independent Vercel API service', () => {
+	it('coalesces concurrent readiness probes and retries after failure', async () => {
+		let rejectProbe: (reason: Error) => void = () => {};
+		const ready = vi.fn().mockImplementationOnce(() => new Promise<void>((_resolve, reject) => {
+			rejectProbe = reject;
+		})).mockResolvedValue(undefined);
+		const factory = vi.fn().mockReturnValue({ handler: vi.fn(), ready, fetch: vi.fn() });
+		const handler = createVercelHandler({}, factory);
+		const probes = Array.from({ length: 5 }, () => nodeHandlerFetch(handler,
+			new Request('https://site.test/health/ready'), 'peer'));
+		expect(ready).toHaveBeenCalledOnce();
+		rejectProbe(new Error('private database diagnostics'));
+		for (const response of await Promise.all(probes)) {
+			expect(response.status).toBe(503);
+			expect(await response.text()).not.toContain('private database');
+		}
+		expect((await nodeHandlerFetch(handler, new Request('https://site.test/health/ready'), 'peer')).status).toBe(200);
+		expect(ready).toHaveBeenCalledTimes(2);
+		expect(factory).toHaveBeenCalledOnce();
+	});
 	it('exports the backend Fetch contract without starting a listener', async () => {
 		const response = await service.fetch(new Request('https://site.test/health/live'));
 		expect(response.status).toBe(200);

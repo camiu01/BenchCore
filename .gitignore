@@ -13,3 +13,5 @@ api/output/
 .preview/
 artifacts/
 .vercel/
+frontend/test-results/
+frontend/playwright-report/

@@ -1,7 +1,7 @@
 <!-- @file CategoryField.svelte @brief One optional main category, separate from free-form post tags. -->
 <script lang="ts">
 	import { t } from '../i18n/t.svelte.js';
-	let { value = '' }: { value?: string } = $props();
+	let { value = $bindable('') }: { value?: string } = $props();
 </script>
 
 <div>
@@ -10,7 +10,7 @@
 		class="field-input"
 		id="category"
 		name="category"
-		{value}
+		bind:value
 		maxlength="80"
 		aria-describedby="category-help"
 	/>

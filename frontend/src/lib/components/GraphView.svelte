@@ -1,9 +1,16 @@
 <!-- @file GraphView.svelte @brief Post connections with searchable lists and accessible graph controls. -->
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { page } from '$app/state';
+	import { replaceState } from '$app/navigation';
 	import type { GraphData } from '../api.js';
 	import { createGraphRenderer } from '../graph-renderer.js';
-	import { matchesGraphNode, relatedGraphNodes } from '../graph-navigation.js';
+	import {
+		graphLocation,
+		graphLocationUrl,
+		matchesGraphNode,
+		relatedGraphNodes
+	} from '../graph-navigation.js';
 	import TagChip from './TagChip.svelte';
 	import { createPreviewController, type PreviewTarget } from '../linked-previews.js';
 	import PostPreviewCard from './PostPreviewCard.svelte';
@@ -15,23 +22,26 @@
 	}
 	let { graph, focus }: Props = $props();
 	let svg: SVGSVGElement;
-	let query = $state('');
-	let selection = $state<string | null | undefined>(undefined);
-	let focused = $state(false);
+	const location = $derived(graphLocation(page.url, focus));
+	const query = $derived(location.query);
+	const focused = $derived(location.focused);
 	let previewTarget = $state<PreviewTarget | null>(null);
 	const previews = createPreviewController((target) => {
 		previewTarget = target;
 	});
 	onDestroy(() => previews.destroy());
-	const selectedSlug = $derived(selection === undefined ? focus : selection);
+	const selectedSlug = $derived(location.slug);
 	const selected = $derived(graph.nodes.find((node) => node.slug === selectedSlug) ?? null);
 	const results = $derived(graph.nodes.filter((node) => matchesGraphNode(node, query)));
 	const related = $derived(relatedGraphNodes(graph, selectedSlug, t));
-	let applyFilter: (query: string) => void = () => undefined;
-	let applySelection: (slug: string | null) => void = () => undefined;
-	let applyFocus: (slug: string | null) => void = () => undefined;
+	let renderer = $state<ReturnType<typeof createGraphRenderer> | null>(null);
 	let resetView = () => {};
 	let zoomView: (factor: number) => void = () => undefined;
+	$effect(() => {
+		renderer?.select(selectedSlug);
+		renderer?.filter(query);
+		renderer?.focus(focused ? selectedSlug : null);
+	});
 
 	/**
 	 * @brief Selects a node in both the visual graph and detail panel.
@@ -39,36 +49,30 @@
 	 * @return Nothing.
 	 */
 	function selectNode(slug: string | null): void {
-		selection = slug;
-		applySelection(slug);
-		if (slug === null) focused = false;
-		applyFocus(focused ? slug : null);
+		replaceState(
+			graphLocationUrl(page.url, { ...location, slug, focused: slug !== null && focused }),
+			page.state
+		);
 	}
 
 	/** @brief Switches between the complete map and the selected neighborhood. @return Nothing. */
 	function toggleFocus(): void {
-		focused = !focused;
-		applyFocus(focused ? selectedSlug : null);
+		replaceState(graphLocationUrl(page.url, { ...location, focused: !focused }), page.state);
 	}
 
 	/** @brief Applies search from the input or a topic shortcut. @param value Search text. @return Nothing. */
 	function searchGraph(value: string): void {
-		query = value;
-		selectNode(null);
-		applyFilter(value);
+		replaceState(
+			graphLocationUrl(page.url, { query: value, slug: null, focused: false }),
+			page.state
+		);
 	}
 
 	onMount(() => {
 		const controller = createGraphRenderer(svg, graph, selectNode, previews, t);
+		renderer = controller;
 		resetView = controller.reset;
 		zoomView = controller.zoom;
-		applyFilter = controller.filter;
-		applySelection = controller.select;
-		applyFocus = controller.focus;
-		focused = selected !== null;
-		applySelection(selectedSlug);
-		applyFilter(query);
-		applyFocus(focused ? selectedSlug : null);
 		return controller.destroy;
 	});
 </script>
@@ -83,8 +87,8 @@
 			id="graph-search"
 			class="field-input"
 			type="search"
-			bind:value={query}
-			oninput={() => searchGraph(query)}
+			value={query}
+			oninput={(event) => searchGraph(event.currentTarget.value)}
 			placeholder={t('public.graphView.searchPlaceholder')}
 		/>
 		<button

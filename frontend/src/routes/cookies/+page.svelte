@@ -72,26 +72,34 @@
 				<span class="stamp">{t('public.cookies.stamp')}</span>
 			</div>
 			<p class="summary">{t('public.cookies.intro')}</p>
-			<table class="inventory-table">
-				<thead>
-					<tr>
-						<th>{t('public.cookies.colType')}</th>
-						<th>{t('public.cookies.colName')}</th>
-						<th>{t('public.cookies.colPurpose')}</th>
-						<th>{t('public.cookies.colLasts')}</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each items as item (item.name)}
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard users must be able to scroll this named table region.) -->
+			<div
+				class="table-scroll"
+				role="region"
+				tabindex="0"
+				aria-label={t('public.cookies.whatTitle')}
+			>
+				<table class="inventory-table">
+					<thead>
 						<tr>
-							<td class="code">{item.code}</td>
-							<td class="item"><code>{item.name}</code></td>
-							<td>{item.purpose}</td>
-							<td class="dim">{item.duration}</td>
+							<th>{t('public.cookies.colType')}</th>
+							<th>{t('public.cookies.colName')}</th>
+							<th>{t('public.cookies.colPurpose')}</th>
+							<th>{t('public.cookies.colLasts')}</th>
 						</tr>
-					{/each}
-				</tbody>
-			</table>
+					</thead>
+					<tbody>
+						{#each items as item (item.name)}
+							<tr>
+								<td class="code">{item.code}</td>
+								<td class="item"><code>{item.name}</code></td>
+								<td>{item.purpose}</td>
+								<td class="dim">{item.duration}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
 		</article>
 		<article class="record">
 			<div class="record-header">

@@ -7,7 +7,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import GraphView from '../src/lib/components/GraphView.svelte';
 import { graphSchema } from '../src/lib/api.js';
 import { load } from '../src/routes/graph/+page.server.js';
-import { matchesGraphNode, relatedGraphNodes } from '../src/lib/graph-navigation.js';
+import {
+	graphLocation,
+	graphLocationUrl,
+	matchesGraphNode,
+	relatedGraphNodes
+} from '../src/lib/graph-navigation.js';
 
 const graph = {
 	nodes: [
@@ -28,6 +33,27 @@ afterEach(() => {
 });
 
 describe('public graph', () => {
+	it('round-trips search, selection and full-map mode without losing other URL state', () => {
+		const url = new URL('https://example.test/graph?extra=keep#map');
+		const state = { query: 'systems & tools', slug: 'alpha', focused: false };
+		const shared = graphLocationUrl(url, state);
+		expect(graphLocation(shared)).toEqual(state);
+		expect(shared.searchParams.get('extra')).toBe('keep');
+		expect(shared.hash).toBe('#map');
+		const cleared = graphLocationUrl(shared, { query: '', slug: null, focused: false });
+		expect(cleared.search).toBe('?extra=keep');
+		expect(graphLocation(cleared, 'alpha').slug).toBeNull();
+	});
+
+	it('restores legacy focused links and rejects unsafe selected slugs', () => {
+		expect(graphLocation(new URL('https://example.test/graph?focus=alpha'))).toEqual({
+			query: '',
+			slug: 'alpha',
+			focused: true
+		});
+		expect(graphLocation(new URL('https://example.test/graph?focus=../private')).slug).toBeNull();
+	});
+
 	it('validates and renders an accessible record fallback', () => {
 		expect(graphSchema.safeParse(graph).success).toBe(true);
 		const result = render(GraphView, { props: { graph, focus: 'alpha' } });

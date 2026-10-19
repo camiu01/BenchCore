@@ -301,7 +301,7 @@ deployment verification remain operator gates, not locally verified results.
 | 0.6.0 | Media management and storage refinement | Shipped |
 | 0.7.0 | Social graph, links and knowledge navigation | Shipped |
 | 0.8.0 | Engagement, moderation and auth hardening | Prepared locally |
-| 0.9.0 | Stabilization, performance and deployment parity | Pending |
+| 0.9.0 | Stabilization, performance and deployment parity | In progress |
 | 1.0.0 | Production readiness and developer experience | Pending |
 
 ### Validation anchor (0.8.0)
@@ -315,21 +315,48 @@ the ledger has one contrast check requiring manual review. Changed frontend
 files pass formatting; the full formatting check flags 97 unchanged files.
 Native PostgreSQL, hosted R2/SMTP and deployment checks were not run.
 
+### Validation anchor (0.9.0 work in progress)
+
+284 API + 313 frontend unit tests pass, along with workspace/runtime typechecks
+and lint. Chromium passes 96 browser checks against each local API transport:
+Node HTTP and the Vercel Node handler through its Fetch adapter. The production
+Node frontend is used in both fixture modes; this is not a hosted Vercel E2E
+result. The suite covers 31 reader/admin route cases in all three themes at
+390px, automated WCAG 2.1 A/AA rules, skip-link focus, overflow, real
+login/publishing/global-logout forms, SSR social metadata and parsed XML feeds.
+The publishing journey also protects against editing the body clearing other
+unsaved editor fields.
+
+Node and Vercel production builds and the credential-free real Vercel API
+packaging regression pass. Pool settings and concurrent readiness behavior
+have offline regression tests. Hosted cold-start/pooling, PostgreSQL, R2/SMTP,
+the actual Vercel frontend and manual accessibility checks remain operator
+gates. No migration, deployment, release or version bump was performed.
+
 ## Pending
 
 ### Version 0.9.0: Stabilization, performance & deployment parity
 
 Focus: prepare the release candidate, freeze breaking changes and optimize infrastructure.
 
+See [0.9.0 preparation and completion gates](docs/RELEASE_0.9.0.md).
+Workspace metadata stays at 0.8.0 until the remaining gates are closed.
+
 - [ ] Functional parity between standalone and Vercel serverless deployments. #runtime #ops #perf
-	- [ ] Standardize cold-start performance and database connection-pool management (Drizzle/PostgreSQL pooling with PgBouncer/Neon).
-	- [ ] Add dedicated E2E tests in CI for both the Node runtime and Vercel edge/serverless targets.
+	- [x] Bound and validate shared Drizzle/PostgreSQL pool settings, with explicit session/transaction modes for PgBouncer/Neon and small Vercel defaults.
+	- [x] Keep liveness lazy and coalesce concurrent serverless readiness checks without caching stale results.
+	- [x] Add a dedicated browser CI matrix for Node HTTP and the Vercel API Fetch adapter, using disposable memory fixtures.
+	- [ ] Measure hosted cold/warm starts and provider pooling under concurrent instances.
+	- [ ] Verify the actual Vercel frontend, service bindings and hosted runtime E2E. Both services target Node.js 24, not Edge.
+	- [ ] Resolve/document the remaining scheduler and process-local quota parity gates before claiming full deployment parity.
 - [ ] Accessibility and themes (A11y). #ux #theme
-	- [ ] Review every reader and admin view against WCAG 2.1 AA.
-	- [ ] Complete high-contrast light and dark theme tokens.
-- [ ] SEO and dynamic metadata. #seo #tests
-	- [ ] Generate dynamic Open Graph and Twitter Cards through SSR for every post and tag.
-	- [ ] Automatically validate `rss.xml` and `sitemap.xml`.
+	- [x] Automatically review every reader/admin page template against selected WCAG 2.1 A/AA rules in light/dark/OLED, with keyboard skip-link and narrow-viewport checks.
+	- [x] Complete tested text/active-control contrast and distinct control-boundary tokens, with system forced-colors support.
+	- [x] Fix missing page titles, keyboard scrolling of the cookie table and skip-link focus order before the cookie notice.
+	- [ ] Complete manual screen-reader, zoom, OS high-contrast and interactive/error-state review; automated results are not WCAG certification.
+- [x] SEO and dynamic metadata. #seo #tests
+	- [x] Verify dynamic Open Graph and Twitter Cards through SSR for posts and tags, including article dates, optional covers and paginated tag canonicals.
+	- [x] Automatically parse and validate `rss.xml` and `sitemap.xml`, with safe XML 1.0 text and current last-modified dates.
 - [ ] Backup and restore CLI tools: export/import the complete database and image archive in a portable format, such as a ZIP bundle or JSON + Markdown archive. #ops #data #dx
 
 ### Version 1.0.0: Production readiness, documentation & developer experience

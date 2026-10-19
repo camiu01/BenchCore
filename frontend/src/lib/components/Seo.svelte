@@ -12,6 +12,8 @@
 		image?: string | null;
 		noindex?: boolean;
 		type?: 'article' | 'website';
+		publishedTime?: string | null;
+		modifiedTime?: string | null;
 	}
 
 	let {
@@ -20,7 +22,9 @@
 		canonical,
 		image = null,
 		noindex = false,
-		type = 'article'
+		type = 'article',
+		publishedTime = null,
+		modifiedTime = null
 	}: Props = $props();
 </script>
 
@@ -38,6 +42,12 @@
 	<meta property="og:site_name" content={PROJECT_NAME} />
 	<meta property="og:title" content={title} />
 	<meta property="og:description" content={description} />
+	{#if type === 'article' && publishedTime}
+		<meta property="article:published_time" content={publishedTime} />
+	{/if}
+	{#if type === 'article' && modifiedTime}
+		<meta property="article:modified_time" content={modifiedTime} />
+	{/if}
 	{#if image !== null}
 		<meta property="og:image" content={image} />
 	{/if}

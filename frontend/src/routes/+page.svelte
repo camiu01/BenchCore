@@ -62,9 +62,9 @@
 			{#each data.posts.items as post (post.id)}
 				<article class="record">
 					<div class="record-header">
-						<span class="record-title">
+						<h2 class="record-title">
 							<a href="/posts/{encodeURIComponent(post.slug)}">{post.title}</a>
-						</span>
+						</h2>
 						<span class="stamp"
 							>{post.audience === 'readers' ? t('public.readersOnly') : t('public.published')}</span
 						>

@@ -36,11 +36,11 @@
 
 <style>
 	.cookie-notice {
-		position: fixed;
-		left: 16px;
-		bottom: 16px;
-		z-index: 40;
-		width: min(420px, calc(100vw - 32px));
+		width: min(700px, 100%);
+		margin: 0 auto 24px;
+		max-height: 50dvh;
+		overflow-y: auto;
+		overscroll-behavior: contain;
 		box-sizing: border-box;
 		padding: 16px;
 		border: 2px solid var(--border);

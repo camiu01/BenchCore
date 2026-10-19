@@ -15,8 +15,11 @@ import { createServerlessApp } from './app.js';
  */
 export function createVercelHandler(env: NodeJS.ProcessEnv, factory = createServerlessApp) {
 	let app: ReturnType<typeof createServerlessApp> | undefined;
+	let readiness: Promise<void> | undefined;
 	/** @brief Initializes dependencies only on API and readiness calls. @return Application. */
 	const application = () => app ??= factory(env);
+	/** @brief Shares concurrent probes, without caching stale success or failure. @return Readiness. */
+	const ready = () => readiness ??= application().ready().finally(() => { readiness = undefined; });
 	/**
 	 * @brief Handles public and internally bound requests with unchanged /api paths.
 	 * @param req Node request. @param res Node response.
@@ -30,7 +33,7 @@ export function createVercelHandler(env: NodeJS.ProcessEnv, factory = createServ
 				if (req.method !== 'GET') {
 					sendJson(res, 405, { error: 'method_not_allowed' }, { allow: 'GET' }); return;
 				}
-				if (path === '/health/ready') { await application().ready(); }
+				if (path === '/health/ready') { await ready(); }
 				sendJson(res, 200, { status: 'ok' }); return;
 			}
 			application().handler(req, res);

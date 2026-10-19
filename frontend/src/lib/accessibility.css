@@ -1,0 +1,44 @@
+/* @file accessibility.css @brief Distinguishable controls and system high-contrast support. */
+.table-scroll {
+	overflow-x: auto;
+}
+
+html .table-scroll .inventory-table {
+	display: table;
+	overflow: visible;
+}
+
+.table-scroll:focus-visible {
+	outline: 3px solid var(--accent);
+	outline-offset: 3px;
+}
+
+html .wrapper :is(.field-input, .btn, .theme-btn, .password-toggle, .topic-filter) {
+	border-color: var(--control-border);
+}
+
+html .wrapper :is(.btn-accent, .theme-btn.active, .topic-filter[aria-pressed='true']),
+html .wrapper :is(.field-input, .btn, .theme-btn, .password-toggle, .topic-filter):hover {
+	border-color: var(--accent);
+}
+
+html .wrapper .field-input::placeholder {
+	color: var(--muted);
+	opacity: 1;
+}
+
+@media (forced-colors: active) {
+	.wrapper :is(a, button, input, select, textarea, summary):focus-visible {
+		outline-color: Highlight;
+	}
+
+	.wrapper :is(.btn, .theme-btn, .field-input, .topic-filter),
+	.wrapper .tag-chip {
+		border-color: ButtonText;
+	}
+
+	.wrapper :is(.theme-btn.active, .topic-filter[aria-pressed='true']),
+	.wrapper .doc-nav a[aria-current='page'] {
+		outline: 2px solid Highlight;
+	}
+}

@@ -18,7 +18,10 @@
 <Seo
 	title={t('public.tag.seoTitle', { tag: data.tag })}
 	description={t('public.tag.seoDescription', { tag: data.tag })}
-	canonical="{data.siteBase}/tags/{encodeURIComponent(data.tag)}"
+	canonical="{data.siteBase}/tags/{encodeURIComponent(data.tag)}{data.page > 1
+		? `?page=${data.page}`
+		: ''}"
+	type="website"
 />
 
 <DocShell

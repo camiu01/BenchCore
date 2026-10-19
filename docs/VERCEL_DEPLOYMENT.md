@@ -49,6 +49,10 @@ Set these environment variables for the intended deployment environments:
 | `DEPLOYMENT_TARGET` | `vercel` |
 | `SCHEDULER_ENABLED` | `false` |
 | `DATABASE_URL` | Private PostgreSQL connection URL, TLS enabled, preferably the provider's pooled endpoint |
+| `DATABASE_POOL_MODE` | `transaction` (Vercel default), disables prepared statements for PgBouncer/Neon transaction pooling |
+| `DATABASE_POOL_MAX` | Optional integer 1–20; default 3 per Vercel instance, 10 for standalone Node |
+| `DATABASE_POOL_IDLE_SECONDS` | Optional integer 1–600; default 10 on Vercel, 30 on Node |
+| `DATABASE_POOL_LIFETIME_SECONDS` | Optional integer 30–3600; default 300 on both targets |
 | `SITE_URL` | Exact canonical HTTPS origin, no path |
 | `PUBLIC_SITE_URL` | Same canonical HTTPS origin |
 | `PUBLIC_API_URL` | Optional standalone Node/development setting; Vercel server calls use the injected binding instead |
@@ -120,7 +124,7 @@ chosen port first. Do not use ports 3000/3001 for this repository.
 - Scheduling is temporarily disabled on Vercel. Scheduled drafts remain private;
   the editor preserves their dates but does not offer new schedules. Publish
   manually. No cron or request-triggered publication is installed.
-- PostgreSQL pools use three connections per Function instance. Provider pooling
+- PostgreSQL pools default to three connections per Function instance. Provider pooling
   is still needed as instances scale; the in-memory rate limiter is per instance,
   not a shared production perimeter. Internal calls can share a transport-peer
   quota; arbitrary forwarded-IP headers are not trusted. Add platform-level abuse controls before
@@ -140,3 +144,25 @@ chosen port first. Do not use ports 3000/3001 for this repository.
 Offline tests exercise signatures and protocol behavior but do **not** replace
 a real browser upload against your configured bucket. No R2 account credentials
 or Vercel project deployment are included in this repository.
+
+## Deployment parity gates
+
+`pnpm test:e2e` runs production frontend browser checks with disposable memory
+repositories and no configured database, SMTP or R2 access. CI runs this suite
+twice: the Node HTTP API and the Vercel Node handler through its Fetch adapter.
+This verifies UI/API transport behavior, not Vercel's hosted routing, scaling,
+TLS, provider pooling or cold-start latency. The frontend fixture uses the Node
+adapter in both runs; the actual Vercel frontend remains a build/hosting gate.
+There is no Edge runtime target: both Vercel services require Node.js 24.
+
+Liveness does not initialize database/media dependencies. Concurrent readiness
+requests share one in-flight schema check, but neither success nor failure is
+cached after it completes. The application and pool are reused on warm calls.
+Use `DATABASE_POOL_MODE=transaction` on standalone Node too when connecting to
+a transaction pooler. Migrations need a provider-approved direct/session
+endpoint configured separately by the operator; no endpoint is provisioned or
+rewritten automatically.
+
+Full parity remains blocked on the intentionally disabled Vercel scheduler and
+process-local quotas. Before closing this gate, measure cold/warm latency on the
+configured deployment and verify pooled PostgreSQL under concurrent instances.

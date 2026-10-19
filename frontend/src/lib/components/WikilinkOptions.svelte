@@ -10,10 +10,20 @@
 </script>
 
 {#if matches.length}
-	<div class="wikilink-suggestions" role="listbox" aria-label={t('editor.wikilink.suggestions')}>
+	<p id="wikilink-match-status" class="sr-only" role="status">
+		{t('editor.wikilink.suggestions')}: {matches[active]?.title}
+	</p>
+	<div
+		id="wikilink-options"
+		class="wikilink-suggestions"
+		role="listbox"
+		aria-label={t('editor.wikilink.suggestions')}
+	>
 		{#each matches as post, index (post.slug)}
 			<button
 				type="button"
+				id={`wikilink-option-${index}`}
+				tabindex="-1"
 				role="option"
 				aria-selected={index === active}
 				class:active={index === active}

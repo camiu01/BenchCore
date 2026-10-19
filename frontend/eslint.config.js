@@ -31,6 +31,13 @@ export default [
 		}
 	},
 	{
-		ignores: ['.svelte-kit/', '.vercel/', 'build/', '.pnpm-store/']
+		ignores: [
+			'.svelte-kit/',
+			'.vercel/',
+			'build/',
+			'.pnpm-store/',
+			'test-results/',
+			'playwright-report/'
+		]
 	}
 ];

@@ -4,6 +4,7 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="theme-color" content="#f5f2ea" />
 		<script nonce="%sveltekit.nonce%">
 			try {
 				const stored = localStorage.getItem('site-theme');
@@ -14,6 +15,13 @@
 			} catch {
 				document.documentElement.setAttribute('data-theme', 'light');
 			}
+			const theme = document.documentElement.getAttribute('data-theme');
+			document
+				.querySelector('meta[name="theme-color"]')
+				.setAttribute(
+					'content',
+					theme === 'dark' ? '#15181c' : theme === 'oled' ? '#000000' : '#f5f2ea'
+				);
 		</script>
 		%sveltekit.head%
 	</head>

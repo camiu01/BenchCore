@@ -2,6 +2,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import DocShell from '../../../lib/components/DocShell.svelte';
+	import Seo from '../../../lib/components/Seo.svelte';
 	import { t } from '../../../lib/i18n/t.svelte.js';
 	import type { ActionData } from './$types';
 
@@ -9,6 +10,8 @@
 	let busy = $state(false);
 	const nav = $derived([{ href: '/admin', label: t('vault.back') }]);
 </script>
+
+<Seo title={t('vault.title')} description={t('vault.help')} type="website" noindex />
 
 <DocShell
 	docId="FORM: OBSIDIAN // REF: IMPORT"

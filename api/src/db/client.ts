@@ -5,6 +5,7 @@
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema.js';
+import { poolSettings } from './pool-settings.js';
 
 /**
  * @brief The application database handle type.
@@ -24,9 +25,7 @@ export function getDb(): AppDb {
 		throw new Error('DATABASE_URL is not set');
 	}
 	if (cached === null) {
-		const serverless = process.env['VERCEL'] === '1' || process.env['DEPLOYMENT_TARGET'] === 'vercel';
-		client = postgres(url, { connect_timeout: 5, connection: { statement_timeout: 10_000 },
-			...(serverless ? { max: 3, idle_timeout: 10, max_lifetime: 300, prepare: false } : {}) });
+		client = postgres(url, poolSettings(process.env));
 		cached = drizzle(client, { schema });
 	}
 	return cached;

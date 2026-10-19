@@ -3,9 +3,10 @@
 
 # Testing
 
-Quality gates behind BENCHCORE. Every suite below lives in `api/tests/` or
-`frontend/tests/` mirroring `src/`, service tests run against in-memory
-repositories, and CI in `.github/` runs the same gates.
+Quality gates behind BENCHCORE. Unit suites live in `api/tests/` and
+`frontend/tests/`, browser journeys in `frontend/e2e/`, and packaging checks in
+`scripts/`. Service tests use in-memory repositories; CI in `.github/` runs
+the automated gates.
 
 ## Required checks
 
@@ -16,19 +17,65 @@ pnpm --filter benchcore-api exec tsc --noEmit
 pnpm check
 pnpm test
 pnpm lint
+pnpm format
 pnpm build
+pnpm build:vercel
+pnpm test:vercel-api
 pnpm release:check
 ```
 
 Use Node.js 24 and pnpm 10.15.0. CI should install with
 `pnpm install --frozen-lockfile` and run API/frontend typechecks, tests,
-frontend lint, and both production builds. A local 0.7.0 version bump does not
-publish anything.
+frontend lint, formatting and production builds. Version metadata checks do not
+publish anything. For current evidence and open operator gates, see
+[0.9.0 preparation](RELEASE_0.9.0.md).
 
 `pnpm check` covers both packages. The explicit API TypeScript command is
 useful for a focused check. Passing a build alone is not a substitute for all gates.
 
 ## Focused tests
+
+### Browser, accessibility and discovery
+
+```sh
+pnpm --filter benchcore-frontend exec playwright install chromium
+pnpm build
+pnpm test:e2e
+```
+
+The browser suite owns a loopback-only listener on `127.0.0.1:5198` and refuses
+to reuse an existing server. It loads compiled production artifacts with
+in-memory repositories, synthetic accounts and temporary local media, never
+the application's `.env` or a live PostgreSQL/SMTP/R2 service.
+`E2E_TARGET=serverless` selects the Vercel API handler plus Fetch adapter; CI
+runs both transports. The frontend uses the Node adapter in both fixture modes,
+not a hosted Vercel deployment.
+
+After `pnpm build`, run both modes in a POSIX shell:
+
+```sh
+E2E_TARGET=node pnpm test:e2e
+E2E_TARGET=serverless pnpm test:e2e
+```
+
+In PowerShell, set `$env:E2E_TARGET = 'node'` or `'serverless'` before each
+`pnpm test:e2e` run. Remove the variable afterward with
+`Remove-Item Env:E2E_TARGET`. Run browser checks before `pnpm build:vercel`,
+which replaces generated frontend output; rebuild with `pnpm build` before
+returning to browser fixtures.
+
+Checks cover every current reader/admin page template in light/dark/OLED at
+390px, automated axe WCAG 2.1 A/AA rules, one main landmark/heading, skip-link
+keyboard navigation and horizontal overflow. Separate journeys exercise real
+login/publishing/logout forms, anonymous draft masking, SSR Open Graph/Twitter
+metadata and XML parsing of RSS/sitemap in Chromium. Unit tests measure actual
+theme-token contrast and reject forbidden XML 1.0 characters.
+Failure traces are retained as CI artifacts.
+
+Automated checks are not a WCAG certification. Screen-reader usability, zoom,
+high-contrast OS modes, content-specific image alternatives, interactive error
+states and hosted services still require manual review. Do not mark hosted
+deployment parity or measured cold-start performance complete from these tests.
 
 Vitest suites live in each package's `tests/` directory:
 

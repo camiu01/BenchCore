@@ -19,6 +19,18 @@ reads the database or the authoring directory.
 [![pnpm](https://img.shields.io/badge/pnpm-10.15.0-yellow.svg)](https://pnpm.io/)
 [![Vitest](https://img.shields.io/badge/Vitest-5.0.3-green.svg)](https://vitest.dev/)
 
+## In progress: 0.9.0
+
+Stabilization work adds bounded PostgreSQL pools, local Node/serverless
+transport parity checks, a three-theme browser accessibility matrix, and
+SSR metadata/feed validation. It also fixes unsaved editor fields resetting
+when the body changes and improves shareable graph navigation.
+
+The workspace version remains **0.8.0**. Version 0.9.0 is not complete:
+hosted deployment/pooling checks, scheduler and quota decisions, manual
+accessibility review, and backup/restore tooling remain open.
+See the [0.9.0 completion checklist](docs/RELEASE_0.9.0.md) and [roadmap](TODO.md).
+
 ## What's new in 0.8.0
 
 Engagement, authentication hardening and public-site completion:

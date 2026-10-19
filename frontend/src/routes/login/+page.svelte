@@ -7,6 +7,10 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	let passwordVisible = $state(false);
+	let errorSummary = $state<HTMLParagraphElement>();
+	$effect(() => {
+		if (form?.error) errorSummary?.focus();
+	});
 
 	const nav = [
 		{ href: '/', label: '[01] index' },
@@ -35,9 +39,6 @@
 				<span class="record-title">{t('auth.login.credentials')}</span>
 				<span class="stamp">{t('auth.login.stamp')}</span>
 			</div>
-			{#if form?.error !== undefined}
-				<p class="error-stamp" role="alert">{form.error}</p>
-			{/if}
 			{#if data.notice}<p class="summary" role="status">{data.notice}</p>{/if}
 			<form method="POST" action="?/login">
 				<input type="hidden" name="next" value={data.next ?? ''} />
@@ -52,6 +53,9 @@
 							maxlength="254"
 							required
 							autocomplete="username"
+							autocapitalize="none"
+							spellcheck={false}
+							aria-describedby={form?.error ? 'login-error' : undefined}
 							value={form?.email ?? ''}
 						/>
 					</div>
@@ -65,6 +69,7 @@
 								type={passwordVisible ? 'text' : 'password'}
 								required
 								autocomplete="current-password"
+								aria-describedby={form?.error ? 'login-error' : undefined}
 							/>
 							<button
 								class="password-toggle"
@@ -105,11 +110,23 @@
 							minlength="6"
 							maxlength="6"
 							autocomplete="one-time-code"
-							aria-describedby="code-help"
+							spellcheck={false}
+							aria-describedby={form?.error ? 'code-help login-error' : 'code-help'}
 						/>
 						<p class="field-help" id="code-help">{t('security.loginCodeHelp')}</p>
 					</div>
 				</div>
+				{#if form?.error !== undefined}
+					<p
+						bind:this={errorSummary}
+						id="login-error"
+						class="error-stamp"
+						role="alert"
+						tabindex="-1"
+					>
+						{form.error}
+					</p>
+				{/if}
 				<div class="btn-row">
 					<button class="btn btn-accent" type="submit">{t('auth.login.submit')}</button>
 					<a class="btn" href="/register">{t('auth.login.createReader')}</a>

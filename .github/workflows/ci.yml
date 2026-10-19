@@ -13,6 +13,44 @@ permissions:
   contents: read
 
 jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [node, serverless]
+    env:
+      E2E_TARGET: ${{ matrix.target }}
+      SITE_URL: http://127.0.0.1:5198
+      PUBLIC_SITE_URL: http://127.0.0.1:5198
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.0
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter benchcore-frontend exec playwright install --with-deps chromium
+      - name: Build production Node frontend and API fixture
+        run: pnpm build
+      - name: Browser journeys, accessibility, SSR metadata and XML
+        run: pnpm test:e2e
+      - name: Save failure traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-${{ matrix.target }}-traces
+          path: frontend/test-results
+          retention-days: 7
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 15

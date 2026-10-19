@@ -1,6 +1,7 @@
 <!-- @file +page.svelte @brief Preview-first newsletter drafts with deliberate manual batch approval. -->
 <script lang="ts">
 	import DocShell from '../../../lib/components/DocShell.svelte';
+	import Seo from '../../../lib/components/Seo.svelte';
 	import { t } from '../../../lib/i18n/t.svelte.js';
 	import type { PageData, ActionData } from './$types';
 	let { data, form }: { data: PageData; form?: ActionData } = $props();
@@ -9,6 +10,13 @@
 		{ href: '/newsletter', label: t('newsletter.subscribe') }
 	]);
 </script>
+
+<Seo
+	title={t('newsletter.title')}
+	description={t('newsletter.adminIntro')}
+	type="website"
+	noindex
+/>
 
 <DocShell
 	title={t('newsletter.title')}

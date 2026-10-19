@@ -66,6 +66,7 @@ html .wrapper {
 }
 
 .wrapper .record-title {
+	margin: 0;
 	font-size: 18px;
 	line-height: 1.5;
 	letter-spacing: 0.3px;
@@ -294,6 +295,11 @@ html .wrapper {
 	outline-offset: 3px;
 }
 
+.cookie-notice :is(a, button):focus-visible {
+	outline: 3px solid var(--accent);
+	outline-offset: 3px;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.wrapper .btn,
 	.topic-card {
@@ -308,18 +314,28 @@ html .wrapper {
 
 .skip-link {
 	position: absolute;
-	top: 8px;
-	left: 8px;
-	z-index: 20;
-	padding: 12px 16px;
-	background: var(--sheet-bg);
-	color: var(--ink);
-	border: 2px solid var(--accent);
-	transform: translateY(-200%);
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
 }
 
 .skip-link:focus {
-	transform: translateY(0);
+	position: static;
+	display: block;
+	width: fit-content;
+	max-width: 100%;
+	height: auto;
+	margin-bottom: 16px;
+	padding: 12px 16px;
+	overflow: visible;
+	clip-path: none;
+	white-space: normal;
+	background: var(--sheet-bg);
+	color: var(--ink);
+	border: 2px solid var(--accent);
 }
 
 #main-content {

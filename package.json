@@ -27,6 +27,7 @@
 		"test:beta": "node scripts/test-beta.mjs",
 		"test:bundle": "node scripts/test-beta.mjs --bundle",
 		"test:vercel-api": "node scripts/test-vercel-api.mjs",
+		"test:e2e": "pnpm --filter benchcore-frontend test:e2e",
 		"check": "pnpm -r check && pnpm check:runtime",
 		"lint": "pnpm --filter benchcore-frontend lint",
 		"format": "pnpm --filter benchcore-frontend format",

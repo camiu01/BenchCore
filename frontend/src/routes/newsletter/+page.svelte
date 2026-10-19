@@ -1,11 +1,19 @@
 <!-- @file +page.svelte @brief Explicit opt-in newsletter subscription, separate from account creation. -->
 <script lang="ts">
 	import DocShell from '../../lib/components/DocShell.svelte';
+	import Seo from '../../lib/components/Seo.svelte';
 	import { t } from '../../lib/i18n/t.svelte.js';
 	import type { PageData, ActionData } from './$types';
 	let { data, form }: { data: PageData; form?: ActionData } = $props();
 	const nav = $derived([{ href: '/', label: t('public.nav.index') }]);
 </script>
+
+<Seo
+	title={t('newsletter.title')}
+	description={t('newsletter.intro')}
+	canonical="{data.siteBase}/newsletter"
+	type="website"
+/>
 
 <DocShell
 	title={t('newsletter.title')}

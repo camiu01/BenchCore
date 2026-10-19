@@ -1,5 +1,6 @@
 <!-- @file PostEditor.svelte @brief Engineering-log page and presentation component. -->
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { EditorValues } from '../server/editor-values.js';
 	import { t } from '../i18n/t.svelte.js';
 	import DirectUpload from './DirectUpload.svelte';
@@ -20,7 +21,6 @@
 		insertEditorWikilink,
 		type WikilinkSuggestion
 	} from '../wikilink-suggestions.js';
-
 	interface Props {
 		values: EditorValues;
 		savedValues?: EditorValues;
@@ -32,7 +32,6 @@
 		schedulerEnabled?: boolean;
 		wikilinkSuggestions?: WikilinkSuggestion[];
 	}
-
 	let {
 		values,
 		savedValues = values,
@@ -53,7 +52,15 @@
 	const editingMedia = $derived(uploadingImages || removingImages);
 	let imageContent = $state<string | null>(null);
 	let imageCover = $state<string | null>(null);
+	let draft = $state(
+		untrack(() => ({
+			...values,
+			category: values.category ?? '',
+			audience: values.audience ?? 'public'
+		}))
+	);
 	$effect(() => {
+		draft = { ...values, category: values.category ?? '', audience: values.audience ?? 'public' };
 		imageContent = values.content;
 		imageCover = values.coverImage;
 	});
@@ -72,7 +79,6 @@
 		uploadingImages = busy;
 		wikiMatches = [];
 	}
-
 	/** @brief Inserts an uploaded image and advances the batch cursor. @param url Media URL. @param file Uploaded file. @return Nothing. */
 	function attachImage(url: string, file: File): void {
 		uploadCursor = insertUploadedImage(contentInput, coverInput, url, uploadCursor, file.name);
@@ -82,7 +88,6 @@
 		removeImageFromEditor(contentInput, coverInput, key);
 		imageUploader?.forgetImage(key);
 	}
-
 	/** @brief Allows file drops onto the editor. @param event Drag event. @return Nothing. */
 	function handleImageDrag(event: DragEvent): void {
 		if (!directUploads || !event.dataTransfer?.types.includes('Files')) return;
@@ -188,7 +193,7 @@
 			<div class="field-row">
 				<div>
 					<label class="field-label" for="title">{t('editor.field.title')}</label>
-					<input class="field-input" id="title" name="title" required value={values.title} />
+					<input class="field-input" id="title" name="title" required bind:value={draft.title} />
 				</div>
 				<div>
 					<label class="field-label" for="slug">{t('editor.field.slug')}</label>
@@ -197,7 +202,7 @@
 						id="slug"
 						name="slug"
 						required
-						value={values.slug}
+						bind:value={draft.slug}
 						aria-describedby="slug-help"
 					/>
 					<span class="field-help" id="slug-help">{t('editor.field.slugHelp')}</span>
@@ -209,7 +214,7 @@
 					class="field-input"
 					id="description"
 					name="description"
-					value={values.description}
+					bind:value={draft.description}
 					aria-describedby="description-help"
 				/>
 				<span class="field-help" id="description-help">{t('editor.field.descriptionHelp')}</span>
@@ -217,27 +222,21 @@
 			<div class="field-row">
 				<div>
 					<label class="field-label" for="status">{t('editor.field.status')}</label>
-					<select class="field-input" id="status" name="status">
+					<select class="field-input" id="status" name="status" bind:value={draft.status}>
 						{#each statusLabels as status (status.value)}
-							<option value={status.value} selected={values.status === status.value}
-								>{t(status.label)}</option
-							>
+							<option value={status.value}>{t(status.label)}</option>
 						{/each}
 					</select>
 					<label class="field-label" for="audience">{t('editor.field.audience')}</label>
-					<select class="field-input" id="audience" name="audience">
-						<option value="public" selected={(values.audience ?? 'public') === 'public'}
-							>{t('editor.audience.public')}</option
-						>
-						<option value="readers" selected={values.audience === 'readers'}
-							>{t('editor.audience.readers')}</option
-						>
+					<select class="field-input" id="audience" name="audience" bind:value={draft.audience}>
+						<option value="public">{t('editor.audience.public')}</option>
+						<option value="readers">{t('editor.audience.readers')}</option>
 					</select>
 				</div>
 				<div>
-					<CategoryField value={values.category ?? ''} />
+					<CategoryField bind:value={draft.category} />
 					<label class="field-label" for="tags">{t('editor.field.tags')}</label>
-					<input class="field-input" id="tags" name="tags" value={values.tags} />
+					<input class="field-input" id="tags" name="tags" bind:value={draft.tags} />
 				</div>
 			</div>
 			<div class="field-row">
@@ -254,7 +253,7 @@
 						class="field-input"
 						id="cover_image"
 						name="cover_image"
-						value={values.coverImage}
+						bind:value={draft.coverImage}
 						readonly={removingImages}
 						oninput={(event) => {
 							imageCover = event.currentTarget.value;
@@ -288,6 +287,12 @@
 						class:dragging-images={draggingImages}
 						id="content"
 						name="content"
+						bind:value={draft.content}
+						aria-autocomplete="list"
+						aria-haspopup="listbox"
+						aria-controls={wikiMatches.length ? 'wikilink-options' : undefined}
+						aria-activedescendant={wikiMatches.length ? `wikilink-option-${wikiActive}` : undefined}
+						aria-describedby={wikiMatches.length ? 'wikilink-match-status' : undefined}
 						readonly={editingMedia}
 						ondragover={handleImageDrag}
 						ondragleave={() => {
@@ -296,8 +301,7 @@
 						ondrop={handleImageDrop}
 						oninput={updateWikiMatches}
 						onclick={updateWikiMatches}
-						onkeydown={handleWikiKeydown}>{values.content}</textarea
-					>
+						onkeydown={handleWikiKeydown}></textarea>
 					<WikilinkOptions matches={wikiMatches} active={wikiActive} onselect={insertWikilink} />
 				</div>
 			</div>

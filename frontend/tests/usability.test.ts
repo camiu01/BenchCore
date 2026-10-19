@@ -9,6 +9,7 @@ import Posts from '../src/routes/posts/+page.svelte';
 import Topics from '../src/routes/tags/+page.svelte';
 import Register from '../src/routes/register/+page.svelte';
 import Login from '../src/routes/login/+page.svelte';
+import WikilinkOptions from '../src/lib/components/WikilinkOptions.svelte';
 import AdminTags from '../src/routes/admin/tags/+page.svelte';
 import { actions as loginActions } from '../src/routes/login/+page.server.js';
 
@@ -41,6 +42,16 @@ const posts = {
 };
 
 describe('reader usability', () => {
+	it('identifies the active wikilink option and announces its title', () => {
+		const { body } = render(WikilinkOptions, {
+			props: { matches: [{ slug: 'alpha', title: 'Alpha' }], active: 0, onselect: () => {} }
+		});
+		expect(body).toContain('id="wikilink-options"');
+		expect(body).toContain('id="wikilink-option-0"');
+		expect(body).toContain('aria-selected="true"');
+		expect(body).toContain('role="status"');
+	});
+
 	it('uses recognizable destination names while keeping custom navigation labels', () => {
 		expect(navigationLabel('/posts', '[02] records')).toBe('Posts');
 		expect(navigationLabel('/graph?focus=alpha', '[04] graph')).toBe('Connections');
@@ -119,6 +130,10 @@ describe('reader usability', () => {
 		});
 		expect(body).toContain('role="alert"');
 		expect(body).toContain('Sign-in failed');
+		expect(body).toContain('id="login-error"');
+		expect(body).toContain('aria-describedby="login-error"');
+		expect(body).toContain('code-help login-error');
+		expect(body).toContain('tabindex="-1"');
 	});
 
 	it('gives readers a useful sign-in recovery message during API downtime', async () => {

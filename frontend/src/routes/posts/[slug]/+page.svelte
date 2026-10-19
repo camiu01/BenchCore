@@ -43,6 +43,8 @@
 	description={data.post.description || data.post.title}
 	{canonical}
 	image={data.coverAbsolute}
+	publishedTime={data.post.publishedAt}
+	modifiedTime={data.post.updatedAt}
 />
 
 <DocShell
@@ -115,7 +117,7 @@
 			{:else}
 				{#if cover !== null}
 					<figure class="cover-figure">
-						<img src={cover} alt={data.post.title} class="cover-image" />
+						<img src={cover} alt={data.post.title} class="cover-image" width="1200" height="675" />
 					</figure>
 				{/if}
 				<PostOutline headings={outline.headings} />
