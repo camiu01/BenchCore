@@ -10,7 +10,9 @@ Editorial workflow behind BENCHCORE. Every screen below lives in
 
 ## Access and navigation
 
-Bootstrap an admin with `pnpm seed`, sign in at `/login`, and open `/admin`.
+Provision an admin with `pnpm user:create` using private stdin, sign in at
+`/login`, and open `/admin`. `pnpm seed` is an alternative that also imports
+authoring files and can overwrite database posts.
 The dashboard lists posts including drafts and archived records. Search titles
 or slugs across the complete archive and filter by status. Results are paginated
 at 25 posts per page; status counts cover all search matches, not just the page.
@@ -22,7 +24,8 @@ view approves, rejects, reopens or deletes reader responses.
 Admin routes resolve the browser session through the API. Redirects and page
 guards are convenience controls; the API also requires a session for protected
 operations. Public reader registration and Zoho-backed password recovery are
-available when their deployment settings are configured.
+available on the wired API entrypoints when configured. The unified `pnpm start`
+runtime does not currently wire password recovery or newsletter services.
 
 ## Editing
 
@@ -165,7 +168,9 @@ key against a new reference added after reference cleanup.
 - Add meaningful alt text rather than leaving `![](...)` empty.
 - Use the returned `/api/media/<key>` URL for Markdown and cover images.
 - Remove private content and sensitive image metadata before uploading.
-- Uploading does not publish the post, but the asset itself is public by key.
+- Uploading does not publish the post. Unreferenced uploads and images with
+  public-audience saved uses are public by key; exclusively reader-audience
+  saved uses require a reader/admin session.
 - Switching media providers does not migrate existing uploaded objects.
 - Deleting a post is not guaranteed to delete its images.
 

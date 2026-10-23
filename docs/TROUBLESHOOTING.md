@@ -50,7 +50,7 @@ pnpm as root. Existing versioned artifacts are intentionally not overwritten.
 
 ## Login fails or cookie disappears
 
-- Seed the intended database with the intended email.
+- Provision an account in the intended database with private-stdin `pnpm user:create`.
 - Existing users are not password-reset by `pnpm seed`.
 - Production Secure cookies require HTTPS at the browser-facing origin.
 - Check that SvelteKit forwards API Set-Cookie and subsequent session cookies.
@@ -63,6 +63,8 @@ For password recovery failures, verify `ZOHO_SMTP_USER`,
 two-factor authentication need a Zoho app password. The request intentionally
 returns the same result for existing and unknown accounts, so inspect delivery
 status without logging reset URLs or tokens. Do not repeatedly re-seed.
+The unified `pnpm start` runtime does not wire recovery delivery. Valid SMTP
+settings alone cannot enable it there; standalone API and Vercel do wire it.
 
 ## Mutation returns 403
 
@@ -93,6 +95,9 @@ future posts should be absent; masked 404 is intentional.
 For a scheduled draft, ensure the API process is running, the schedule is due,
 the job has had a subsequent minute tick, and the clock is correct.
 Check the admin record, not only an old cached browser tab.
+Vercel installs no scheduler; Node scheduling can be disabled with
+`SCHEDULER_ENABLED=false`. Guest frontend reads can remain cached for 15 seconds
+by default (`API_GUEST_CACHE_MS`); authenticated requests bypass that cache.
 
 Backlinks only include public source posts. An unpublished referencing note
 must not appear as a backlink.
@@ -127,6 +132,10 @@ does not imply an available history/restore feature.
 - Local mode requires both image bytes and JSON sidecar in `MEDIA_DIR`.
 - Verify persistent paths, permissions, and available disk space.
 - Database mode requires its tables/migrations and accessible blobs.
+- Reader-only saved uses require a reader/admin session when there are no
+  public-audience uses. Unreferenced uploads remain public by key.
+- R2 needs the configured private bucket, exact-origin PUT CORS, and completion
+  checks; unified `pnpm start` supports only local/database storage.
 - Check CSP and browser network errors without disabling all security headers.
 
 PNG/JPEG/WebP/GIF only, decoded maximum 5 MiB. Base64 transport is larger than

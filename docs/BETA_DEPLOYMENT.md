@@ -4,7 +4,7 @@
 
 **Bench-testing, Embedded Networks, & Circuit Hacks: Centralized Open-source Research Engine**
 
-Version **0.7.0** delivers the frontend and API as one Node.js service.
+The Node delivery path combines frontend and API as one Node.js service.
 Public pages and `/api/*` share one origin and port, **5180** by default.
 Only a random loopback port is used internally for SSR calls. No second public
 API port, container registry or container image is needed.
@@ -58,7 +58,7 @@ pnpm release:check
 pnpm release:package
 ```
 
-The directory `artifacts/benchcore-0.7.0` is allowlisted: compiled API,
+The directory `artifacts/benchcore-<version>` is allowlisted: compiled API,
 frontend build, runtime, migrations, production dependencies, license,
 changelog and this guide. It excludes `.env`, authoring content, uploaded media,
 preview accounts, screenshots, `.git`, tests and development dependencies.
@@ -166,8 +166,17 @@ change them before exposing the site. The account migration preserves existing
 roles and valid pre-migration sessions; it rejects duplicate case-folded emails
 instead of merging identities. Resolve collisions before retrying migrations.
 
-This release has **no email verification, CAPTCHA, MFA or account deletion
-workflow**. Password-reset delivery is available when Zoho Mail is configured.
+Public account registration has **no email verification, external CAPTCHA, or
+account deletion workflow**. Optional administrator TOTP is implemented; see
+[setup and offline recovery](RELEASE_0.8.0.md). It requires a stable
+`AUTH_TOTP_KEY`; readers do not have a TOTP enrollment workflow.
+
+The unified `pnpm start` entrypoint currently does **not** wire password-reset
+delivery or newsletter dependencies. SMTP configuration alone does not enable
+them there. The standalone API and Vercel entrypoints do wire these services;
+see [email configuration](DEVELOPMENT.md#optional-email). This is an entrypoint
+implementation gap, not a recommended production workaround.
+
 Email remains a login identifier, not proof of
 mailbox ownership. Add perimeter abuse protection if public registration attracts
 spam. Never rely on in-memory quotas as distributed multi-instance enforcement.
@@ -196,3 +205,9 @@ spam. Never rely on in-memory quotas as distributed multi-instance enforcement.
 The legacy `beta:*` command names and this guide's filename remain compatible.
 See [0.7.0 preparation](RELEASE_0.7.0.md) for maintenance safety and local versus
 remote validation evidence.
+
+Current workspace metadata is 0.8.0, with stabilization tracked in
+[0.9.0 preparation](RELEASE_0.9.0.md). Example older tags are illustrative,
+not evidence of a published release. This guide describes configured delivery
+and operator procedures; host installation and restore verification are not
+established by static configuration.

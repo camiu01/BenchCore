@@ -25,7 +25,7 @@ claim of an external audit or a security certification.
 | Session tokens | HttpOnly cookie to API; only hash persisted |
 | Unpublished content | Authenticated admin versus public repository/DTO paths |
 | Published HTML | Untrusted Markdown to sanitizer to browser rendering |
-| Uploaded files | Authenticated input to validated key/provider to public bytes |
+| Uploaded files | Administrator input to validated key/provider; saved audience references govern reads |
 | Database | Services to repository implementations; no browser SQL access |
 | Secrets/backups | Operator environment and protected storage, outside Git |
 | Availability | Public HTTP and costly rendering/auth/storage operations |
@@ -50,7 +50,7 @@ administrator from reading disk/database contents.
 
 | Threat | Intended control | Residual risk/operator action |
 |---|---|---|
-| Credential theft or guessing | scrypt hashes, timing-safe verification, login limits, HTTPS | No claimed MFA; use a unique strong password and protect operator access |
+| Credential theft or guessing | scrypt hashes, timing-safe verification, login limits, HTTPS; optional administrator TOTP | TOTP needs a stable operator encryption key and offline recovery; readers have no factor enrollment |
 | Session spoofing | Cryptographic random tokens, hash lookup, expiry, HttpOnly/Secure/Lax cookies | Stolen cookies remain sensitive; revoke sessions after compromise |
 | Cross-site mutation | Exact Origin allowlist on API writes and trusted server-action forwarding | Origin is not auth; non-browser clients can supply it |
 | Draft disclosure | Central visibility rules and masked public 404 | Verify every new surface: search/counts/backlinks/feed/sitemap |
@@ -64,14 +64,18 @@ administrator from reading disk/database contents.
 | Supply-chain compromise | Pinned versions, lockfile, review and CI | Pinning does not prove a dependency is safe |
 | Sensitive logging | No application analytics; operator redaction policy | Infrastructure can still record IPs, paths, and timings |
 
-## Media is public
+## Media access boundaries
 
-`GET /api/media/:key` is public. A difficult-to-guess key is not an authorization
-scheme. Uploading to a draft does not create a private attachment.
+`GET /api/media/:key` checks saved image references. Exclusively reader-audience
+uses require a reader/admin session; unreferenced uploads and images with any
+public-audience use remain public by key. Draft status does not itself protect
+attachments. A difficult-to-guess key is not an authorization scheme.
 
-Long-lived caches may retain deleted images. Do not upload secrets or personal
-documents that require revocation guarantees. Database media changes storage
-location, not public access semantics.
+Application responses prevent shared CDN caching and recheck audience before
+local/database conditional responses. Downloaded bytes and already issued
+short-lived R2 URLs cannot be recalled. Do not upload secrets or personal documents
+that require revocation guarantees. Database media changes storage location,
+not access policy.
 
 ## Scheduling and revisions
 

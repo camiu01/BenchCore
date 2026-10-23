@@ -37,28 +37,106 @@ POSIX equivalent: `cp .env.example .env`.
 `.env` is private configuration, not a committed source artifact.
 API development, migrate, import and
 seed/account-creation scripts load the root `.env` through Node's optional
-environment-file flag. Vite reads only the frontend's three server-side URL
-settings from that file. Exported process variables take precedence.
+environment-file flag. Vite reads `SITE_URL`, `PUBLIC_SITE_URL`,
+`PUBLIC_API_URL`, and `R2_ACCOUNT_ID` from the root environment files.
+Exported process variables take precedence.
 Production frontend startup uses its own launch environment; copying `.env`
 does not export it into your terminal.
 
-| Variable | Consumer | Purpose |
-|---|---|---|
-| `DATABASE_URL` | API and database scripts | PostgreSQL connection string |
-| `PORT` | API/frontend runtime separately | Listening port for that process |
-| `PUBLIC_API_URL` | Frontend server | API base reachable from the frontend server |
-| `PUBLIC_SITE_URL` | Frontend server | External canonical URL for SEO/feeds |
-| `SITE_URL` | API security configuration | Trusted external site origin |
-| `API_ALLOWED_ORIGINS` | API security configuration | Comma-separated exact trusted origins; overrides `SITE_URL` |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`, `ADMIN_USERNAME` | Seed script | Initial admin bootstrap; username optional |
-| `BODY_SIZE_LIMIT` | Adapter-node | Set to `8M` for supported multipart image uploads |
-| `CONTENT_DIR` | Import/seed scripts | Authoring directory override |
-| `MEDIA_STORAGE` | API | `local`, `database` or private `r2` storage selection |
-| `MEDIA_DIR` | Local media provider | Persistent filesystem media directory |
-| `NODE_ENV` | Runtime | Production cookie/security behavior |
+### Core settings
 
-Do not treat an unused placeholder secret as active cookie signing. Sessions
-are opaque random tokens verified by looking up their stored hashes.
+All variables below are consumed server-side. URL values can appear in rendered
+links; `PUBLIC_` does not make credentials safe to expose. There is no need to
+export any database, SMTP, TOTP, or R2 secret to browser code.
+
+| Variable | Required / default | Purpose and constraints |
+| --- | --- | --- |
+| `DATABASE_URL` | Required for persistent API and data scripts; no default | PostgreSQL connection string. Provision the database separately; use certificate-verified TLS for remote hosts. |
+| `PORT` | Optional: standalone API `5181`, unified Node `5180` | Listener port. Vite has its own dev-server port; `PORT` does not configure it. |
+| `HOST` | Optional: unified Node `0.0.0.0`; standalone API leaves the host unspecified | Bind address. Set `127.0.0.1` behind a local reverse proxy. |
+| `SITE_URL` | Required explicitly for public hosting | Canonical browser origin, no credentials/path/query. Unified Node falls back to `PUBLIC_SITE_URL`, then local `http://localhost:5180`; production requires an explicit site setting and HTTPS for non-local origins. |
+| `PUBLIC_SITE_URL` | Optional fallback for `SITE_URL` | Frontend SEO helper defaults to `http://localhost:5173`; unified Node overrides both site variables with its validated origin. |
+| `PUBLIC_API_URL` | Optional: `http://localhost:5181` | Frontend server's standalone API base. Unified Node replaces it with its private loopback address; Vercel uses the service binding instead. |
+| `API_ALLOWED_ORIGINS` | Optional for standalone API/Vercel | Exact comma-separated origins; precedence over `SITE_URL`, then `PUBLIC_SITE_URL`. Without any setting, development accepts localhost ports 5173/5180/5181; production fails configuration. Unified Node instead permits only its canonical origin. |
+| `NODE_ENV` | Set `production` for deployment | Standalone API/Vercel use it for Secure cookies. Unified Node derives cookie security from its configured HTTPS origin. |
+| `BODY_SIZE_LIMIT` | Unified Node defaults to `8M`; set explicitly for standalone adapter-node | Frontend multipart request cap. It is separate from API JSON/decoded-image limits. |
+| `TRUSTED_PROXY_IPS` | Optional, empty trusted set | Unified Node only: comma-separated exact immediate proxy IPs. Accepts one valid forwarded IP only from a trusted peer; the proxy must overwrite `X-Forwarded-For`. |
+| `SCHEDULER_ENABLED` | Optional: only exact `false` disables the Node timer | Approximately minute-based due-draft publication. Vercel installs no timer regardless of this setting. |
+| `API_GUEST_CACHE_MS` | Optional: `15000`, or `0` in test mode | Frontend process-local cookie-less API read cache; nonnegative milliseconds capped at `60000`. Set `0` to disable. |
+
+`API_PORT` in `.env.example` is **unused** by the standalone entrypoint; use
+`PORT` instead. `AUTH_SESSION_SECRET` is also unused: sessions are random opaque
+tokens authenticated by hash lookup, not signed cookies.
+
+### Database pooling
+
+Optional server-only API settings, validated in `api/src/db/pool-settings.ts`:
+
+| Variable | Default | Accepted values / purpose |
+| --- | --- | --- |
+| `DATABASE_POOL_MODE` | Node `session`; Vercel target `transaction` | `session` enables prepared statements; `transaction` disables them for transaction poolers. |
+| `DATABASE_POOL_MAX` | Node `10`; Vercel target `3` | Integer 1–20, per process/instance, not a deployment-wide limit. |
+| `DATABASE_POOL_IDLE_SECONDS` | Node `30`; Vercel target `10` | Integer 1–600. |
+| `DATABASE_POOL_LIFETIME_SECONDS` | `300` | Integer 30–3600. |
+
+Use a provider-approved migration connection separately when transaction pooling
+does not support migrations. The application does not create a pooler or choose
+an alternate database endpoint.
+
+### Media, authoring, and account setup
+
+| Variable | Required / default | Purpose and constraints |
+| --- | --- | --- |
+| `MEDIA_STORAGE` | Optional: API `local`, or `r2` when `VERCEL=1` | API accepts `local`, `database`, `r2`; local is rejected with `VERCEL=1`. Unified `pnpm start` accepts only `local`/`database`. |
+| `MEDIA_DIR` | Optional: `./data/media` | Local backend only; relative to process working directory. `pnpm dev:api` runs inside `api/`, while root `pnpm start` runs at the repository root. Use an absolute path to share persistent media. |
+| `CONTENT_DIR` | Optional: repository `content/posts` | TOML import/seed directory. Only direct `.md` children are imported. Relative overrides resolve from the script's working directory (`api/` for root pnpm data scripts). |
+| `ADMIN_EMAIL` | Required only by seed | Initial administrator email; existing matches are preserved. |
+| `ADMIN_PASSWORD` | Required only by seed | Initial administrator password; does not reset existing accounts. Also used with `ADMIN_USERNAME` for optional memory-demo admin creation. |
+| `ADMIN_NAME` | Optional: `Admin` in seed | Initial display name. |
+| `ADMIN_USERNAME` | Optional in seed | Validated login name; required with a password for the optional memory-demo administrator. |
+| `AUTH_TOTP_KEY` | Optional, no default | 64 hexadecimal characters, independent random 32-byte encryption key. Keep stable across replicas and backed up separately. Missing configuration disables enrollment, never bypasses an existing factor. |
+
+Prefer `pnpm user:create` with private stdin instead of keeping account passwords
+in environment files. Seed also imports content and can overwrite database edits.
+
+### Optional email
+
+Wired in `api/src/index.ts` and `api/src/serverless/app.ts`, **not** in
+`runtime/server.mjs`. Unified `pnpm start` currently has neither password-reset
+delivery nor newsletter dependencies. These settings alone do not enable them there.
+
+| Variable | Required / default | Purpose and constraints |
+| --- | --- | --- |
+| `ZOHO_SMTP_USER` | Optional; required with SMTP password and site origin for recovery | Zoho EU SMTP login, server-only. |
+| `ZOHO_SMTP_PASSWORD` | Required with SMTP user | Server-only credential/app password. Both SMTP variables absent disables recovery; partial configuration fails startup on wired entrypoints. |
+| `PASSWORD_RESET_FROM` | Optional: SMTP username | Sender address/label; reset links use `SITE_URL`, falling back to `PUBLIC_SITE_URL`. |
+| `NEWSLETTER_ENABLED` | Optional: disabled unless exactly `true` | Explicit activation, independent of recovery configuration. |
+| `NEWSLETTER_TOKEN_KEY` | Required when newsletter enabled | Independent server-only secret, at least 32 characters; changing it invalidates previously issued unsubscribe links. |
+| `NEWSLETTER_FROM` | Optional: SMTP username | Newsletter sender. Enabling delivery also requires both SMTP credentials and a site URL, HTTPS in production. |
+
+SMTP uses authenticated TLS at `smtp.zoho.eu:465`; host/port are not configurable
+variables. Remove the example SMTP assignments from a basic local `.env` unless
+you intend to configure mail. Placeholder credentials are not a working transport.
+See [Newsletter and categories](NEWSLETTER.md) for explicit consent and send limits.
+
+### Vercel and R2
+
+| Variable | Required / default | Purpose and exposure |
+| --- | --- | --- |
+| `DEPLOYMENT_TARGET` | Optional: `vercel` selects that target | Build/runtime target switch, also selects Vercel pool defaults. Unset for normal Node builds. |
+| `VERCEL` | Platform-provided `1` on Vercel | Also selects Vercel behavior; do not rely on local storage there. |
+| `VERCEL_URL` | Optional platform deployment hostname | Validated `<deployment>.vercel.app` hostname; its HTTPS origin is added to the API allowlist. Public hostname, not a credential. |
+| `API_SERVICE_URL` | Required Vercel runtime binding; no default | Injected private API base for frontend server calls. Do not set it manually or expose it in browser bundles. |
+| `R2_ACCOUNT_ID` | Required for R2 | 32 lowercase hexadecimal characters; read by API and frontend build for upload CSP. Account/upload host is intentionally visible to the browser. |
+| `R2_BUCKET` | Required for R2 | Private bucket name; 3–63 lowercase alphanumeric/dash characters. Server configuration, no default. |
+| `R2_ACCESS_KEY_ID` | Required for R2 | Server-only bucket-scoped access key, at least 16 characters. |
+| `R2_SECRET_ACCESS_KEY` | Required for R2 | Server-only S3 secret, at least 32 characters. |
+| `R2_UPLOAD_SECRET` | Required for R2 | Independent server-only upload-ticket signing secret, at least 32 characters. |
+
+Only signed upload/read URLs and tickets are sent to the client, not storage
+credentials. Configure private bucket access, CORS and staging lifecycle separately
+using [Vercel deployment](VERCEL_DEPLOYMENT.md). Changing `R2_ACCOUNT_ID` requires
+rebuilding the frontend CSP.
 
 ### PowerShell example
 

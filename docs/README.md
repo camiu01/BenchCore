@@ -5,9 +5,11 @@
 
 **Bench-testing, Embedded Networks, & Circuit Hacks: Centralized Open-source Research Engine**
 
-Reading paths behind BENCHCORE. Every guide below is implemented in
-`frontend/`, `api/` or `runtime/` and mirrored by the checks in
-[Testing](TESTING.md); [TODO.md](../TODO.md) owns the roadmap.
+BenchCore publishes linked engineering notes through a public reading site and
+an administrator workbench. Start with the [project README](../README.md).
+These guides describe implementation and operator procedures; a documented
+procedure is not evidence that it passed on a deployed host.
+[Testing](TESTING.md) separates checks; [TODO.md](../TODO.md) owns the roadmap.
 
 ## Choose a path
 
@@ -16,7 +18,9 @@ Reading paths behind BENCHCORE. Every guide below is implemented in
 | Deliver a Node release | [Node deployment and CI/CD](BETA_DEPLOYMENT.md), [0.8.0 preparation](RELEASE_0.8.0.md) |
 | Configure two-factor authentication | [0.8.0 setup and recovery](RELEASE_0.8.0.md) |
 | Run the project | [Development](DEVELOPMENT.md), [Troubleshooting](TROUBLESHOOTING.md) |
+| Configure services | [Environment reference](DEVELOPMENT.md#environment), [Vercel and R2](VERCEL_DEPLOYMENT.md) |
 | Write and publish | [Authoring](AUTHORING.md), [Admin & themes](ADMIN_AND_THEMES.md) |
+| Manage categories or opt-in email | [Newsletter and categories](NEWSLETTER.md) |
 | Build an API client | [API](API.md), [Threat model](THREAT_MODEL.md) |
 | Change implementation | [Architecture](ARCHITECTURE.md), [Testing](TESTING.md), [Contributing](../CONTRIBUTING.md) |
 | Deploy or recover data | [Operations](OPERATIONS.md), [Security policy](../SECURITY.md) |
@@ -34,8 +38,11 @@ operational differences. Version bumps do not publish packages, tags,
 releases, or a hosted service automatically.
 
 Revision tables are groundwork, not a revision product. Public moderated comments
-and anonymous likes are available. No email subscriptions, newsletter jobs, multi-user collaboration, or automatic
-revision history is promised by this documentation. Schema presence alone is
+and anonymous likes are available. Optional categories and manual double-opt-in
+newsletters are implemented; actual SMTP validation and activation remain operator
+checks. There is no automatic newsletter job, collaborative editing, or automatic
+revision history. The unified Node entrypoint does not wire newsletter or password
+recovery dependencies; standalone API and Vercel entrypoints do. Schema presence alone is
 not evidence of a working user-facing feature. [TODO.md](../TODO.md) owns the
 roadmap; source and committed migrations own exact implementation details.
 

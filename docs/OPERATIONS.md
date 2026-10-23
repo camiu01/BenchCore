@@ -7,7 +7,7 @@ Runbook behind BENCHCORE. Every procedure below acts on the single-origin
 Node service in `runtime/server.mjs` with PostgreSQL 17 as the stateful
 dependency; the packaged artifact is assembled by `scripts/package-beta.mjs`.
 
-For **0.7.0 single-origin Node deployment**, use
+For single-origin Node deployment, use
 [Node deployment](BETA_DEPLOYMENT.md). The supported deployment is the
 production-only Node artifact, with a separately managed PostgreSQL database.
 For full-app serverless hosting, use [Vercel and private R2](VERCEL_DEPLOYMENT.md);
@@ -17,7 +17,14 @@ its scheduler is temporarily disabled.
 
 The frontend and API share one Node service; this is not a frontend-only static
 deployment. PostgreSQL holds runtime content/users/sessions; local media
-requires durable filesystem storage unless `MEDIA_STORAGE=database` or `r2`.
+requires durable filesystem storage unless `MEDIA_STORAGE=database`.
+The standalone API supports `r2`, but the unified Node runtime currently rejects
+that selection. The documented private-R2 deployment uses Vercel.
+
+The unified runtime also omits password-reset and newsletter dependencies.
+SMTP environment settings do not enable these workflows on `pnpm start`.
+Standalone API and Vercel wire them; see the
+[environment reference](DEVELOPMENT.md#environment).
 
 From a reviewed source checkout:
 
@@ -38,7 +45,7 @@ production credentials. The packaged artifact needs no source build or pnpm.
 - [ ] Set strong, unique database and admin credentials outside Git.
 - [ ] Configure HTTPS at a reverse proxy; redirect public HTTP to HTTPS.
 - [ ] Set `SITE_URL` to the external canonical origin.
-- [ ] Add only necessary exact origins to `API_ALLOWED_ORIGINS`.
+- [ ] For standalone API/Vercel, add only necessary exact origins to `API_ALLOWED_ORIGINS`; unified Node permits only its configured canonical origin.
 - [ ] Proxy pages, `/api/*` and health probes to the same Node listener.
 - [ ] Configure only the immediate proxy addresses in `TRUSTED_PROXY_IPS`.
 - [ ] Run production processes with `NODE_ENV=production`.
@@ -131,6 +138,7 @@ reviewed compatibility plan. Do not invent destructive down migrations.
 |---|---|---|
 | `local` | `MEDIA_DIR`, image bytes and JSON sidecars | Back up database **and** the complete media directory |
 | `database` | PostgreSQL media/blob tables | Include blobs in database dumps; monitor DB/backup growth |
+| `r2` (standalone API/Vercel, not unified Node) | Private bytes, sidecars, and staging objects | Back up published object/sidecar prefixes separately from PostgreSQL; see the Vercel guide |
 
 Changing modes alone does not transfer objects. Test a deliberate copy/verify
 procedure or keep using the existing provider until migration tooling exists.
@@ -138,12 +146,19 @@ Never delete the old store solely because the new provider starts successfully.
 
 ## Backup
 
+The commands below are operator examples, not a verified backup/restore result.
+There is no integrated portable backup/restore CLI. Run drills against isolated
+targets before relying on a recovery plan.
+
 Back up runtime data, not just Git:
 
 - PostgreSQL: posts, source/rendered content, tags, users, sessions, schedules,
   and database-mode media.
 - Local-mode media: image files **and sidecars**.
 - Deployment configuration/secret references, protected separately.
+- `AUTH_TOTP_KEY` separately from PostgreSQL; encrypted factors cannot be
+  decrypted without the original key. Preserve `NEWSLETTER_TOKEN_KEY` if that
+  optional service is used, to keep delivered unsubscribe links valid.
 - Authoring source and the deployed code/migration version.
 
 Protect backups as sensitive data: drafts, emails, hashes, and session hashes

@@ -1,419 +1,370 @@
 <!-- @file README.md -->
-<!-- @brief Project overview, features, quick start, and documentation map. -->
+<!-- @brief Purpose, setup, workflows, configuration, and operational boundaries. -->
 
-# BENCHCORE
+# BenchCore
 
-**Bench-testing, Embedded Networks, & Circuit Hacks: Centralized Open-source Research Engine**
+BenchCore is a self-hosted website for writing and sharing engineering notes.
+It is for authors who want Markdown editing, linked notes, searchable archives,
+and a public reading interface, with optional posts restricted to signed-in readers.
 
-**Markdown authoring. PostgreSQL publishing. An engineering-log interface.**
+The application combines a SvelteKit frontend, a TypeScript HTTP API, and PostgreSQL.
+Administrators manage content and accounts; readers browse and access reader-only posts.
+It is not a bench-testing tool, an encrypted vault, or a collaborative editor.
+Markdown files are an import source, not a live, two-way copy of database content.
 
-BenchCore is a self-hosted research publishing platform with a SvelteKit frontend and a
-standalone TypeScript API. Write Markdown with TOML frontmatter, connect notes
-with Obsidian-style `[[wikilinks]]`, and publish through a session-protected
-admin editor. PostgreSQL is the runtime source of truth; the frontend never
-reads the database or the authoring directory.
+[![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)](LICENSE)
 
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
-[![Node](https://img.shields.io/badge/Node-24-green.svg)](https://nodejs.org/)
-[![pnpm](https://img.shields.io/badge/pnpm-10.15.0-yellow.svg)](https://pnpm.io/)
-[![Vitest](https://img.shields.io/badge/Vitest-5.0.3-green.svg)](https://vitest.dev/)
+[Features](#what-it-does) · [Requirements](#requirements) · [Setup](#build-and-run) · [Use](#controls-and-everyday-use) · [Configuration](#configuration) · [Architecture](#architecture) · [Troubleshooting](#limitations-and-troubleshooting) · [Development](#development)
 
-## In progress: 0.9.0
+## What it does
 
-Stabilization work adds bounded PostgreSQL pools, local Node/serverless
-transport parity checks, a three-theme browser accessibility matrix, and
-SSR metadata/feed validation. It also fixes unsaved editor fields resetting
-when the body changes and improves shareable graph navigation.
+### Available in the source
 
-The workspace version remains **0.8.0**. Version 0.9.0 is not complete:
-hosted deployment/pooling checks, scheduler and quota decisions, manual
-accessibility review, and backup/restore tooling remain open.
-See the [0.9.0 completion checklist](docs/RELEASE_0.9.0.md) and [roadmap](TODO.md).
+Implemented capabilities do not establish production readiness. Workspace packages
+are versioned **0.8.0**; stabilization work for 0.9.0 is still in progress.
 
-## What's new in 0.8.0
+| Feature | Observable behavior |
+| --- | --- |
+| Public reading | Browse posts, tags, categories, related notes, RSS, and a graph of published notes. |
+| Search and filters | Combine full-text search, category, and up to 20 tags with AND/OR; sort by publication, update time, or likes. |
+| Reader accounts | Register as a reader, sign in by username or email, read restricted posts, change passwords, and revoke device sessions. |
+| Administrator workbench | Create, edit, preview, publish, archive, and explicitly delete posts; manage accounts, tags, categories, comments, and security history. |
+| Markdown | Render sanitized Markdown, tables, code, math, wikilinks, backlinks, heading navigation, and reading-time estimates. |
+| Imports | Upsert Markdown/TOML files by slug, or create notes from selected Markdown files and Obsidian ZIPs with an explicit visibility choice. |
+| Publication states | Drafts and archived posts stay out of public routes. Reader-only published posts expose titles but withhold protected content from guests. |
+| Scheduled publication | A persistent API-process job promotes due drafts approximately once per minute unless disabled. |
+| Managed images | Administrators upload PNG, JPEG, WebP, or GIF images up to 5 MiB and use their URLs in posts and covers. |
+| Engagement | Like eligible posts and submit comments; comments require administrator approval before public display. |
+| Account protection | Opaque cookie sessions, global logout, and optional administrator TOTP enrollment with an operator-supplied encryption key. |
+| Presentation | Choose light, dark, or OLED themes and Italian or English interface text. |
 
-Engagement, authentication hardening and public-site completion:
+### Experimental and incompletely validated
 
-- Per-IP/session comment quotas and a first-party honeypot, with administrator approval.
-- Global device logout and password-confirmed administrator TOTP with replay protection.
-- Encrypted factor secrets, explicit offline recovery and `/admin/audit`.
-- Confirmed selected post deletion with transactional security records.
-- Localized 404 recovery, project information, reader guide and privacy pages.
-- Complete footer navigation, RSS discovery and an expanded public sitemap.
+| Feature | Observable behavior |
+| --- | --- |
+| Vercel deployment | Configured frontend/API Node Functions use a private service binding and private R2 uploads. Hosted routing, pooling, and performance remain operator checks; scheduling is disabled. |
+| Email workflows | Standalone API and Vercel entrypoints support Zoho EU password recovery and an explicitly enabled, double-opt-in newsletter. Sends are manual batches of at most five recipients, not publish notifications. Real SMTP validation remains pending. |
+| Unified Node email support | `pnpm start` does not currently wire password recovery or newsletter dependencies. Environment variables alone cannot enable these workflows on this entrypoint. |
 
-Apply the new migration explicitly before deployment. TOTP enrollment needs an
-operator-configured `AUTH_TOTP_KEY`; missing keys never bypass existing factors.
-See [0.8.0 setup, recovery and release gates](docs/RELEASE_0.8.0.md).
-Version tags and hosted releases remain separate operator actions.
-Deployment follows the configured CI/CD.
-The configured database received migration 0007 during a separately authorized
-local startup, not automatically on application boot.
+### Planned or deferred
 
-## Previously in 0.7.0
+The [roadmap](TODO.md) tracks hosted deployment parity, manual accessibility review,
+and portable backup/restore CLI tooling. Revision tables exist, but automatic
+history, diffs, and restoration are not implemented. API v1 stabilization is future
+work, not a compatibility guarantee for the current API.
 
-Stable release of the v0.7.0 milestone: knowledge navigation and media refinement.
+## Requirements
 
-- **Link previews:** hover or focus a wikilink or graph node for a lightweight
-  session-aware preview. Unpublished records stay masked and reader-only bodies
-  stay redacted, with no persistent client preview cache.
-- **Fuzzy suggestions:** accent-insensitive editor completion across slugs,
-  titles and tags, without new dependencies.
-- **Reader navigation:** collapsible heading index from sanitized Markdown
-  headings with stable anchors, fitted graph views and focused neighborhoods.
-- **Archive filters:** combine up to 20 tags with AND/OR, sort by publication,
-  last update or existing likes, and preserve filters across pages. Protected
-  engagement counts and rank stay hidden from guests.
-- **Media lifecycle:** dry-run-first orphan cleanup CLI with bounded batches
-  and saved-reference rechecks, strict 5 MiB direct-upload limits with exact
-  signed length/type and owner-bound completion, immediate local previews with
-  measured progress and reordering, and audience-safe cache controls.
-- **Delivery gates:** stable workspace metadata with exact-tag validation and
-  separate stable/beta approval environments. Packaging and publication remain
-  separate operator actions.
+| Use | Requirements |
+| --- | --- |
+| Visit a deployed site | A browser; no developer tools, database access, or service credentials. |
+| Develop locally | Git, Node.js 24, pnpm 10.15.0, and PostgreSQL 17 for persistent operation. A database-free visual preview is available. |
+| Self-host with Node | Node.js 24, PostgreSQL, HTTPS for public hosting, and persistent media storage. CI assembles Linux x64 archives; local bundles follow the build machine. |
+| Deploy on Vercel | Configured frontend/API services on Node.js 24, external PostgreSQL, and private R2 for the documented direct-upload path. |
+| Enable optional services | Zoho EU SMTP for email; an authenticator and `AUTH_TOTP_KEY` for administrator TOTP. Neither is required for public browsing or basic editing. |
 
-For release checks and the remaining operator gates, see
-[0.7.0 release preparation](docs/RELEASE_0.7.0.md). `pnpm release:check`
-validates workspace versions; `pnpm release:package` builds the versioned Node
-bundle after `pnpm build`. Neither command tags, publishes or deploys.
+GitHub Pages cannot run this backend. See [Node deployment](docs/BETA_DEPLOYMENT.md)
+and [Vercel deployment](docs/VERCEL_DEPLOYMENT.md) for their different requirements.
 
-## Previously in 0.6.0
+## Build and run
 
-**Media management.** The orphan cleanup CLI defaults to dry-run with bounded
-batches and saved-use rechecks; apply mode needs stopped writers and an
-explicit maintenance acknowledgement. Direct uploads keep the allowlisted MIME
-set and the 5 MiB cap with exact signed length/type and owner-bound completion.
+Run commands from the repository root unless stated otherwise. Initialization
+commands below write to your selected database; review the connection first.
 
-**Graph navigation.** Published posts connect through shared tags with
-linear-size hub links for large topic groups, plus topic shortcuts, readable
-graph labels, related-post lists and direct reading links.
+### 1. Prerequisites
 
-**Reader UX.** Shared typography, navigation, topic cards, touch targets,
-keyboard focus and recovery messages were refined; reader and admin pages hold
-at the tested narrow viewport with no horizontal overflow.
+Install Git, Node.js **24**, pnpm **10.15.0**, and PostgreSQL **17**.
+Create a local PostgreSQL database and user with permission to apply migrations.
+The application does not provision PostgreSQL.
 
-**Admin safety.** Title/slug/status filters, explicit delete confirmation,
-image link copy controls with clipboard feedback and a selectable manual
-fallback, and server-side pagination with status counts.
+```sh
+node --version
+pnpm --version
+```
 
-**Vercel and private R2.** Full app and API on Node 24 Vercel Functions with
-no listeners or startup migrations, browser-direct R2 uploads via signed
-length/type with owner-bound tickets and immutable conditional publication,
-and scheduling temporarily disabled on that target.
+For a disposable visual preview without PostgreSQL, use the
+[database-free preview](docs/DEVELOPMENT.md#database-free-visual-preview).
 
-**Online beta.** One public Node service for frontend and `/api/*` on 5180
-with a private loopback SSR bridge, reader-only registration, admin user
-management with last-active-admin protection, own-password changes with global
-revocation, and tag-matched environment-gated prerelease delivery.
-
-The full checklist lives in [TODO.md](TODO.md).
-
-## Features
-
-- **Markdown + TOML** — `+++` frontmatter, validated metadata, sanitized HTML,
-  tables, code blocks, images, excerpts, and reading-time estimates.
-- **Wikilinks & backlinks** — `[[slug]]` and `[[slug|label]]` link notes;
-  backlinks show only visible source posts. Hover or focus a wikilink or graph
-  node for a session-aware preview. The reader includes a heading index.
-- **Public publishing** — home, paginated posts, post detail, tags, and tag
-  archives. Draft, archived, and not-yet-public content stays out of public data.
-- **Search** — `GET /api/posts?search=...`; PostgreSQL generated `tsvector`
-  with the `simple` configuration and a GIN index. Combine tags with AND/OR and
-  sort by publication, updates or existing likes. Editor suggestions match
-  fuzzy titles, slugs and tags.
-- **Admin workbench** — session-protected deck, create/edit/delete posts,
-  write/preview modes, comma-separated tags, and image uploads.
-- **Publishing lifecycle** — draft, published, archived; publication timestamps
-  and a separate scheduled `publishAt` value in the API/admin. The 0.5.0 due
-  publication job runs approximately once per minute.
-- **Media storage seam** — `StorageProvider` isolates callers from the backend;
-  `MEDIA_STORAGE=local|database|r2` selects filesystem images, database blobs or private R2.
-  R2 batches have immediate previews, measured upload progress and attachment
-  reordering. `pnpm media:cleanup` reports orphan counts without deleting;
-  apply mode requires an explicit maintenance acknowledgement.
-- **Authentication** — scrypt password hashes, random session tokens, hashed
-  tokens at rest, HttpOnly cookies, SameSite=Lax, and Secure production cookies.
-- **Database accounts** — username/email login; provision an administrator through
-  private stdin with `pnpm user:create`, without storing account credentials in `.env`.
-- **Security hardening** — exact Origin allowlists, bounded in-memory rate
-  limits, response security headers, and frontend Content Security Policy in
-  the 0.5.0 milestone.
-- **SEO & feeds** — canonical URLs, metadata, sitemap, RSS, and robots routes.
-- **Site information** — project overview, reader guide, privacy and cookie
-  inventory, with localized error recovery and footer navigation.
-- **Three themes** — light, dark, and OLED; CSS tokens, persisted preference,
-  and a pre-paint script to reduce theme flashes.
-- **Self-hosting** — one Node service for frontend and API, with PostgreSQL;
-  explicit migrations, admin bootstrap, and repeatable content import.
-- **Quality gates** — Vitest suites, frontend/API typechecks, frontend lint,
-  and production builds; CI runs the same checks.
-- **No application telemetry** — no built-in analytics, tracking SDKs, or
-  third-party trackers. Hosts and reverse proxies can still log requests.
-
-**Scope:** 0.8.0 is implemented, not a published package or a
-promise of a hosted service. Revision storage is groundwork only: no automatic
-revision capture, history browser, diff, or restore workflow is claimed.
-Basic moderated comments and anonymous likes are implemented. Advanced anti-spam,
-additional second-factor methods, revision workflows and other deferred features are not claimed.
-See [TODO.md](TODO.md) for milestone status.
-
-## One origin
-
-The production runtime combines frontend and backend into one Node service.
-Pages and `/api/*` share the same domain and port. Run `pnpm build`, configure
-the database and trusted origin, then run `pnpm start` on port **5180**.
-`/register` creates readers only; `/account` changes passwords; `/admin/users`
-manages accounts and protects the final active administrator.
-
-[Node deployment](docs/BETA_DEPLOYMENT.md) covers the unified Node artifact,
-GitHub CI/CD, HTTPS hosting, explicit migrations, backups and release limits.
-No GHCR/container images are required. **GitHub Pages cannot run the backend.**
-
-[Vercel deployment](docs/VERCEL_DEPLOYMENT.md) runs independently built frontend
-and API services in one project/domain, with a private runtime binding and R2
-browser-direct uploads. Scheduled publication
-is temporarily disabled on that target; the persistent Node runtime remains available.
-
-## Publishing engine
-
-| Layer | Responsibility |
-|---|---|
-| `api/src/markdown/` | Split `+++` fences, parse TOML, validate with Zod, render and sanitize Markdown |
-| `api/src/posts/` | Publishing rules, timestamps, slug conflicts, imports, public DTOs |
-| `api/src/db/` | Repository contracts, memory test doubles, Drizzle implementations and schema |
-| `api/src/auth/` | Password verification, token generation, session hashing and cookies |
-| `api/src/media/` | Swappable image storage behind `StorageProvider` |
-| `api/src/server.ts` | HTTP boundary and routing; services own business rules |
-| `frontend/src/lib/` | Server-only API clients, SEO URL helpers, components, theme state |
-| `frontend/src/routes/` | Public pages, authentication, guarded admin, feeds and metadata routes |
-
-The database and uploaded media contain runtime state. Import is a deliberate
-upsert by slug, not a live filesystem watcher or two-way editor synchronization.
-Re-importing a file can overwrite later admin edits.
-
-## Milestones
-
-| Version | Focus | Status |
-|:---|---|---|
-| 0.2.0 | Content pipeline and auth core | Shipped |
-| 0.3.0 | Database, API and media | Shipped |
-| 0.4.0 | Public site and admin | Shipped |
-| 0.5.0 | Hardening and release | Prepared locally |
-| 0.6.0-beta.1 | Online beta preparation | Shipped |
-| 0.6.0 | Media management and storage refinement | Shipped |
-| 0.7.0 | Social graph, links and knowledge navigation | Shipped |
-| 0.8.0 | Engagement, moderation and auth hardening | Implemented; release pending |
-| 0.9.0 | Stabilization, performance and deployment parity | Pending |
-| 1.0.0 | Production readiness and developer experience | Pending |
-
-### Validation anchor (0.8.0)
-
-223 API + 245 frontend tests, workspace/runtime typechecks, lint, production
-builds and credential-free Vercel API packaging pass. Synthetic browser checks
-cover the new security settings, selected deletion and audit viewer at 390px.
-Public-page checks cover real 404 responses, IT/EN information pages, crawler
-directions, XML discovery and narrow-screen recovery.
-The full formatting check passes. Existing animations were preserved; only their
-CSS layout was reformatted. QR regressions independently decode the local SVG
-and validate Google Authenticator-compatible settings and private enrollment.
-Native PostgreSQL concurrency and hosted deployment checks remain operator gates.
-
-## Run it
-
-Prerequisites: Node.js 24, pnpm 10.15.0, and PostgreSQL 17.
+### 2. Clone
 
 ```sh
 git clone https://github.com/camiu01/BenchCore.git
 cd BenchCore
+```
+
+### 3. Install dependencies
+
+```sh
 pnpm install --frozen-lockfile
 ```
 
-If pnpm is not installed, use `npx --yes pnpm@10.15.0` in place of `pnpm`
-throughout the commands below. Do not substitute an unpinned `pnpm@latest`.
+### 4. Configure the environment
 
-To see the public interface without PostgreSQL, run `pnpm demo:api` and
-`pnpm dev:frontend` in separate terminals. The preview uses synthetic public
-notes and keeps authored drafts private. Set `ADMIN_USERNAME` and
-`ADMIN_PASSWORD` in the preview process environment to create an optional
-in-memory administrator. See [Development](docs/DEVELOPMENT.md).
+PowerShell:
 
-### Local development
+```powershell
+Copy-Item .env.example .env
+```
 
-Copy `.env.example` to `.env`, set development-only database/admin values, and
-load the required variables into the processes you launch. A root `.env` is a
-reference file, not a guarantee that every CLI loads it automatically.
-See [Development](docs/DEVELOPMENT.md) for PowerShell and POSIX setup.
+POSIX equivalent: `cp .env.example .env`. Do not overwrite existing private settings.
+Set these local values, replacing the illustrative database credential:
+
+```dotenv
+DATABASE_URL=postgresql://benchcore:replace-with-local-password@localhost:5432/benchcore
+PUBLIC_API_URL=http://localhost:5181
+SITE_URL=http://localhost:5173
+PUBLIC_SITE_URL=http://localhost:5173
+API_ALLOWED_ORIGINS=http://localhost:5173
+MEDIA_STORAGE=local
+BODY_SIZE_LIMIT=8M
+```
+
+For basic local use, remove the placeholder `ZOHO_SMTP_USER`,
+`ZOHO_SMTP_PASSWORD`, and `PASSWORD_RESET_FROM` assignments from your private
+copy unless you intend to configure SMTP. Keep `NEWSLETTER_ENABLED=false`.
+There is no default administrator account.
+
+API development and data scripts load the root `.env`; Vite loads selected
+frontend settings. See the [environment reference](docs/DEVELOPMENT.md#environment)
+for precedence, defaults, required settings, and server/browser boundaries.
+
+### 5. Initialize local data
+
+Against the new local database:
 
 ```sh
 pnpm db:migrate
-pnpm seed
+```
+
+Create the first administrator using `pnpm user:create` with private JSON stdin.
+The [account-provisioning example](docs/OPERATIONS.md#bootstrap-and-configuration)
+prompts for a password without putting it in command arguments.
+
+Optional: configure `ADMIN_EMAIL` and `ADMIN_PASSWORD`, then run `pnpm seed`
+to bootstrap by email and import `content/posts`. Alternatively, `pnpm content:import`
+imports files without creating an account. Both imports **can overwrite database
+posts with matching slugs**, including later administrator edits. Neither runs
+automatically at startup.
+
+### 6. Run locally
+
+Terminal 1:
+
+```sh
 pnpm dev:api
 ```
 
-The API development command runs
-`tsx watch --env-file-if-exists=../.env src/index.ts` from `api/`.
-The `watch` subcommand must precede Node flags; otherwise Node treats
-`watch` as a filename instead of starting the file watcher.
-
-In another terminal, with the same relevant environment:
+Terminal 2:
 
 ```sh
 pnpm dev:frontend
 ```
 
-Open `http://localhost:5173`; the API listens on `http://localhost:5181`.
-If your database already has an operator account, skip `pnpm seed` and sign in.
-To create an account without importing posts, use `pnpm user:create` as described
-in [Operations](docs/OPERATIONS.md). Sign in at `/login`, then open `/admin`. Set `SITE_URL` and
-`PUBLIC_SITE_URL` to `http://localhost:5173` for local development.
+Open `http://localhost:5173`. The standalone API defaults to port **5181**;
+it reads `PORT`, not the unused `API_PORT` entry in the example file.
+Sign in through the local site to access the administrator workbench.
 
-### Production Node service
+### 7. Build and preview
 
 ```sh
 pnpm build
-pnpm beta:migrate
+```
+
+For a unified local preview, change the private `.env` site URLs to
+`http://localhost:5180`, keep `MEDIA_STORAGE=local` or `database`, then run:
+
+```sh
 pnpm start
 ```
 
-Configure `.env` with the intended PostgreSQL connection and trusted `SITE_URL`
-before applying migrations. Pages and `/api/*` share port **5180**.
-Admin creation is an explicit operation, not part of startup.
-Use [Beta deployment](docs/BETA_DEPLOYMENT.md) for artifact installation,
-production settings and account provisioning.
+This serves pages and `/api/*` on port **5180** and uses real PostgreSQL.
+It does not migrate, seed, or create users. Its email-wiring limitation is
+listed above. Public production hosting also needs HTTPS, production settings,
+persistent storage, and operator checks.
 
-### Checks
+`pnpm --filter benchcore-frontend preview` previews only the frontend build;
+it still needs a separately running API. It is not a full production deployment.
+Use `pnpm build:vercel` only for the separately configured Vercel target.
 
-```sh
-pnpm --filter benchcore-api exec tsc --noEmit
-pnpm check
-pnpm test
-pnpm lint
-pnpm build
+## Controls and everyday use
+
+| Action | Result |
+| --- | --- |
+| Browse posts, select tags/category, search, or change sort | The archive updates its filtered results and pagination. |
+| Follow a wikilink or graph node | Open a published note; hover/focus can show a content-redacted preview when access is restricted. |
+| Register, then sign in | Registration creates a reader, not an administrator, and does not automatically sign in. |
+| Sign out or use global logout | Revoke the current session or all sessions respectively. Password changes also revoke all sessions. |
+| Administrator: preview Markdown | Render through the API sanitizer without saving a post. |
+| Administrator: save draft or archive | Persist changes in PostgreSQL, without making the post public. All administrators can manage drafts. |
+| Administrator: publish with the public audience | Make the post visible when its publication date is eligible. No build or deployment is triggered. |
+| Administrator: publish for readers | Guests see a title/sign-in gate; signed-in readers and administrators receive the protected content. |
+| Administrator: schedule a draft | Save a separate `publishAt`; a running Node job publishes it after it becomes due. Vercel does not run this job. |
+| Administrator: upload and insert an image | Store the image and add its managed URL. Uploading alone does not save or publish the post. |
+| Administrator: moderate comments | Approve, reject, reopen, or delete submitted responses. |
+| Administrator: import Obsidian notes | Create notes as private drafts, reader-only posts, or public posts. Existing slugs are rejected, not overwritten. |
+| Subscribe to an enabled newsletter | Give explicit consent, then confirm by pressing the email-link page's button. Registration never subscribes an account. |
+| Administrator: save a newsletter campaign | Save an immutable preview, not a send. Each approved `SEND` action processes at most five recipients. |
+
+To create a draft authoring file, save this example as `content/posts/first-note.md`:
+
+```markdown
++++
+title = "First engineering note"
+slug = "first-note"
+status = "draft"
+tags = ["engineering"]
++++
+
+## Observation
+
+Record the result and link to [[another-note]].
 ```
 
-## How it works
+Use exactly three plus signs for TOML fences. File edits reach PostgreSQL only
+through explicit import. Administrator saves do not update files or make Git
+commits. Re-importing TOML files upserts by slug; Obsidian import is create-only.
+See [Authoring](docs/AUTHORING.md), [Admin and themes](docs/ADMIN_AND_THEMES.md),
+and [Newsletter and categories](docs/NEWSLETTER.md).
 
-```mermaid
-flowchart TB
-	Browser["Browser: readers and administrators"]
-	Frontend["SvelteKit frontend"]
-	API["TypeScript HTTP API"]
-	Services["Authentication, publishing and Markdown services"]
-	Repositories["Repository contracts + Drizzle"]
-	Database[("PostgreSQL: posts, tags, users and sessions")]
-	Files["content/posts/*.md: Markdown + TOML"]
-	Import["Explicit content import"]
-	Storage["StorageProvider"]
-	Local["Local filesystem"]
-	Blobs["Database media repository"]
-	R2["Private R2 bucket"]
+## Configuration
 
-	Browser <-->|Pages and admin forms| Frontend
-	Frontend <-->|API data and authenticated commands| API
-	Browser <-->|Same-origin media and upload endpoints| API
-	API --> Services
-	Services <--> Repositories
-	Repositories <--> Database
-	Files --> Import
-	Import --> Services
-	API --> Storage
-	Storage <--> Local
-	Storage <--> Blobs
-	Blobs <--> Database
-	Storage <--> R2
-	Browser -.->|R2 only: signed direct upload| R2
-```
+### Runtime configuration
 
-1. A reader opens a page. SvelteKit asks the API for visible posts, and the
-   API queries PostgreSQL through repositories. The frontend receives API data,
-   never a database connection. Drafts and archived posts remain private;
-   reader-only bodies require a reader or administrator session.
-2. An administrator signs in and edits a post. The API checks the session and
-   trusted Origin, validates metadata, sanitizes rendered Markdown and saves
-   through the repositories. Preview renders HTML without saving the post.
-3. Markdown files enter the database only through an explicit import. Import
-   parses TOML, validates fields and applies the same publishing pipeline.
-   Editing a file does not update the running site until it is imported.
-4. Images use the configured storage provider. Local and database uploads pass
-   through the API. For R2, the API authorizes an upload, the browser sends the
-   image directly to R2, and the API validates completion before accepting
-   its managed URL.
+| Option | Available configuration |
+| --- | --- |
+| Theme | `light`, `dark`, or `oled`; stored in browser localStorage as `site-theme`. |
+| Interface language | Italian or English through the language picker. |
+| Post visibility | Administrator-selected `draft`, `published`, or `archived`, plus `public` or `readers` audience. |
+| Organization | Tags with editable colors and one optional main category per post. |
+| Accounts and TOTP | Administrators manage reader/admin roles and activation; administrators can enroll TOTP when the server key is configured. |
 
-The diagram shows logical boundaries. Development uses frontend port **5173**
-and API port **5181**; the production Node runtime serves pages and `/api/*`
-through one origin on port **5180**.
+### Environment and service configuration
 
-## Structure
+These settings are read by server processes, not editable site settings.
+Restart the relevant process after changing them.
 
-```text
-content/posts/                  # Markdown + TOML authoring source
-api/
-  src/auth/                     # scrypt passwords and token sessions
-  src/db/                       # contracts, schema, Drizzle, memory repos
-  src/markdown/                 # frontmatter validation and safe rendering
-  src/posts/                    # publishing, CRUD, import
-  src/media/                    # StorageProvider and backend implementations
-  src/server.ts                 # standalone node:http API
-  src/index.ts                  # dependency wiring and boot
-  scripts/                      # migration, seed, content import
-  drizzle/                      # committed SQL migrations
-  tests/                        # Vitest suites
-frontend/
-  src/lib/components/           # document shell, SEO, theme picker, editor
-  src/lib/server/               # authenticated server-only API client
-  src/routes/                   # public pages, login/logout, admin, feeds
-  src/app.css                   # theme tokens and spec-sheet design
-  src/app.html                  # page shell and pre-paint theme script
-  tests/                        # Vitest suites
-docs/                           # developer, author, API, operations guides
-.github/                        # CI and contribution templates
-runtime/                        # unified production Node listener
-scripts/                        # allowlisted packaging and isolated SQL smoke
-TODO.md                         # milestone roadmap
-```
+| Option | Available configuration |
+| --- | --- |
+| `DATABASE_URL` | Required for persistent API/data operations; server-only PostgreSQL connection URL, no default. |
+| `SITE_URL`, `PUBLIC_SITE_URL` | Trusted site origin and canonical URL; defaults vary by entrypoint. Public hosting must configure them explicitly. Read server-side, but their resulting URLs are public. |
+| `PUBLIC_API_URL` | Frontend server's standalone API base, default `http://localhost:5181`; not a browser credential or browser environment export. Unified Node overrides it. |
+| `API_ALLOWED_ORIGINS` | Optional exact comma-separated mutation origins for standalone API/Vercel; unified Node uses its canonical site origin instead. |
+| `MEDIA_STORAGE`, `MEDIA_DIR` | Local files, PostgreSQL blobs, or private R2 in the API. Unified `pnpm start` accepts only `local` or `database`. Local API default directory is `./data/media`, relative to process working directory. |
+| `AUTH_TOTP_KEY` | Optional server-only 64-hex-character encryption key. Needed for enrollment and decryption of existing factors; keep stable across replicas. |
+| SMTP and newsletter settings | Optional server-only credentials and consent-token key. Disabled/unwired paths differ by entrypoint; see the full reference. |
+| `API_GUEST_CACHE_MS` | Optional frontend server cache duration for cookie-less reads, normally 15000 ms, capped at 60000; `0` disables it. |
 
-Conventions: tabs, single quotes, semicolons, TSDoc on every function, feature files <400 lines, functions <50 lines.
+The [full environment reference](docs/DEVELOPMENT.md#environment) covers exact
+names, defaults, pooling, ports, proxy trust, email, and R2 settings.
+Do not infer browser safety from a variable's prefix.
 
-## Design system
+### Development and build configuration
 
-An engineering-log spec sheet: monospace typography, blueprint grid, bordered
-sheet with a hard shadow, record cards, stamp badges, and inventory tables.
-Themes use `data-theme` and CSS variables rather than independent page palettes.
-Preference lives in localStorage under `site-theme`; it is not an analytics
-identifier. See [Admin & themes](docs/ADMIN_AND_THEMES.md).
+| Option | Available configuration |
+| --- | --- |
+| Dependencies | Exact versions in workspace manifests and `pnpm-lock.yaml`; use the frozen lockfile. |
+| Frontend adapter and CSP | `frontend/vite.config.ts`; `DEPLOYMENT_TARGET=vercel` selects the Vercel build. `R2_ACCOUNT_ID` also sets the allowed upload hostname in CSP and requires rebuilding when changed. |
+| File authoring | Markdown/TOML under `content/posts/`; `CONTENT_DIR` selects another import directory, not a live content watcher. |
 
-## Key decisions
+## Architecture
 
-1. Separate frontend and API so deployments and storage boundaries stay explicit.
-2. Plain `node:http` rather than a web framework for a compact API.
-3. TOML `+++` fences avoid confusion with Markdown horizontal rules.
-4. PostgreSQL owns published runtime data; Markdown remains a portable source.
-5. Services own publishing visibility; unpublished slugs always mask as 404.
-6. HTML is sanitized before it reaches a page or editor preview.
-7. Repository interfaces keep unit tests independent of a live database.
-8. Media callers use an interface, never filesystem paths or blob SQL.
-9. SvelteKit 3 configuration lives in `vite.config.ts`; relative imports and
-   server-only `process.env` keep tooling and secret boundaries predictable.
-10. Dependencies are pinned; pnpm's lockfile is part of the reproducible build.
+Paths below are relative to the repository root.
 
-## Documentation
+| Module | Responsibility |
+| --- | --- |
+| `frontend/src/routes/` | Server-rendered public pages, account/admin actions, media proxies, RSS, sitemap, and robots routes. |
+| `frontend/src/lib/` | Validated API clients, server-only session forwarding, components, themes, and localization. |
+| `api/src/server.ts`, `api/src/http/` | Dispatch requests, validate inputs, enforce Origin/session checks, and map responses. |
+| `api/src/posts/`, `api/src/markdown/` | Publishing, audience rules, imports, graphs, TOML parsing, sanitized rendering, and math. |
+| `api/src/auth/`, `api/src/newsletter/` | Password/session/TOTP/recovery services and explicit-consent newsletter delivery. |
+| `api/src/db/`, `api/drizzle/` | Repository contracts, Drizzle SQL implementations, memory test doubles, schema, and explicit migrations. |
+| `api/src/media/` | Storage provider interface, local/database/R2 implementations, access checks, and maintenance. |
+| `runtime/` | Unified public Node listener and private loopback API bridge. |
+| `api/src/vercel.ts`, `api/src/serverless/` | Fetch-compatible Node Function entrypoint without listeners or scheduler timers. |
+| `content/posts/` | Authoring files, imported deliberately rather than read by frontend requests. |
+| `scripts/`, `.github/workflows/` | Packaging, isolated integration fixtures, CI, and gated release delivery. |
+
+At request time, SvelteKit fetches API DTOs rather than SQL or authoring files.
+The API reads/writes PostgreSQL through repositories. Writes render and sanitize
+Markdown; post-detail reads also render stored Markdown through the current pipeline.
+Preview renders without persistence.
+
+Login issues a random HttpOnly, SameSite=Lax cookie; PostgreSQL stores its hash.
+Sessions last 30 days and are checked for expiry, active account, and session version.
+Administrator authorization is enforced by the API as well as frontend guards.
+Mutations require an exact trusted Origin; this is a CSRF control, not authentication.
+
+Local/database images pass through the application. R2 uploads send browser bytes
+directly to signed staging URLs, followed by API completion checks; reads redirect
+to short-lived signed URLs. Media access depends on saved audience references,
+not simply whether a post is a draft.
+
+Builds produce replaceable code artifacts, not a populated database. Unified Node
+serves one public origin with an internal loopback listener. Vercel builds two
+services with a runtime API binding. Neither deployment runs migrations at startup.
+See [Architecture](docs/ARCHITECTURE.md) and the [API reference](docs/API.md).
+
+## Limitations and troubleshooting
+
+| Symptom / limitation | Checks and boundary |
+| --- | --- |
+| Startup or database-backed requests fail | Check process configuration and apply reviewed migrations explicitly. A build does not initialize the database. |
+| Site reports the API offline | Check `PUBLIC_API_URL` in development or the Vercel binding. Frontend builds alone do not run the API. |
+| Login does not work | Provision the intended database account; seed does not reset an existing password. Check cookie forwarding, expiry, and HTTPS for production Secure cookies. |
+| Mutation returns 403 | Check exact scheme/host/port and administrator role. Do not disable Origin validation or use wildcard origins. |
+| Published edit appears stale to guests | Cookie-less frontend reads can be cached for 15 seconds by default; sessions bypass this cache. |
+| Reader-only content is discoverable | Titles and organization metadata can remain public. This audience restricts content, not the existence of a post. Draft privacy is separate. |
+| A draft's image is accessible | Unreferenced images and images with public-audience uses are public by key. Only exclusively reader-audience saved uses require a reader/admin session. Do not upload secrets. |
+| Images disappear after restart or provider change | Persist local bytes and JSON sidecars, or the selected database/R2 store. Changing providers does not migrate objects. |
+| Upload fails | Check the 5 MiB image cap, allowed MIME types, adapter body limit, and, for R2, exact-origin CORS and signed-upload completion. MIME checking is not antivirus validation. |
+| Scheduled post remains a draft | Keep the scheduler process running and check timezone/due date. Vercel has no scheduler; manual publication is required. |
+| Newsletter/recovery unavailable on `pnpm start` | The unified runtime does not wire those dependencies. Standalone API and Vercel do; SMTP settings do not close this code gap. |
+| Search or import behaves unexpectedly | Search uses PostgreSQL `simple` full-text semantics, not fuzzy matching. TOML import overwrites by slug and can partially succeed; Obsidian import does not overwrite. |
+| Rate limits vary across replicas | Counters are process-local and reset on restart. They are not distributed abuse protection; configure trusted infrastructure controls. |
+| Recovery after data loss | Git is not a database/media backup. There is no automatic revision restore or schema downgrade. Use an isolated restore drill before relying on a backup. |
+
+Tests cover local service, HTTP, and UI behavior; they do not prove that a host,
+bucket, SMTP account, backup, or deployment works. Deployment guides contain
+operator checks, not certificates of validation.
+See [Troubleshooting](docs/TROUBLESHOOTING.md), [Operations](docs/OPERATIONS.md),
+and [Threat model](docs/THREAT_MODEL.md).
+
+## Development
+
+| Command | Check or workflow | External requirements |
+| --- | --- | --- |
+| `pnpm check` | API TypeScript, frontend Svelte/type checks, runtime scripts | Installed dependencies; no live services. |
+| `pnpm test` | Both packages' Vitest suites | Memory repositories and local fixtures; no production credentials. |
+| `pnpm lint` | Frontend ESLint | No live services. |
+| `pnpm format` | Frontend formatting check, not a rewrite | No live services. |
+| `pnpm build` | Production frontend/API compilation | Installed dependencies and valid build settings; no migration. |
+| `pnpm build:vercel` | Target-specific compilation/packaging | Does not deploy; see the Vercel guide. |
+| `pnpm test:vercel-api` | Credential-free production API packaging regression | Existing build tooling; not a hosted Vercel test. |
+| `pnpm test:e2e` | Production-artifact browser journeys and accessibility checks | Built Node artifacts and installed Chromium; disposable local fixtures. |
+| `pnpm test:beta`, `pnpm test:bundle` | PostgreSQL and unified runtime/bundle smoke tests | Dedicated disposable `*_test` PostgreSQL database; never production. |
+| `pnpm release:check` | Workspace version/tag consistency | Local metadata only; does not publish. |
+
+Follow [Contributing](CONTRIBUTING.md): tabs, single quotes, semicolons, documented
+functions, repository-owned SQL, and service-owned rules. Run type checks and
+tests before committing. Do not commit private environment files or runtime data.
 
 | Guide | Contents |
-|---|---|
-| [Documentation index](docs/README.md) | Suggested reading paths and scope |
-| [Architecture](docs/ARCHITECTURE.md) | Data flow, module boundaries, database, trust boundaries |
-| [Development](docs/DEVELOPMENT.md) | Prerequisites, shell setup, environment, commands |
-| [Authoring](docs/AUTHORING.md) | TOML fields, Markdown, links, import, scheduling |
-| [API](docs/API.md) | Routes, payloads, cookies, Origin, search, media, errors |
-| [Admin & themes](docs/ADMIN_AND_THEMES.md) | Editorial workflow, image handling, design tokens |
-| [Operations](docs/OPERATIONS.md) | Deployment, migrations, backup/restore, incident checks |
-| [Testing](docs/TESTING.md) | Automated checks, regression coverage, manual smoke tests |
-| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common setup and runtime failures |
-| [Contributing](CONTRIBUTING.md) | Workflow, conventions, PR checklist |
-| [Security policy](SECURITY.md) | Private reporting, privacy, supported scope |
-| [Threat model](docs/THREAT_MODEL.md) | Assets, attackers, controls, operational limitations |
+| --- | --- |
+| [Documentation index](docs/README.md) | Reading paths and current scope |
+| [Development](docs/DEVELOPMENT.md) | Environment reference, setup, and preview |
+| [Authoring](docs/AUTHORING.md) | Frontmatter, Markdown, imports, and scheduling |
+| [API](docs/API.md) | Current routes, authentication, payloads, and errors |
+| [Testing](docs/TESTING.md) | Local, browser, and isolated PostgreSQL checks |
+| [Node deployment](docs/BETA_DEPLOYMENT.md) / [Vercel deployment](docs/VERCEL_DEPLOYMENT.md) | Target-specific setup and open validation gates |
+| [Operations](docs/OPERATIONS.md) | Persistence, migrations, backup examples, and restore drill |
+| [Security policy](SECURITY.md) | Private vulnerability reporting |
 
-## License
+## Credits and license
 
-Maintained by **Camiu** ([@camiu01](https://github.com/camiu01)).
-GNU Affero General Public License v3.0 (AGPL-3.0-or-later) — see [LICENSE](LICENSE).
+Maintained by [Camiu (@camiu01)](https://github.com/camiu01).
+The expanded project name is “Bench-testing, Embedded Networks, & Circuit Hacks:
+Centralized Open-source Research Engine.”
+
+Licensed under **AGPL-3.0-or-later**; see [LICENSE](LICENSE) for the actual terms.
+Dependencies are listed in the workspace manifests and lockfile and retain their
+own licenses and notices. No separate third-party notice file is present.

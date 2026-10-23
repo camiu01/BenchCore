@@ -3,9 +3,9 @@
 
 # Architecture
 
-Layer responsibilities behind BENCHCORE. Every relation below is implemented
-in `api/src/` (plus `frontend/src/routes/` and `runtime/`) and mirrored by
-the suites in `api/tests/` and `frontend/tests/`.
+Paths are relative to the repository root unless stated otherwise.
+Tests exercise service and transport behavior; they do not establish hosted
+deployment parity.
 
 ## Overview
 
@@ -22,7 +22,7 @@ Author files --import CLI--+
 Browser -> SvelteKit -> API services -> repository interfaces -> PostgreSQL
                           |
                           +-> Markdown renderer -> sanitized HTML
-                          +-> StorageProvider -> local files / database blobs
+                          +-> StorageProvider -> local files / database blobs / R2
                           +-> due-publication job -> published posts
 ```
 
@@ -32,12 +32,15 @@ session cookie and trusted Origin to the API.
 
 ## Module contracts
 
+API module paths in this table are relative to `api/src/`; frontend rows
+describe responsibilities in `frontend/src/`.
+
 | Module | Owns | Must not own |
 |---|---|---|
 | `markdown/` | TOML parsing, validation, safe rendering, links, reading time | SQL, authentication, page state |
 | `posts/` | Visibility, lifecycle, CRUD, import use cases | HTTP responses, raw SQL |
 | `db/repositories.ts` | Database-free repository interfaces | Drizzle implementation details |
-| `db/drizzle.ts` | SQL and persisted queries | Page rendering or cookie policy |
+| `db/drizzle.ts`, `db/drizzle-*.ts` | SQL-backed repositories and persisted queries | Page rendering or cookie policy |
 | `db/memory.ts` | Deterministic test implementations | Production persistence |
 | `auth/` | scrypt, random tokens, hashing, expiry, cookie helpers | UI components |
 | `media/` | Storage interface and concrete backends | Editorial visibility decisions |
@@ -62,6 +65,12 @@ PostgreSQL. Storage tests should exercise shared provider behavior.
 Admin writes use the same service layer but do not automatically write back to
 `content/posts/`. Import is not transactional across the whole directory:
 successful files can remain imported when other files fail.
+
+Published detail reads render the stored Markdown through the current sanitizer
+again, rather than serving only the stored HTML. This makes renderer changes
+visible without a reimport. Frontend builds do not import content or initialize
+the database. Cookie-less frontend reads have a bounded process-local cache
+(normally 15 seconds); requests carrying cookies bypass it.
 
 ## Persistence
 
@@ -95,17 +104,22 @@ external queue or a guarantee of second-level execution.
 ## Media boundary
 
 `StorageProvider` exposes save, load, remove, and list. Services and HTTP routes
-do not know whether bytes live on disk or in PostgreSQL.
+do not know whether bytes live on disk, in PostgreSQL, or in R2.
 
 - Local mode requires durable storage of image files **and JSON sidecars**.
 - Database mode puts blobs into database backup scope.
 - Changing `MEDIA_STORAGE` is selection, not migration of existing objects.
-- Uploaded images are publicly retrievable by key; drafts do not make their
-  uploaded assets private.
+- Managed images with saved uses exclusively in the `readers` audience require
+  a reader/admin session. Public-audience uses and unreferenced uploads remain
+  public by key; draft status alone does not protect attachments.
+- R2 stores bytes and sidecars outside PostgreSQL. Browser uploads use signed
+  staging PUTs followed by owner-bound completion; reads use signed redirects.
+- The standalone API supports all three providers, but unified `pnpm start`
+  validates only `local` and `database`.
 
 ## Frontend and design
 
-Public routes are grouped separately from `/admin`. Hooks resolve sessions,
+Public routes live alongside account and `/admin` routes. Hooks resolve sessions,
 and admin loads/actions use the server-only authenticated client.
 SEO helpers build URLs from the configured canonical site URL.
 
@@ -117,6 +131,17 @@ CSS tokens implement the shared spec-sheet design. Theme preference is
 presentation state in `lib/theme.ts`, not a publishing concern.
 
 ## Security and scaling limitations
+
+Public registration creates readers only. Administrator operations enforce
+the role at the API boundary. Published reader-only posts still expose titles
+and organization metadata; bodies, descriptions, covers, and engagement are
+redacted for guests. This is not an encrypted or owner-private vault.
+
+`api/src/index.ts` and `api/src/serverless/app.ts` wire password recovery and
+newsletter services. `runtime/server.mjs` currently wires neither, so the unified
+Node runtime cannot enable those workflows through environment settings alone.
+Vercel uses a runtime `API_SERVICE_URL` binding between independently built
+frontend and API Node Functions and does not start a scheduler.
 
 Exact Origin checking constrains browser mutation requests but does not replace
 session authentication. Rate counters are bounded and in memory: restarting

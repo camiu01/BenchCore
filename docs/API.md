@@ -3,14 +3,13 @@
 
 # API reference
 
-HTTP boundary behind BENCHCORE. Every route below is dispatched in
-`api/src/server.ts`, validated with Zod at the boundary, served by the rules
-in `api/src/posts/` and `api/src/auth/`, and mirrored by the suites in
-`api/tests/`.
+This reference describes current handlers in `api/src/server.ts` and
+`api/src/http/`, not a versioned or stability-guaranteed public contract.
+Service and HTTP tests live in `api/tests/`; hosted verification is separate.
 
 ## Base URLs and conventions
 
-The **0.7.0 unified runtime** exposes `/api/*` on the same origin as
+The unified runtime exposes `/api/*` on the same origin as
 the site (default `http://localhost:5180`). Its SSR backend is private and
 the production `SITE_URL` is the single trusted mutation origin.
 
@@ -21,6 +20,14 @@ database secrets. Use HTTPS for a public deployment.
 JSON request bodies use `Content-Type: application/json`. Timestamps are ISO
 strings with a timezone or `null` where accepted. Public reads need no session;
 admin reads and writes require an administrator's opaque session cookie.
+
+“Administrator session” means an active user with role `admin`, not any
+authenticated reader. Reader-only published responses are redacted for guests
+rather than returning the unpublished-post 404.
+
+Password recovery and newsletter dependencies are wired in standalone API and
+Vercel entrypoints, but not in the unified `pnpm start` runtime. Newsletter
+mutations return 503 when their required dependencies are unavailable.
 
 **Path distinction:** public detail is addressed by **slug**; update/delete
 and admin detail are addressed by database **UUID**. `/api/posts/:id` does
@@ -56,7 +63,7 @@ not accept a slug for mutation even though the public route shares the prefix.
 | GET | `/api/admin/posts/suggestions` | Administrator session | Up to 200 recently updated identifiers, titles, slugs and tags |
 | POST | `/api/admin/posts/delete` | Administrator + trusted Origin | Confirmed selected deletion with atomic audit |
 | GET | `/api/admin/audit` | Administrator session | Identifier-only security history, 50 per page |
-| GET | `/api/admin/posts/:id` | Session | Editable post, including Markdown |
+| GET | `/api/admin/posts/:id` | Administrator session | Editable post, including Markdown |
 | GET | `/api/admin/tags` | Administrator session | Full tag registry, including draft-only names |
 | PATCH | `/api/admin/tags/:id` | Administrator + trusted Origin | Change a tag HEX color |
 | DELETE | `/api/admin/tags/:id` | Administrator + trusted Origin | Delete tag and post associations |
@@ -66,16 +73,27 @@ not accept a slug for mutation even though the public route shares the prefix.
 | GET | `/api/admin/users` | Administrator session | Account page, `limit` 1–100 and bounded `offset` |
 | POST | `/api/admin/users` | Administrator + trusted Origin | Create an explicit reader/admin account |
 | PATCH | `/api/admin/users/:id` | Administrator + trusted Origin | Change role or activation, revoke sessions |
-| POST | `/api/posts` | Session + trusted Origin | Create post |
-| PUT | `/api/posts/:id` | Session + trusted Origin | Partial-field update |
-| DELETE | `/api/posts/:id` | Session + trusted Origin | Delete post |
-| POST | `/api/render` | Session + trusted Origin | Sanitized Markdown preview |
-| POST | `/api/media` | Session + trusted Origin | Upload image |
-| GET | `/api/media/:key` | Public | Raw image bytes |
-| DELETE | `/api/media/:key` | Session + trusted Origin | Delete image |
+| POST | `/api/posts` | Administrator + trusted Origin | Create post |
+| PUT | `/api/posts/:id` | Administrator + trusted Origin | Partial-field update |
+| DELETE | `/api/posts/:id` | Administrator + trusted Origin | Delete post |
+| POST | `/api/render` | Administrator + trusted Origin | Sanitized Markdown preview |
+| POST | `/api/media` | Administrator + trusted Origin | Upload image |
+| GET | `/api/media/:key` | Reader/admin for exclusively reader-audience saved uses; otherwise public | Image bytes or R2 signed redirect |
+| DELETE | `/api/media/:key` | Administrator + trusted Origin | Delete unused image; 409 when saved references exist |
 | GET | `/api/admin/media/:key` | Administrator session | Saved uses and deletion confirmation fingerprint |
 | GET | `/api/admin/media/:key?details=1` | Administrator session | One image's metadata, without bytes or private storage keys |
 | DELETE | `/api/admin/media/:key` | Administrator + trusted Origin | Confirmed removal of stored image and saved references |
+| GET | `/api/categories` | Public | Published category counts |
+| GET | `/api/admin/categories` | Administrator session | Counts including unpublished assignments |
+| POST | `/api/admin/categories` | Administrator + trusted Origin | Rename or clear category assignments |
+| POST | `/api/admin/imports/obsidian` | Administrator + trusted Origin | Create-only import with per-file results |
+| GET | `/api/newsletter` | Public | `{ "enabled": boolean }` |
+| POST | `/api/newsletter/subscribe` | Trusted Origin | 202 generic consent-request acceptance when configured |
+| POST | `/api/newsletter/confirm` | Trusted Origin + single-use token | Confirm explicit opt-in |
+| POST | `/api/newsletter/unsubscribe` | Trusted Origin + signed token | Remove subscription without an account |
+| GET | `/api/admin/newsletter` | Administrator session | Campaign previews and private counts |
+| POST | `/api/admin/newsletter` | Administrator + trusted Origin | 201 saved draft, no email send |
+| POST | `/api/admin/newsletter/send` | Administrator + trusted Origin | One explicitly approved delivery batch |
 
 There is no promised revision API or media-list HTTP route. A provider's
 internal `list()` method is not an endpoint.
@@ -94,6 +112,11 @@ Counts use the same filters before pagination. List items add `updatedAt` and
 `likesCount`; guests receive zero for reader-only engagement, and restricted
 likes do not influence their popularity ranking. Draft, archived, future and
 pending-schedule visibility rules are unchanged.
+
+An optional trimmed `category` (1–80 characters) filters by exact category
+alongside search and tags. List items also include nullable `category`,
+`audience` (`public`/`readers`), and `locked`. For guests, locked items retain
+their title but have an empty description and zero likes.
 
 `GET /api/posts/:slug/preview` returns only `slug`, `title`, `description`,
 `tags`, `publishedAt`, `coverImage` and `locked`. Unpublished/missing targets
@@ -279,7 +302,12 @@ Example list item:
 	"description": "A short summary.",
 	"tags": ["engineering"],
 	"authorName": "Local Admin",
-	"publishedAt": "2026-10-01T18:00:00.000Z"
+	"publishedAt": "2026-10-01T18:00:00.000Z",
+	"updatedAt": "2026-10-01T18:00:00.000Z",
+	"category": null,
+	"audience": "public",
+	"locked": false,
+	"likesCount": 0
 }
 ```
 
@@ -300,6 +328,8 @@ Drafts and archived/future posts remain excluded from results and counts.
 	"slug": "publishing-note",
 	"description": "A concise summary.",
 	"status": "draft",
+	"audience": "public",
+	"category": "Engineering",
 	"tags": ["engineering", "publishing"],
 	"contentMarkdown": "## Notes\n\nSee [[first-note]].",
 	"coverImage": "/api/media/0123456789abcdef0123456789abcdef.png",
@@ -317,6 +347,10 @@ PATCH. Omission means retain/default according to the service rules; do not
 assume `null` is supported for every field. `publishAt` explicitly accepts
 ISO string or `null`. `publishedAt` is publication metadata, not the separate
 schedule. Duplicate slugs produce conflict errors.
+
+`audience` defaults to `public` on creation; `readers` restricts content to
+signed-in readers/admins, not administrators alone. `category` accepts a
+trimmed 1–80-character string or `null`. Omission on update preserves these fields.
 
 Create normally returns 201; update returns 200; successful delete returns 204
 with no JSON body. Use the returned UUID for further mutations.
@@ -401,13 +435,48 @@ not exact English message text.
 | 413 | Oversized upload/body where a response can be delivered |
 | 429 | Rate limit exceeded |
 | 500 | Generic internal failure, without stack trace disclosure |
+| 503 | Required service/dependencies unavailable |
 
 Rate limits are bounded in-memory controls, not durable quotas. They reset on
 restart and are not shared across replicas. Use infrastructure limits for
 distributed abuse protection. Inspect `Retry-After` when returned and back off;
 do not hammer login or preview endpoints.
 
-Defaults are 120 requests and 10 login attempts per direct peer address per
-minute, with at most 10,000 tracked peers. Forwarded-IP headers are not trusted.
-Requests proxied by a frontend can share its quota; apply additional controls
-at your reverse proxy when deploying behind shared infrastructure.
+Defaults are 120 requests and 10 credential-path requests per peer per minute,
+with at most 10,000 tracked peers. Credential paths include registration,
+password recovery, factor mutations, and newsletter consent, not just login.
+Standalone API/Vercel do not trust arbitrary forwarded-IP headers.
+Unified Node additionally supports exact immediate proxy IPs and preserves the
+visitor quota identity through its private SSR bridge. Requests on other
+transports can share a peer quota; infrastructure abuse controls remain necessary.
+
+## Categories, imports, and newsletters
+
+Category rename/clear accepts `{ "name": "Old", "replacement": "New" }`, or
+`replacement: null` to clear assignments. It returns 200 with
+`{ "changed": number }` and never deletes posts.
+
+Obsidian import accepts JSON, not a raw ZIP at the API boundary:
+
+```json
+{
+	"visibility": "private",
+	"files": [{ "path": "notes/first.md", "source": "# First note\n\nObservation." }]
+}
+```
+
+`visibility` is `private` (default), `readers`, or `public`. Files use safe
+vault-relative paths. There are at most 500 notes, 200000 source characters per
+note, and 2000000 aggregate UTF-8 bytes. The request-body cap is 4000000 bytes.
+The frontend unpacks bounded ZIPs before calling this endpoint. Import returns
+200 with per-file created/error/warning results; inspect them rather than treating
+HTTP success as proof every note was imported. Existing slugs are never overwritten.
+See [Authoring](AUTHORING.md#obsidian-vaults).
+
+Newsletter consent and campaign schemas, limits, and illustrative request
+payloads are documented in [Newsletter and categories](NEWSLETTER.md#api).
+Subscribe returns 202 `{ "accepted": true }` for valid configured requests
+without exposing subscriber existence or SMTP failure. Confirm/unsubscribe
+return 200 `{ "accepted": true }` or 400 `{ "accepted": false }` for rejected
+tokens. Invalid shapes return 400; unavailable delivery returns 503.
+Saving a campaign does not send it; sends require explicit `confirmation: "SEND"`.

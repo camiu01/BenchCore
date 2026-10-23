@@ -5,8 +5,9 @@
 
 ## Supported versions
 
-Only the latest commit on `main` is actively maintained. The 0.5.0 milestone
-is a local repository version, not a promise of a published or hosted release.
+Only the latest commit on `main` is actively maintained. Workspace metadata is
+0.8.0, with stabilization work in progress; this is not a promise of a published
+or hosted release.
 
 | Version | Supported |
 |---|---|
@@ -16,7 +17,7 @@ is a local repository version, not a promise of a published or hosted release.
 ## Reporting issues
 
 For exploitable vulnerabilities, use the repository's
-[private vulnerability reporting](https://github.com/camiu01/legendary-octo-bassoon/security/advisories/new)
+[private vulnerability reporting](https://github.com/camiu01/BenchCore/security/advisories/new)
 if enabled. If that channel is unavailable, contact the maintainer privately
 at **lorenzo.camuso@gmail.com**. Do not publish a working exploit, private
 content, or credentials in a public issue before coordination.
@@ -64,9 +65,11 @@ distributed denial-of-service protection. Add trusted infrastructure controls
 for public deployments. A compromised host/database remains outside what
 application-level validation can contain.
 
-Uploaded media is **public by key**, including images referenced from drafts.
-Immutable caches may retain deleted bytes. Do not upload content requiring
-private-access or reliable revocation guarantees.
+Managed images with saved uses exclusively in the `readers` audience require
+a reader/admin session. Unreferenced images and images with any public-audience
+use remain public by key, including draft uses. Draft status alone does not protect
+attachments. Already downloaded bytes and issued short-lived signed URLs cannot
+be recalled. Do not upload secrets or rely on retroactive revocation.
 
 Revision tables are groundwork, not an audit trail or backup substitute.
 Scheduled publication depends on the API process and its clock.
@@ -75,7 +78,9 @@ Scheduled publication depends on the API process and its clock.
 
 The application **does not collect analytics and includes no third-party
 trackers or telemetry SDKs**. It stores functional application data, including
-posts, admin identity, password/session hashes, and media.
+posts, account identities, password/session hashes, comments, media, and explicit
+newsletter consent/delivery state when used. Configured SMTP providers receive
+recipient addresses. Keep reset and newsletter query tokens out of access logs.
 
 Infrastructure can log requests, IP addresses, paths, user agents, and timing.
 Operators own those systems' retention, access, and redaction policies.

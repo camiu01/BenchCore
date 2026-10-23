@@ -46,6 +46,8 @@ expects ISO strings with a timezone.
 | `slug` | Required | 1–100 lowercase alphanumeric/dash characters, e.g. `first-note` |
 | `description` | Default `""` | At most 500 characters |
 | `status` | Default `"draft"` | `draft`, `published`, or `archived` |
+| `audience` | Optional | `public` or `readers`; new records default to public, omission preserves an existing audience on import |
+| `category` | Optional | Trimmed nonempty string, at most 80 characters; omission clears an existing category on TOML import |
 | `tags` | Default `[]` | At most 20 names; each 1–60 characters |
 | `published_at` | Optional | Quoted ISO date/time with offset or `Z` |
 | `publish_at` | Optional | Draft schedule as a quoted ISO date/time with offset or `Z` |
@@ -117,7 +119,7 @@ Choose one visibility for the whole import:
 
 - **Private** (default): administrator-only drafts, excluded from public and reader views.
 - **Authenticated readers**: published immediately with reader-only content. Titles
-  and descriptions may still appear in public listings, following normal reader-post rules.
+  may still appear in public listings; descriptions and bodies are withheld from guests.
 - **Public**: published immediately for everyone.
 
 Private means all BenchCore administrators can manage these drafts, not a personal,
@@ -127,7 +129,7 @@ Source YAML cannot override the selected visibility or schedule publication.
 Local CLI alternative (requires `DATABASE_URL` and existing migrations):
 
 ```powershell
-pnpm obsidian:import "C:\Users\LorenzoCamuso\Documents\Obsidian" private
+pnpm obsidian:import "C:\path\to\vault" private
 pnpm obsidian:import "C:\path\to\selected-folder" readers
 pnpm obsidian:import "C:\path\to\selected-folder" public
 ```
@@ -155,6 +157,8 @@ responsible for HTML output.
 Earlier imports may have removed unresolved links or section fragments. Those
 cannot be reconstructed from the stored labels: restore the original wikilinks
 in the editor. Import remains create-only and never overwrites existing notes.
+
+### Markdown and TOML files
 
 ```sh
 pnpm content:import
@@ -211,8 +215,14 @@ once per minute; expect publication on a subsequent tick, not precisely at the
 scheduled second. The API must remain running. Check the server's clock and
 persisted schedule when investigating delays.
 
-Do not use scheduling as a confidentiality boundary for uploaded images:
-media is public by key regardless of a referencing post's status.
+The Vercel entrypoint does not run this job. Set `SCHEDULER_ENABLED=false`
+to disable it on Node; publish manually when no scheduler is running.
+
+Do not use scheduling or draft status as a confidentiality boundary for images.
+Managed media with saved uses exclusively assigned to the `readers` audience
+requires a reader/admin session. Unreferenced images and images with any
+public-audience saved use are public by key, even if that use is a draft.
+Already downloaded bytes and issued signed URLs cannot be recalled.
 
 ## Editorial checklist
 

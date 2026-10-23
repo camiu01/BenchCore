@@ -30,6 +30,11 @@ requiring an account. Messages already in flight can still arrive.
 
 ## Enable delivery
 
+This feature is wired by the standalone API (`pnpm dev:api` / API service boot)
+and Vercel entrypoints. The unified `pnpm start` runtime currently omits both
+newsletter repository and mail dependencies; it reports delivery disabled and
+cannot save/send campaigns. Setting these variables does not fix that code gap.
+
 1. Apply the generated `0008` database migration using the normal operator
    migration procedure. Generation does not apply it.
 2. Configure `ZOHO_SMTP_USER`, `ZOHO_SMTP_PASSWORD` and a trusted public `SITE_URL`.
