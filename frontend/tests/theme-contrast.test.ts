@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const css = readFileSync(new URL('../src/app.css', import.meta.url), 'utf8');
+const css = readFileSync(new URL('../src/lib/styles/tokens.css', import.meta.url), 'utf8');
 
 /**
  * @brief Calculates WCAG sRGB relative luminance.

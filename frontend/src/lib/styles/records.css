@@ -1,0 +1,136 @@
+/* @file records.css @brief Record cards, badges, technical tables and footer. */
+.record {
+	border: 1px solid var(--border);
+	background: var(--card-bg);
+	padding: var(--record-padding);
+	margin-bottom: 28px;
+}
+
+.record-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	border-bottom: 1px solid var(--border);
+	padding-bottom: 8px;
+	margin-bottom: 12px;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.record-title {
+	font-weight: bold;
+	font-size: 14px;
+	letter-spacing: 0.5px;
+	overflow-wrap: anywhere;
+}
+
+.stamp {
+	font-size: 10px;
+	font-weight: bold;
+	color: var(--accent);
+	border: 1px solid var(--accent);
+	padding: 1px 6px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	background: var(--accent-bg);
+	white-space: nowrap;
+}
+
+.summary {
+	margin: 0 0 14px 0;
+}
+
+.spec-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 11px;
+	margin: 14px 0;
+}
+
+.spec-table tr {
+	border-top: 1px dashed var(--border-light);
+}
+
+.spec-table td {
+	padding: 5px 0;
+}
+
+.spec-table td.label {
+	color: var(--muted);
+	width: 130px;
+	font-weight: 600;
+}
+
+.tool-section {
+	margin-top: 40px;
+	border-top: 2px solid var(--border);
+	padding-top: 24px;
+}
+
+.section-banner {
+	font-size: 11px;
+	font-weight: bold;
+	letter-spacing: 0.8px;
+	color: var(--accent);
+	margin-bottom: 14px;
+	text-transform: uppercase;
+}
+
+.inventory-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 11px;
+}
+
+.inventory-table th {
+	text-align: left;
+	padding: 6px 4px;
+	border-bottom: 1px solid var(--border);
+	color: var(--muted);
+	font-weight: 600;
+	letter-spacing: 0.5px;
+}
+
+.inventory-table td {
+	padding: 8px 4px;
+	border-bottom: 1px dashed var(--border-light);
+	vertical-align: top;
+}
+
+.inventory-table td.code {
+	font-weight: bold;
+	width: 125px;
+}
+
+.inventory-table td.item {
+	font-weight: 500;
+	width: 220px;
+}
+
+.inventory-table td.dim {
+	color: var(--muted);
+}
+
+.doc-footer {
+	margin-top: 40px;
+	border-top: 1px dashed var(--border);
+	padding-top: 14px;
+	font-size: 11px;
+	color: var(--muted);
+	display: flex;
+	justify-content: space-between;
+}
+
+.tag-chip {
+	--tag-color: #64748b;
+	display: inline-block;
+	margin: 2px 4px 2px 0;
+	padding: 2px 7px;
+	border: 1px solid var(--tag-color);
+	border-left-width: 5px;
+	color: var(--ink);
+	background: color-mix(in srgb, var(--tag-color) 12%, var(--card-bg));
+	font-size: 10px;
+	font-weight: bold;
+	letter-spacing: 0.4px;
+}

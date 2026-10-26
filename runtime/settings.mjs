@@ -20,8 +20,8 @@ export function platformSettings(env) {
 	if (production && settings.origin.protocol !== 'https:' && !local) {
 		throw new Error('Public production requires an HTTPS origin');
 	}
-	if (!['local', 'database'].includes(env['MEDIA_STORAGE'] ?? 'local')) {
-		throw new Error('MEDIA_STORAGE must be local or database');
+	if (!['local', 'database', 'r2'].includes(env['MEDIA_STORAGE'] ?? 'local')) {
+		throw new Error('MEDIA_STORAGE must be local, database or r2');
 	}
 	let database;
 	try { database = new URL(env['DATABASE_URL'] ?? ''); } catch {

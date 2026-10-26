@@ -44,11 +44,14 @@ function guardDatabase() {
  * @return {Promise<void>} Completion.
  */
 async function checkBundle() {
-	const allowed = new Set(['api', 'frontend', 'runtime', 'package.json', 'README.md', 'LICENSE', 'CHANGELOG.md', '.env.production.example']);
+	const allowed = new Set(['api', 'frontend', 'runtime', 'package.json', 'README.md', 'BACKUP.md', 'LICENSE', 'CHANGELOG.md', '.env.production.example']);
 	for (const entry of await readdir(app)) { assert(allowed.has(entry), 'Unexpected bundle entry'); }
 	const manifest = JSON.parse(await readFile(join(app, 'package.json'), 'utf8'));
 	assert(!manifest.dependencies && !manifest.devDependencies);
 	assert.equal(manifest.scripts.start, 'node --env-file-if-exists=.env runtime/server.mjs');
+	assert.equal(manifest.scripts.backup, 'node --env-file-if-exists=.env api/dist/cli/backup.js');
+	assert((await readFile(join(app, 'BACKUP.md'), 'utf8')).includes('RESTORE_DATABASE_URL'));
+	cli('api/dist/cli/backup.js', ['--help']);
 	for (const name of ['api', 'frontend']) {
 		const entries = await readdir(join(app, name));
 		assert(!entries.includes('src') && !entries.includes('tests') && !entries.includes('.env'));

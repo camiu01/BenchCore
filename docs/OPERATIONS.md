@@ -18,13 +18,10 @@ its scheduler is temporarily disabled.
 The frontend and API share one Node service; this is not a frontend-only static
 deployment. PostgreSQL holds runtime content/users/sessions; local media
 requires durable filesystem storage unless `MEDIA_STORAGE=database`.
-The standalone API supports `r2`, but the unified Node runtime currently rejects
-that selection. The documented private-R2 deployment uses Vercel.
-
-The unified runtime also omits password-reset and newsletter dependencies.
-SMTP environment settings do not enable these workflows on `pnpm start`.
-Standalone API and Vercel wire them; see the
-[environment reference](DEVELOPMENT.md#environment).
+Standalone API, unified Node and Vercel share service wiring, including private
+R2, configured password-reset delivery and opt-in newsletter persistence/mail.
+Optional SMTP services remain disabled until explicitly configured; startup
+does not send mail. See the [environment reference](DEVELOPMENT.md#environment).
 
 From a reviewed source checkout:
 
@@ -134,11 +131,11 @@ reviewed compatibility plan. Do not invent destructive down migrations.
 
 ## Media selection
 
-| Mode | Durable state | Backup consequence |
-|---|---|---|
-| `local` | `MEDIA_DIR`, image bytes and JSON sidecars | Back up database **and** the complete media directory |
-| `database` | PostgreSQL media/blob tables | Include blobs in database dumps; monitor DB/backup growth |
-| `r2` (standalone API/Vercel, not unified Node) | Private bytes, sidecars, and staging objects | Back up published object/sidecar prefixes separately from PostgreSQL; see the Vercel guide |
+| Mode       | Durable state                                | Backup consequence                                                                          |
+| ---------- | -------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `local`    | `MEDIA_DIR`, image bytes and JSON sidecars   | Back up database **and** the complete media directory                                       |
+| `database` | PostgreSQL media/blob tables                 | Include blobs in database dumps; monitor DB/backup growth                                   |
+| `r2`       | Private bytes, sidecars, and staging objects | Coordinate PostgreSQL and completed managed images; transient staging is not recovery state |
 
 Changing modes alone does not transfer objects. Test a deliberate copy/verify
 procedure or keep using the existing provider until migration tooling exists.
@@ -146,9 +143,10 @@ Never delete the old store solely because the new provider starts successfully.
 
 ## Backup
 
-The commands below are operator examples, not a verified backup/restore result.
-There is no integrated portable backup/restore CLI. Run drills against isolated
-targets before relying on a recovery plan.
+Use the integrated [backup and empty-target recovery CLI](BACKUP.md), including
+its explicit maintenance/trusted-backup acknowledgements, checksummed manifest
+and isolated PostgreSQL drill. Its unit/protocol tests are not a real recovery
+result. The native manual commands below remain operator alternatives.
 
 Back up runtime data, not just Git:
 
@@ -196,6 +194,9 @@ PostgreSQL dumps are transactionally consistent; coordinating external media
 with that snapshot is an operator responsibility.
 
 ## Restore drill
+
+Prefer the complete coordinated [CLI recovery procedure](BACKUP.md#empty-target-recovery).
+The following manual database-only example is not a full managed-image restore.
 
 Restore into a **new isolated database and media location**, never directly
 over the only live copy. The following database name is dedicated test state:

@@ -1,0 +1,108 @@
+/* @file graph.css @brief Knowledge graph canvas, details and fallback list. */
+.graph-toolbar {
+	margin-bottom: 18px;
+}
+
+.graph-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 260px;
+	gap: 18px;
+}
+
+.graph-canvas {
+	min-height: 520px;
+	border: 1px solid var(--border);
+	background:
+		linear-gradient(var(--grid) 1px, transparent 1px),
+		linear-gradient(90deg, var(--grid) 1px, transparent 1px), var(--card-bg);
+	background-size: 20px 20px;
+	overflow: hidden;
+}
+
+.graph-canvas svg {
+	display: block;
+	width: 100%;
+	height: min(68vh, 620px);
+	touch-action: none;
+}
+
+.graph-links line {
+	stroke: var(--border);
+	stroke-width: 1.3;
+	opacity: 0.65;
+}
+
+.graph-nodes circle {
+	stroke: var(--sheet-bg);
+	stroke-width: 2;
+	cursor: pointer;
+}
+
+.graph-nodes circle:hover,
+.graph-nodes circle:focus-visible,
+.graph-nodes circle.selected {
+	stroke: var(--ink);
+	stroke-width: 4;
+	outline: none;
+}
+
+.graph-labels text {
+	fill: var(--ink);
+	font-family: inherit;
+	font-size: 10px;
+	pointer-events: none;
+}
+
+.graph-scene .search-muted,
+.graph-scene .selection-muted {
+	opacity: 0.12;
+}
+
+.graph-detail {
+	align-self: start;
+	min-height: 180px;
+	padding: 16px;
+	border: 1px solid var(--border);
+	background: var(--card-bg);
+}
+
+.graph-detail h2 {
+	margin: 0 0 8px;
+	font-size: 15px;
+}
+
+.graph-detail .btn {
+	margin-top: 16px;
+}
+
+.graph-legend {
+	margin: 14px 0;
+}
+
+.graph-fallback {
+	margin-top: 18px;
+	border-top: 1px dashed var(--border);
+	padding-top: 12px;
+}
+
+.graph-fallback summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.graph-fallback li {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	margin: 7px 0;
+}
+
+.graph-fallback button {
+	border: 0;
+	padding: 0;
+	background: none;
+	color: var(--ink);
+	font: inherit;
+	text-decoration: underline;
+	cursor: pointer;
+}

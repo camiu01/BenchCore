@@ -1,0 +1,4 @@
+/* @file custom.css @brief Site-specific overrides. See docs/CSS_CUSTOMIZATION.md. */
+/* This stylesheet loads last in the customization layer.
+   Override shared tokens on :root, theme colors on html[data-theme='…'],
+   or shared classes directly. Keep component-only rules in their .svelte file. */

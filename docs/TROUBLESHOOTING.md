@@ -63,8 +63,9 @@ For password recovery failures, verify `ZOHO_SMTP_USER`,
 two-factor authentication need a Zoho app password. The request intentionally
 returns the same result for existing and unknown accounts, so inspect delivery
 status without logging reset URLs or tokens. Do not repeatedly re-seed.
-The unified `pnpm start` runtime does not wire recovery delivery. Valid SMTP
-settings alone cannot enable it there; standalone API and Vercel do wire it.
+All production entrypoints now share recovery/newsletter wiring. With older
+artifacts the unified runtime omitted these dependencies; verify the exact
+artifact before diagnosing SMTP. Configuration is not a successful delivery test.
 
 ## Mutation returns 403
 

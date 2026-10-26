@@ -1,0 +1,6751 @@
+{
+	"openapi": "3.1.0",
+	"x-file": "docs/openapi.json",
+	"x-brief": "Generated current HTTP contract. Edit api/scripts/openapi, then run pnpm api:spec.",
+	"info": {
+		"title": "BenchCore API",
+		"version": "0.8.0",
+		"license": {
+			"name": "AGPL-3.0-or-later",
+			"identifier": "AGPL-3.0-or-later"
+		},
+		"description": "Current unversioned HTTP API, not a frozen API v1 or a 1.0 release promise. All mutations require an exact trusted Origin, including credential/consent endpoints. Administrator operations additionally require an active admin cookie session. Errors use stable error identifiers, optional localized message and optional English issues. Regular JSON body cap is 256 KiB unless documented otherwise. Quotas are process-local, not fleet-wide. Cookie-dependent responses are private/no-store. Source handlers and Zod input validators are authoritative; JSON Schema cannot express every cross-field, byte-count or domain rule. See docs/API.md for deployment differences."
+	},
+	"servers": [
+		{
+			"url": "/",
+			"description": "Same-origin unified Node/Vercel delivery; do not expose the SSR bridge."
+		},
+		{
+			"url": "http://localhost:5181",
+			"description": "Standalone local development API; use a configured trusted Origin for writes."
+		}
+	],
+	"tags": [
+		{
+			"name": "Authentication"
+		},
+		{
+			"name": "Posts"
+		},
+		{
+			"name": "Engagement"
+		},
+		{
+			"name": "Administration"
+		},
+		{
+			"name": "Media"
+		},
+		{
+			"name": "Newsletter"
+		},
+		{
+			"name": "Health"
+		}
+	],
+	"paths": {
+		"/health": {
+			"get": {
+				"operationId": "getHealth",
+				"summary": "Read service liveness",
+				"description": "Standalone API reports status/service/license without probing dependencies. Unified runtime intercepts this path and returns status only; /health/live and /health/ready are deployment-layer probes, not standalone API routes.",
+				"tags": [
+					"Health"
+				],
+				"security": [],
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Health"
+								}
+							}
+						}
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				}
+			}
+		},
+		"/api/auth/login": {
+			"post": {
+				"operationId": "login",
+				"summary": "Create a session",
+				"description": "Username/email and password authentication; enabled factors require a fresh, non-replayed code. Sets the session cookie for 30 days.",
+				"tags": [
+					"Authentication"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UserResult"
+								}
+							}
+						},
+						"headers": {
+							"Set-Cookie": {
+								"description": "HttpOnly SameSite=Lax cookie, Secure in production. Never log its value.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/Login"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/auth/register": {
+			"post": {
+				"operationId": "register",
+				"summary": "Register a reader",
+				"description": "Always creates a reader. Unknown fields, including role, are rejected. Does not log in or verify the email address.",
+				"tags": [
+					"Authentication"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"201": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UserResult"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"409": {
+						"$ref": "#/components/responses/Error409"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/Registration"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/auth/me": {
+			"get": {
+				"operationId": "getSessionUser",
+				"summary": "Read the current user",
+				"description": "Read the current user",
+				"tags": [
+					"Authentication"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UserResult"
+								}
+							}
+						}
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				}
+			}
+		},
+		"/api/auth/logout": {
+			"post": {
+				"operationId": "logout",
+				"summary": "Revoke the presented session",
+				"description": "Idempotent, including without a current session. Clears the session cookie.",
+				"tags": [
+					"Authentication"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Ok"
+								}
+							}
+						},
+						"headers": {
+							"Set-Cookie": {
+								"description": "HttpOnly SameSite=Lax cookie, Secure in production. Never log its value.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				}
+			}
+		},
+		"/api/auth/logout/all": {
+			"post": {
+				"operationId": "logoutAll",
+				"summary": "Revoke all device sessions",
+				"description": "Revoke all device sessions",
+				"tags": [
+					"Authentication"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Ok"
+								}
+							}
+						},
+						"headers": {
+							"Set-Cookie": {
+								"description": "HttpOnly SameSite=Lax cookie, Secure in production. Never log its value.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				}
+			}
+		},
+		"/api/auth/password": {
+			"post": {
+				"operationId": "changePassword",
+				"summary": "Rotate own password",
+				"description": "Requires the current password. Revokes every owner session and outstanding recovery token; sign in again.",
+				"tags": [
+					"Authentication"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Ok"
+								}
+							}
+						},
+						"headers": {
+							"Set-Cookie": {
+								"description": "HttpOnly SameSite=Lax cookie, Secure in production. Never log its value.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/PasswordChange"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/auth/password/forgot": {
+			"post": {
+				"operationId": "requestPasswordReset",
+				"summary": "Request a recovery link",
+				"description": "Generic acceptance for any valid email, without account enumeration or delivery guarantees. Requires configured delivery; unavailable in the unified Node runtime.",
+				"tags": [
+					"Authentication"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"202": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Ok"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					},
+					"503": {
+						"$ref": "#/components/responses/Error503"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/PasswordResetRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/auth/password/reset": {
+			"post": {
+				"operationId": "resetPassword",
+				"summary": "Consume a recovery token",
+				"description": "Consumes an unexpired, one-hour, single-use token and revokes every owner session. Does not remove TOTP.",
+				"tags": [
+					"Authentication"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Ok"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/PasswordReset"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/auth/totp": {
+			"get": {
+				"operationId": "getTotpStatus",
+				"summary": "Read nonsecret factor state",
+				"description": "Read nonsecret factor state",
+				"tags": [
+					"Authentication"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/FactorStatus"
+								}
+							}
+						}
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/auth/totp/enroll": {
+			"post": {
+				"operationId": "enrollTotp",
+				"summary": "Begin administrator enrollment",
+				"description": "Password-confirmed setup valid for ten minutes. Returns a secret, encrypted owner-bound ticket and otpauth URI: never log or cache them. Requires configured factor encryption.",
+				"tags": [
+					"Authentication"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Enrollment"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"409": {
+						"$ref": "#/components/responses/Error409"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					},
+					"503": {
+						"$ref": "#/components/responses/Error503"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/FactorPassword"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/auth/totp/enable": {
+			"post": {
+				"operationId": "enableTotp",
+				"summary": "Activate an enrolled factor",
+				"description": "Requires password, live setup ticket and fresh TOTP. Revokes every session; sign in again with TOTP.",
+				"tags": [
+					"Authentication"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Ok"
+								}
+							}
+						},
+						"headers": {
+							"Set-Cookie": {
+								"description": "HttpOnly SameSite=Lax cookie, Secure in production. Never log its value.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"409": {
+						"$ref": "#/components/responses/Error409"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					},
+					"503": {
+						"$ref": "#/components/responses/Error503"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/FactorConfirmation"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/auth/totp/disable": {
+			"post": {
+				"operationId": "disableTotp",
+				"summary": "Remove an enabled factor",
+				"description": "Requires password and a fresh, non-replayed code. Revokes every session. Offline recovery is a separate operator CLI, not an HTTP endpoint.",
+				"tags": [
+					"Authentication"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Ok"
+								}
+							}
+						},
+						"headers": {
+							"Set-Cookie": {
+								"description": "HttpOnly SameSite=Lax cookie, Secure in production. Never log its value.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"409": {
+						"$ref": "#/components/responses/Error409"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					},
+					"503": {
+						"$ref": "#/components/responses/Error503"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/FactorRemoval"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/admin/users": {
+			"get": {
+				"operationId": "listUsers",
+				"summary": "List accounts",
+				"description": "List accounts",
+				"tags": [
+					"Administration"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "limit",
+						"in": "query",
+						"required": false,
+						"description": "Maximum page size.",
+						"schema": {
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100,
+							"default": 25
+						}
+					},
+					{
+						"name": "offset",
+						"in": "query",
+						"required": false,
+						"description": "Offset into current results.",
+						"schema": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 100000,
+							"default": 0
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UserPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"x-required-role": "admin"
+			},
+			"post": {
+				"operationId": "createUser",
+				"summary": "Create an account with an explicit role",
+				"description": "Create an account with an explicit role",
+				"tags": [
+					"Administration"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"201": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UserResult"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"409": {
+						"$ref": "#/components/responses/Error409"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateUser"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/admin/users/{id}": {
+			"patch": {
+				"operationId": "manageUser",
+				"summary": "Change account role or activation",
+				"description": "At least one field is required. Revokes privilege-bearing sessions; 409 protects the last active administrator. Invalid UUID returns 400.",
+				"tags": [
+					"Administration"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "Account UUID.",
+						"schema": {
+							"type": "string",
+							"format": "uuid",
+							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+						}
+					},
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UserResult"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"409": {
+						"$ref": "#/components/responses/Error409"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UserPatch"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/posts": {
+			"get": {
+				"operationId": "listPosts",
+				"summary": "Search published posts",
+				"description": "Published-only results and filtered total. Guests retain locked titles but receive empty descriptions and zero likes. Responses are private/no-store and vary by Cookie.",
+				"tags": [
+					"Posts"
+				],
+				"security": [
+					{},
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "limit",
+						"in": "query",
+						"required": false,
+						"description": "Maximum page size.",
+						"schema": {
+							"default": 10,
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 200
+						}
+					},
+					{
+						"name": "offset",
+						"in": "query",
+						"required": false,
+						"description": "Offset into the filtered page.",
+						"schema": {
+							"default": 0,
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 1000000
+						}
+					},
+					{
+						"name": "search",
+						"in": "query",
+						"required": false,
+						"description": "PostgreSQL full-text search; not a fuzzy or substring search.",
+						"schema": {
+							"type": "string",
+							"maxLength": 200
+						}
+					},
+					{
+						"name": "category",
+						"in": "query",
+						"required": false,
+						"description": "Exact main category, combined with search and tags.",
+						"schema": {
+							"type": "string",
+							"minLength": 1,
+							"maxLength": 80
+						}
+					},
+					{
+						"name": "tag",
+						"in": "query",
+						"required": false,
+						"description": "Repeated tag names. Both tag and tags contribute to the combined maximum of 20 before deduplication.",
+						"schema": {
+							"default": [],
+							"maxItems": 20,
+							"type": "array",
+							"items": {
+								"type": "string",
+								"minLength": 1,
+								"maxLength": 60
+							}
+						},
+						"style": "form",
+						"explode": true
+					},
+					{
+						"name": "tags",
+						"in": "query",
+						"required": false,
+						"description": "Alias for repeated tag; encoded with repeated query keys, not CSV.",
+						"schema": {
+							"default": [],
+							"maxItems": 20,
+							"type": "array",
+							"items": {
+								"type": "string",
+								"minLength": 1,
+								"maxLength": 60
+							}
+						},
+						"style": "form",
+						"explode": true
+					},
+					{
+						"name": "tagMode",
+						"in": "query",
+						"required": false,
+						"description": "AND/OR across selected tags.",
+						"schema": {
+							"default": "and",
+							"type": "string",
+							"enum": [
+								"and",
+								"or"
+							]
+						}
+					},
+					{
+						"name": "sort",
+						"in": "query",
+						"required": false,
+						"description": "Descending order. Restricted likes do not affect guest ranking.",
+						"schema": {
+							"default": "published",
+							"type": "string",
+							"enum": [
+								"published",
+								"updated",
+								"popular"
+							]
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PostPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				}
+			},
+			"post": {
+				"operationId": "createPost",
+				"summary": "Create a post",
+				"description": "Title, slug and Markdown are required. Scheduled posts must remain drafts. JSON has a 256 KiB byte cap, independent of character limits. Duplicate slugs return 409.",
+				"tags": [
+					"Posts"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"201": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Post"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"409": {
+						"$ref": "#/components/responses/Error409"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreatePost"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/posts/{post}": {
+			"get": {
+				"operationId": "getPost",
+				"summary": "Read a published post by slug",
+				"description": "GET uses a slug, unlike PUT/DELETE. Locked guest DTOs redact body, description, cover and backlinks. Missing/unpublished returns the same 404; private/no-store, Vary: Cookie.",
+				"tags": [
+					"Posts"
+				],
+				"security": [
+					{},
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "post",
+						"in": "path",
+						"required": true,
+						"description": "Published slug for GET. Unpublished, missing and invalid slugs return the same 404.",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PostDetail"
+								}
+							}
+						}
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				}
+			},
+			"put": {
+				"operationId": "updatePost",
+				"summary": "Update selected fields by UUID",
+				"description": "Despite PUT, accepts a partial field set. Omitted fields are retained; only nullable fields accept null. A scheduled post must stay draft. No revision restore is promised.",
+				"tags": [
+					"Posts"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "post",
+						"in": "path",
+						"required": true,
+						"description": "Database UUID for mutations, not the public slug.",
+						"schema": {
+							"type": "string",
+							"format": "uuid",
+							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+						}
+					},
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Post"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"409": {
+						"$ref": "#/components/responses/Error409"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdatePost"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			},
+			"delete": {
+				"operationId": "deletePost",
+				"summary": "Delete a post by UUID",
+				"description": "Permanent audited deletion; clients must confirm first. Does not guarantee media cleanup. No revision recovery endpoint exists.",
+				"tags": [
+					"Posts"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "post",
+						"in": "path",
+						"required": true,
+						"description": "Database UUID for mutations, not the public slug.",
+						"schema": {
+							"type": "string",
+							"format": "uuid",
+							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+						}
+					},
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"204": {
+						"description": "Success; no response body."
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/posts/{slug}/preview": {
+			"get": {
+				"operationId": "previewPost",
+				"summary": "Read safe preview metadata",
+				"description": "No post body. Locked guest summaries are empty and covers null. Missing/unpublished share 404; private/no-store, Vary: Cookie.",
+				"tags": [
+					"Posts"
+				],
+				"security": [
+					{},
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "slug",
+						"in": "path",
+						"required": true,
+						"description": "Published post slug.",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PostPreview"
+								}
+							}
+						}
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				}
+			}
+		},
+		"/api/tags": {
+			"get": {
+				"operationId": "listTags",
+				"summary": "List tags with published post counts",
+				"description": "List tags with published post counts",
+				"tags": [
+					"Posts"
+				],
+				"security": [],
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Tags"
+								}
+							}
+						}
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				}
+			}
+		},
+		"/api/graph": {
+			"get": {
+				"operationId": "getGraph",
+				"summary": "Read the published knowledge graph",
+				"description": "Published node metadata and slug-to-slug edges. Reader-only descriptions/outgoing wikilinks are withheld. Shared tags above 24 posts form hubs instead of quadratic meshes.",
+				"tags": [
+					"Posts"
+				],
+				"security": [],
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Graph"
+								}
+							}
+						}
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				}
+			}
+		},
+		"/api/render": {
+			"post": {
+				"operationId": "renderMarkdown",
+				"summary": "Preview sanitized Markdown without saving",
+				"description": "Preview sanitized Markdown without saving",
+				"tags": [
+					"Posts"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Rendered"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RenderInput"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/admin/posts": {
+			"get": {
+				"operationId": "listAdminPosts",
+				"summary": "Search all editorial states",
+				"description": "Search all editorial states",
+				"tags": [
+					"Administration"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "limit",
+						"in": "query",
+						"required": false,
+						"description": "Protected ledger filter; counts cover search matches before the status filter.",
+						"schema": {
+							"default": 25,
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 100
+						}
+					},
+					{
+						"name": "offset",
+						"in": "query",
+						"required": false,
+						"description": "Protected ledger filter; counts cover search matches before the status filter.",
+						"schema": {
+							"default": 0,
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 1000000
+						}
+					},
+					{
+						"name": "search",
+						"in": "query",
+						"required": false,
+						"description": "Protected ledger filter; counts cover search matches before the status filter.",
+						"schema": {
+							"type": "string",
+							"maxLength": 200
+						}
+					},
+					{
+						"name": "status",
+						"in": "query",
+						"required": false,
+						"description": "Protected ledger filter; counts cover search matches before the status filter.",
+						"schema": {
+							"type": "string",
+							"enum": [
+								"draft",
+								"published",
+								"archived"
+							]
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AdminPostPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/admin/posts/{id}": {
+			"get": {
+				"operationId": "getAdminPost",
+				"summary": "Read an editable post",
+				"description": "Read an editable post",
+				"tags": [
+					"Administration"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "Database resource UUID.",
+						"schema": {
+							"type": "string",
+							"format": "uuid",
+							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AdminPost"
+								}
+							}
+						}
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/admin/posts/suggestions": {
+			"get": {
+				"operationId": "suggestPosts",
+				"summary": "Read up to 200 recently updated wikilink candidates",
+				"description": "Read up to 200 recently updated wikilink candidates",
+				"tags": [
+					"Administration"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PostSuggestions"
+								}
+							}
+						}
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/admin/posts/delete": {
+			"post": {
+				"operationId": "deleteSelectedPosts",
+				"summary": "Delete a confirmed bounded selection",
+				"description": "Requires confirmation DELETE and 1–100 UUIDs. Deduplicates IDs and deletes with a transactional audit record. Permanent; no undo.",
+				"tags": [
+					"Administration"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Deleted"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/BulkDelete"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/admin/tags": {
+			"get": {
+				"operationId": "listAdminTags",
+				"summary": "Read the full tag registry",
+				"description": "Read the full tag registry",
+				"tags": [
+					"Administration"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AdminTags"
+								}
+							}
+						}
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/admin/tags/{id}": {
+			"patch": {
+				"operationId": "changeTagColor",
+				"summary": "Set a tag HEX color",
+				"description": "Set a tag HEX color",
+				"tags": [
+					"Administration"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "Database resource UUID.",
+						"schema": {
+							"type": "string",
+							"format": "uuid",
+							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+						}
+					},
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Tag"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/TagColor"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			},
+			"delete": {
+				"operationId": "deleteTag",
+				"summary": "Delete a tag and all its associations",
+				"description": "Permanent tag deletion. Does not delete posts.",
+				"tags": [
+					"Administration"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "Database resource UUID.",
+						"schema": {
+							"type": "string",
+							"format": "uuid",
+							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+						}
+					},
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"204": {
+						"description": "Success; no response body."
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/posts/{slug}/comments": {
+			"get": {
+				"operationId": "listComments",
+				"summary": "Read approved comments",
+				"description": "Read approved comments",
+				"tags": [
+					"Engagement"
+				],
+				"security": [
+					{},
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "slug",
+						"in": "path",
+						"required": true,
+						"description": "Published post slug.",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "offset",
+						"in": "query",
+						"required": false,
+						"description": "Decimal integer. Batches contain at most 100; increase offset by 100 when hasMore is true.",
+						"schema": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 2147483647,
+							"default": 0
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Comments"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				}
+			},
+			"post": {
+				"operationId": "submitComment",
+				"summary": "Submit a comment for moderation",
+				"description": "Plain text; pending until approved. Leave honeypot website empty. Generic acceptance also covers honeypot submissions; per-IP/session quotas apply. Reader-only posts require a reader/admin session.",
+				"tags": [
+					"Engagement"
+				],
+				"security": [
+					{},
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "slug",
+						"in": "path",
+						"required": true,
+						"description": "Published post slug.",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"202": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CommentAccepted"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CommentInput"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/posts/{slug}/likes": {
+			"get": {
+				"operationId": "getLikes",
+				"summary": "Read like count and browser state",
+				"description": "Read like count and browser state",
+				"tags": [
+					"Engagement"
+				],
+				"security": [
+					{},
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "slug",
+						"in": "path",
+						"required": true,
+						"description": "Published post slug.",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Likes"
+								}
+							}
+						}
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				}
+			},
+			"post": {
+				"operationId": "toggleLike",
+				"summary": "Toggle a browser like",
+				"description": "Creates an anonymous like_voter cookie if needed; toggling is not idempotent. Reader-only posts require a reader/admin session. Counts are not page analytics.",
+				"tags": [
+					"Engagement"
+				],
+				"security": [
+					{},
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "slug",
+						"in": "path",
+						"required": true,
+						"description": "Published post slug.",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Likes"
+								}
+							}
+						},
+						"headers": {
+							"Set-Cookie": {
+								"description": "HttpOnly SameSite=Lax cookie, Secure in production. Never log its value.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				}
+			}
+		},
+		"/api/admin/comments": {
+			"get": {
+				"operationId": "listModerationComments",
+				"summary": "Read the moderation queue",
+				"description": "Read the moderation queue",
+				"tags": [
+					"Engagement"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "offset",
+						"in": "query",
+						"required": false,
+						"description": "Decimal integer. Batches contain at most 100; increase offset by 100 when hasMore is true.",
+						"schema": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 2147483647,
+							"default": 0
+						}
+					},
+					{
+						"name": "status",
+						"in": "query",
+						"required": false,
+						"description": "Optional moderation status.",
+						"schema": {
+							"type": "string",
+							"enum": [
+								"pending",
+								"approved",
+								"rejected"
+							]
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ModerationPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/admin/comments/{id}": {
+			"patch": {
+				"operationId": "moderateComment",
+				"summary": "Change comment status",
+				"description": "Change comment status",
+				"tags": [
+					"Engagement"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "Database resource UUID.",
+						"schema": {
+							"type": "string",
+							"format": "uuid",
+							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+						}
+					},
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ModeratedComment"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/Moderation"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			},
+			"delete": {
+				"operationId": "deleteComment",
+				"summary": "Permanently delete a comment",
+				"description": "Permanently delete a comment",
+				"tags": [
+					"Engagement"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"description": "Database resource UUID.",
+						"schema": {
+							"type": "string",
+							"format": "uuid",
+							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+						}
+					},
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"204": {
+						"description": "Success; no response body."
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/admin/audit": {
+			"get": {
+				"operationId": "listAuditEvents",
+				"summary": "Read identifier-only security history",
+				"description": "Contains identifiers, action, count and time, never credentials, emails, IP addresses or content bodies.",
+				"tags": [
+					"Administration"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "offset",
+						"in": "query",
+						"required": false,
+						"description": "At most 50 events per batch, newest first.",
+						"schema": {
+							"type": "integer",
+							"minimum": 0,
+							"maximum": 100000,
+							"default": 0
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AuditPage"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/media": {
+			"post": {
+				"operationId": "uploadMedia",
+				"summary": "Upload a base64 image",
+				"description": "PNG/JPEG/WebP/GIF, nonempty decoded length at most 5 MiB; base64 length must be divisible by four. Body cap 8 MiB. Uses StorageProvider, not multipart. Prefer direct uploads for R2/Vercel.",
+				"tags": [
+					"Media"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"201": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/StoredMedia"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/Upload"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/media/upload": {
+			"post": {
+				"operationId": "prepareDirectUpload",
+				"summary": "Prepare an owner-bound direct R2 upload",
+				"description": "Available only with direct-upload support. Body cap 16 KiB. PUT raw bytes to uploadUrl with exact declared length/type, no cookies and no redirects, then complete. Never log the signed URL or ticket.",
+				"tags": [
+					"Media"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PreparedUpload"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					},
+					"503": {
+						"$ref": "#/components/responses/Error503"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/PrepareUpload"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/media/complete": {
+			"post": {
+				"operationId": "completeDirectUpload",
+				"summary": "Verify and publish a staged R2 upload",
+				"description": "Body cap 16 KiB. Checks ticket owner/expiry, object type, length and ETag before immutable publication. Unsupported storage returns 404.",
+				"tags": [
+					"Media"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"201": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/StoredMedia"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CompleteUpload"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/media/{key}": {
+			"get": {
+				"operationId": "readMedia",
+				"summary": "Read authorized image bytes or a signed redirect",
+				"description": "Exclusively reader-audience saved uses require a valid reader/admin session. Missing, invalid and unauthorized keys share 404. Unreferenced/public-use images remain public by key. Issued URLs and downloaded bytes cannot be revoked retroactively.",
+				"tags": [
+					"Media"
+				],
+				"security": [
+					{},
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "key",
+						"in": "path",
+						"required": true,
+						"description": "Generated managed image key, never a filesystem path or client filename.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[A-Za-z0-9]{32}\\.(png|jpg|jpeg|webp|gif)$"
+						}
+					},
+					{
+						"name": "If-None-Match",
+						"in": "header",
+						"required": false,
+						"description": "Conditional public local/database read; audience is checked before 304.",
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Authorized bytes. Public local/database data: private, no-cache, must-revalidate and ETag; reader-only data: private, no-store. Vary: Cookie; CDN caching disabled.",
+						"content": {
+							"image/png": {
+								"schema": {
+									"type": "string",
+									"format": "binary"
+								}
+							},
+							"image/jpeg": {
+								"schema": {
+									"type": "string",
+									"format": "binary"
+								}
+							},
+							"image/webp": {
+								"schema": {
+									"type": "string",
+									"format": "binary"
+								}
+							},
+							"image/gif": {
+								"schema": {
+									"type": "string",
+									"format": "binary"
+								}
+							}
+						},
+						"headers": {
+							"ETag": {
+								"description": "Content digest on public local/database reads.",
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"304": {
+						"description": "Authorized public bytes unchanged; no body."
+					},
+					"307": {
+						"description": "R2 short-lived signed read URL; private, no-store, no response body.",
+						"headers": {
+							"Location": {
+								"description": "Signed object URL; never log it.",
+								"schema": {
+									"type": "string",
+									"format": "uri"
+								}
+							}
+						}
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				}
+			},
+			"delete": {
+				"operationId": "deleteUnusedMedia",
+				"summary": "Delete an unused image",
+				"description": "409 image_in_use protects saved references. Inspect and confirm the admin media endpoint to remove references deliberately.",
+				"tags": [
+					"Media"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "key",
+						"in": "path",
+						"required": true,
+						"description": "Generated managed image key, never a filesystem path or client filename.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[A-Za-z0-9]{32}\\.(png|jpg|jpeg|webp|gif)$"
+						}
+					},
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"204": {
+						"description": "Success; no response body."
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"409": {
+						"$ref": "#/components/responses/Error409"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/admin/media/{key}": {
+			"get": {
+				"operationId": "inspectMedia",
+				"summary": "Inspect saved uses or image metadata",
+				"description": "Default returns affected post identifiers and a confirmation fingerprint, not image existence. details=1 returns metadata only or 404; never bytes, signed URLs or private object keys.",
+				"tags": [
+					"Media"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "key",
+						"in": "path",
+						"required": true,
+						"description": "Generated managed image key, never a filesystem path or client filename.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[A-Za-z0-9]{32}\\.(png|jpg|jpeg|webp|gif)$"
+						}
+					},
+					{
+						"name": "details",
+						"in": "query",
+						"required": false,
+						"description": "When 1, returns MediaRecord; absent returns MediaUsage.",
+						"schema": {
+							"type": "string",
+							"enum": [
+								"1"
+							]
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/MediaInspection"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"x-required-role": "admin"
+			},
+			"delete": {
+				"operationId": "deleteManagedMedia",
+				"summary": "Delete a confirmed image and saved references",
+				"description": "Send the latest inspection version after explicit user confirmation. Permanently removes saved Markdown/cover references, including other posts. Storage and reference updates are not one cross-system transaction; avoid concurrent edits.",
+				"tags": [
+					"Media"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "key",
+						"in": "path",
+						"required": true,
+						"description": "Generated managed image key, never a filesystem path or client filename.",
+						"schema": {
+							"type": "string",
+							"pattern": "^[A-Za-z0-9]{32}\\.(png|jpg|jpeg|webp|gif)$"
+						}
+					},
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"204": {
+						"description": "Success; no response body."
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"409": {
+						"description": "usage_changed: inspect uses again before retrying.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					},
+					"502": {
+						"description": "storage_failed: saved references were removed but storage deletion failed; an unreferenced object may remain.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/MediaDeletion"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/categories": {
+			"get": {
+				"operationId": "listCategories",
+				"summary": "Read published category counts",
+				"description": "Read published category counts",
+				"tags": [
+					"Posts"
+				],
+				"security": [],
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Categories"
+								}
+							}
+						}
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				}
+			}
+		},
+		"/api/admin/categories": {
+			"get": {
+				"operationId": "listAdminCategories",
+				"summary": "Read all category assignments",
+				"description": "Read all category assignments",
+				"tags": [
+					"Administration"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Categories"
+								}
+							}
+						}
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"x-required-role": "admin"
+			},
+			"post": {
+				"operationId": "replaceCategory",
+				"summary": "Rename or clear a category",
+				"description": "A null replacement clears assignments. Posts are never deleted; changed reports affected rows.",
+				"tags": [
+					"Administration"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Changed"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CategoryChange"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/admin/imports/obsidian": {
+			"post": {
+				"operationId": "importObsidianVault",
+				"summary": "Import a bounded vault without overwriting posts",
+				"description": "JSON notes, not a raw ZIP. Body cap 4,000,000 bytes. Aggregate source cap 2,000,000 UTF-8 bytes. private creates drafts; readers/public publish with corresponding audience. Inspect per-file errors/warnings even after HTTP 200. Existing slugs are not overwritten.",
+				"tags": [
+					"Administration"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/VaultResult"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/VaultImport"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/newsletter": {
+			"get": {
+				"operationId": "getNewsletterStatus",
+				"summary": "Read newsletter availability",
+				"description": "Read newsletter availability",
+				"tags": [
+					"Newsletter"
+				],
+				"security": [],
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Availability"
+								}
+							}
+						}
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					}
+				}
+			}
+		},
+		"/api/newsletter/subscribe": {
+			"post": {
+				"operationId": "subscribeNewsletter",
+				"summary": "Request explicit newsletter consent",
+				"description": "Requires consent=true. Leave website empty. Generic acceptance hides subscriber existence and SMTP failure. Confirmation expires after 24 hours. Requires configured delivery; unavailable in the unified runtime.",
+				"tags": [
+					"Newsletter"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"202": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Accepted"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					},
+					"503": {
+						"$ref": "#/components/responses/Error503"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/Subscription"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/newsletter/confirm": {
+			"post": {
+				"operationId": "confirmNewsletter",
+				"summary": "Consume a single-use confirmation token",
+				"description": "Consume a single-use confirmation token",
+				"tags": [
+					"Newsletter"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Accepted"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid shape returns Error; a well-shaped rejected/expired token returns accepted=false.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"oneOf": [
+										{
+											"$ref": "#/components/schemas/Error"
+										},
+										{
+											"$ref": "#/components/schemas/Accepted"
+										}
+									]
+								}
+							}
+						}
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					},
+					"503": {
+						"$ref": "#/components/responses/Error503"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/Confirmation"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/newsletter/unsubscribe": {
+			"post": {
+				"operationId": "unsubscribeNewsletter",
+				"summary": "Revoke consent without an account",
+				"description": "Requires a valid signed token. Valid signatures return acceptance without exposing subscriber existence.",
+				"tags": [
+					"Newsletter"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Accepted"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid shape returns Error; a rejected signature returns accepted=false.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"oneOf": [
+										{
+											"$ref": "#/components/schemas/Error"
+										},
+										{
+											"$ref": "#/components/schemas/Accepted"
+										}
+									]
+								}
+							}
+						}
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					},
+					"503": {
+						"$ref": "#/components/responses/Error503"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/Unsubscribe"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/admin/newsletter": {
+			"get": {
+				"operationId": "listNewsletterCampaigns",
+				"summary": "Read campaign previews and private counts",
+				"description": "Read campaign previews and private counts",
+				"tags": [
+					"Newsletter"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/NewsletterDashboard"
+								}
+							}
+						}
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					},
+					"503": {
+						"$ref": "#/components/responses/Error503"
+					}
+				},
+				"x-required-role": "admin"
+			},
+			"post": {
+				"operationId": "createNewsletterCampaign",
+				"summary": "Save an immutable campaign draft without sending",
+				"description": "Save an immutable campaign draft without sending",
+				"tags": [
+					"Newsletter"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"201": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Campaign"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					},
+					"503": {
+						"$ref": "#/components/responses/Error503"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CampaignInput"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			}
+		},
+		"/api/admin/newsletter/send": {
+			"post": {
+				"operationId": "sendNewsletterBatch",
+				"summary": "Send one explicitly approved batch",
+				"description": "Requires confirmation SEND for every action. Snapshots at most 1000 opted-in recipients and claims at most five per batch. No automatic sending or retry of in-flight claims. Concurrent requests may send different batches; invoke deliberately.",
+				"tags": [
+					"Newsletter"
+				],
+				"security": [
+					{
+						"session": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "Origin",
+						"in": "header",
+						"required": true,
+						"description": "Exact configured trusted origin (scheme, host and port); not the request-derived Host.",
+						"schema": {
+							"type": "string",
+							"format": "uri",
+							"example": "https://benchcore.example"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/NewsletterStats"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/Error400"
+					},
+					"401": {
+						"$ref": "#/components/responses/Error401"
+					},
+					"403": {
+						"$ref": "#/components/responses/Error403"
+					},
+					"404": {
+						"$ref": "#/components/responses/Error404"
+					},
+					"405": {
+						"$ref": "#/components/responses/Error405"
+					},
+					"413": {
+						"$ref": "#/components/responses/Error413"
+					},
+					"429": {
+						"$ref": "#/components/responses/Error429"
+					},
+					"500": {
+						"$ref": "#/components/responses/Error500"
+					},
+					"503": {
+						"description": "Newsletter repository/delivery is unavailable.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Error"
+								}
+							}
+						}
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/SendNewsletter"
+							}
+						}
+					}
+				},
+				"x-required-role": "admin"
+			}
+		}
+	},
+	"components": {
+		"responses": {
+			"Error400": {
+				"description": "Invalid JSON, query, input fields or domain rules.",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Error"
+						}
+					}
+				}
+			},
+			"Error401": {
+				"description": "Missing, expired or revoked session, invalid credentials or rejected factor.",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Error"
+						}
+					}
+				}
+			},
+			"Error403": {
+				"description": "Untrusted/missing Origin or insufficient role.",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Error"
+						}
+					}
+				}
+			},
+			"Error404": {
+				"description": "Missing or unavailable resource; unpublished resources remain masked.",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Error"
+						}
+					}
+				}
+			},
+			"Error405": {
+				"description": "Method not allowed; Allow lists supported methods.",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Error"
+						}
+					}
+				}
+			},
+			"Error409": {
+				"description": "Conflicting state, duplicate identity/slug or changed saved usage.",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Error"
+						}
+					}
+				}
+			},
+			"Error413": {
+				"description": "Request body exceeds the byte limit.",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Error"
+						}
+					}
+				}
+			},
+			"Error429": {
+				"description": "Process-local quota exceeded; back off. Quotas are not shared across replicas.",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Error"
+						}
+					}
+				},
+				"headers": {
+					"Retry-After": {
+						"description": "Seconds before retry.",
+						"schema": {
+							"type": "integer",
+							"minimum": 1
+						}
+					}
+				}
+			},
+			"Error500": {
+				"description": "Generic internal failure; no stack trace or credentials are returned.",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Error"
+						}
+					}
+				}
+			},
+			"Error502": {
+				"description": "Storage operation failed; inspect operation-specific recovery instructions.",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Error"
+						}
+					}
+				}
+			},
+			"Error503": {
+				"description": "Required service, storage capability or configuration unavailable.",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Error"
+						}
+					}
+				}
+			}
+		},
+		"securitySchemes": {
+			"session": {
+				"type": "apiKey",
+				"in": "cookie",
+				"name": "session",
+				"description": "Opaque HttpOnly SameSite=Lax cookie obtained from login; Secure in production. No bearer-token API exists. Admin role is documented per operation, not an OAuth scope."
+			}
+		},
+		"schemas": {
+			"Error": {
+				"type": "object",
+				"properties": {
+					"error": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					},
+					"issues": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					}
+				},
+				"required": [
+					"error"
+				]
+			},
+			"Ok": {
+				"type": "object",
+				"properties": {
+					"ok": {
+						"type": "boolean",
+						"const": true
+					}
+				},
+				"required": [
+					"ok"
+				]
+			},
+			"CommentAccepted": {
+				"type": "object",
+				"properties": {
+					"ok": {
+						"type": "boolean",
+						"const": true
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"ok",
+					"message"
+				]
+			},
+			"Accepted": {
+				"type": "object",
+				"properties": {
+					"accepted": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"accepted"
+				]
+			},
+			"Availability": {
+				"type": "object",
+				"properties": {
+					"enabled": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"enabled"
+				]
+			},
+			"User": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid",
+						"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+					},
+					"email": {
+						"type": "string",
+						"format": "email",
+						"pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+					},
+					"username": {
+						"type": [
+							"string",
+							"null"
+						]
+					},
+					"name": {
+						"type": "string"
+					},
+					"role": {
+						"type": "string",
+						"enum": [
+							"admin",
+							"reader"
+						]
+					},
+					"isActive": {
+						"type": "boolean"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time",
+						"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+					}
+				},
+				"required": [
+					"id",
+					"email",
+					"username",
+					"name",
+					"role",
+					"isActive",
+					"createdAt"
+				]
+			},
+			"UserResult": {
+				"type": "object",
+				"properties": {
+					"user": {
+						"type": "object",
+						"properties": {
+							"id": {
+								"type": "string",
+								"format": "uuid",
+								"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+							},
+							"email": {
+								"type": "string",
+								"format": "email",
+								"pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+							},
+							"username": {
+								"type": [
+									"string",
+									"null"
+								]
+							},
+							"name": {
+								"type": "string"
+							},
+							"role": {
+								"type": "string",
+								"enum": [
+									"admin",
+									"reader"
+								]
+							},
+							"isActive": {
+								"type": "boolean"
+							},
+							"createdAt": {
+								"type": "string",
+								"format": "date-time",
+								"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+							}
+						},
+						"required": [
+							"id",
+							"email",
+							"username",
+							"name",
+							"role",
+							"isActive",
+							"createdAt"
+						]
+					}
+				},
+				"required": [
+					"user"
+				]
+			},
+			"UserPage": {
+				"type": "object",
+				"properties": {
+					"items": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string",
+									"format": "uuid",
+									"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+								},
+								"email": {
+									"type": "string",
+									"format": "email",
+									"pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+								},
+								"username": {
+									"type": [
+										"string",
+										"null"
+									]
+								},
+								"name": {
+									"type": "string"
+								},
+								"role": {
+									"type": "string",
+									"enum": [
+										"admin",
+										"reader"
+									]
+								},
+								"isActive": {
+									"type": "boolean"
+								},
+								"createdAt": {
+									"type": "string",
+									"format": "date-time",
+									"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+								}
+							},
+							"required": [
+								"id",
+								"email",
+								"username",
+								"name",
+								"role",
+								"isActive",
+								"createdAt"
+							]
+						}
+					},
+					"total": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					}
+				},
+				"required": [
+					"items",
+					"total"
+				]
+			},
+			"Post": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid",
+						"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+					},
+					"slug": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"tags": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					},
+					"category": {
+						"type": [
+							"string",
+							"null"
+						]
+					},
+					"authorName": {
+						"type": [
+							"string",
+							"null"
+						]
+					},
+					"publishedAt": {
+						"anyOf": [
+							{
+								"type": "string",
+								"format": "date-time",
+								"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time",
+						"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+					},
+					"likesCount": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"audience": {
+						"type": "string",
+						"enum": [
+							"public",
+							"readers"
+						]
+					},
+					"locked": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"id",
+					"slug",
+					"title",
+					"description",
+					"tags",
+					"category",
+					"authorName",
+					"publishedAt",
+					"updatedAt",
+					"likesCount",
+					"audience",
+					"locked"
+				]
+			},
+			"PostPage": {
+				"type": "object",
+				"properties": {
+					"items": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string",
+									"format": "uuid",
+									"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+								},
+								"slug": {
+									"type": "string"
+								},
+								"title": {
+									"type": "string"
+								},
+								"description": {
+									"type": "string"
+								},
+								"tags": {
+									"type": "array",
+									"items": {
+										"type": "string"
+									}
+								},
+								"category": {
+									"type": [
+										"string",
+										"null"
+									]
+								},
+								"authorName": {
+									"type": [
+										"string",
+										"null"
+									]
+								},
+								"publishedAt": {
+									"anyOf": [
+										{
+											"type": "string",
+											"format": "date-time",
+											"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+										},
+										{
+											"type": "null"
+										}
+									]
+								},
+								"updatedAt": {
+									"type": "string",
+									"format": "date-time",
+									"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+								},
+								"likesCount": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 9007199254740991
+								},
+								"audience": {
+									"type": "string",
+									"enum": [
+										"public",
+										"readers"
+									]
+								},
+								"locked": {
+									"type": "boolean"
+								}
+							},
+							"required": [
+								"id",
+								"slug",
+								"title",
+								"description",
+								"tags",
+								"category",
+								"authorName",
+								"publishedAt",
+								"updatedAt",
+								"likesCount",
+								"audience",
+								"locked"
+							]
+						}
+					},
+					"total": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					}
+				},
+				"required": [
+					"items",
+					"total"
+				]
+			},
+			"PostDetail": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid",
+						"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+					},
+					"slug": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"tags": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					},
+					"category": {
+						"type": [
+							"string",
+							"null"
+						]
+					},
+					"authorName": {
+						"type": [
+							"string",
+							"null"
+						]
+					},
+					"publishedAt": {
+						"anyOf": [
+							{
+								"type": "string",
+								"format": "date-time",
+								"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time",
+						"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+					},
+					"likesCount": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"audience": {
+						"type": "string",
+						"enum": [
+							"public",
+							"readers"
+						]
+					},
+					"locked": {
+						"type": "boolean"
+					},
+					"contentHtml": {
+						"type": "string"
+					},
+					"coverImage": {
+						"type": [
+							"string",
+							"null"
+						]
+					},
+					"readingMinutes": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"backlinks": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"slug": {
+									"type": "string"
+								},
+								"title": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"slug",
+								"title"
+							]
+						}
+					}
+				},
+				"required": [
+					"id",
+					"slug",
+					"title",
+					"description",
+					"tags",
+					"category",
+					"authorName",
+					"publishedAt",
+					"updatedAt",
+					"likesCount",
+					"audience",
+					"locked",
+					"contentHtml",
+					"coverImage",
+					"readingMinutes",
+					"backlinks"
+				]
+			},
+			"PostPreview": {
+				"type": "object",
+				"properties": {
+					"slug": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"tags": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					},
+					"publishedAt": {
+						"anyOf": [
+							{
+								"type": "string",
+								"format": "date-time",
+								"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					"coverImage": {
+						"type": [
+							"string",
+							"null"
+						]
+					},
+					"locked": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"slug",
+					"title",
+					"description",
+					"tags",
+					"publishedAt",
+					"coverImage",
+					"locked"
+				]
+			},
+			"AdminPost": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid",
+						"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+					},
+					"slug": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string"
+					},
+					"tags": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					},
+					"category": {
+						"type": [
+							"string",
+							"null"
+						]
+					},
+					"authorName": {
+						"type": [
+							"string",
+							"null"
+						]
+					},
+					"publishedAt": {
+						"anyOf": [
+							{
+								"type": "string",
+								"format": "date-time",
+								"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time",
+						"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+					},
+					"audience": {
+						"type": "string",
+						"enum": [
+							"public",
+							"readers"
+						]
+					},
+					"status": {
+						"type": "string",
+						"enum": [
+							"draft",
+							"published",
+							"archived"
+						]
+					},
+					"publishAt": {
+						"anyOf": [
+							{
+								"type": "string",
+								"format": "date-time",
+								"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					"contentMarkdown": {
+						"type": "string"
+					},
+					"contentHtml": {
+						"type": "string"
+					},
+					"coverImage": {
+						"type": [
+							"string",
+							"null"
+						]
+					}
+				},
+				"required": [
+					"id",
+					"slug",
+					"title",
+					"description",
+					"tags",
+					"category",
+					"authorName",
+					"publishedAt",
+					"updatedAt",
+					"audience",
+					"status",
+					"publishAt",
+					"contentMarkdown",
+					"contentHtml",
+					"coverImage"
+				]
+			},
+			"AdminPostPage": {
+				"type": "object",
+				"properties": {
+					"items": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string",
+									"format": "uuid",
+									"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+								},
+								"slug": {
+									"type": "string"
+								},
+								"title": {
+									"type": "string"
+								},
+								"description": {
+									"type": "string"
+								},
+								"tags": {
+									"type": "array",
+									"items": {
+										"type": "string"
+									}
+								},
+								"category": {
+									"type": [
+										"string",
+										"null"
+									]
+								},
+								"authorName": {
+									"type": [
+										"string",
+										"null"
+									]
+								},
+								"publishedAt": {
+									"anyOf": [
+										{
+											"type": "string",
+											"format": "date-time",
+											"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+										},
+										{
+											"type": "null"
+										}
+									]
+								},
+								"updatedAt": {
+									"type": "string",
+									"format": "date-time",
+									"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+								},
+								"audience": {
+									"type": "string",
+									"enum": [
+										"public",
+										"readers"
+									]
+								},
+								"status": {
+									"type": "string",
+									"enum": [
+										"draft",
+										"published",
+										"archived"
+									]
+								},
+								"publishAt": {
+									"anyOf": [
+										{
+											"type": "string",
+											"format": "date-time",
+											"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+										},
+										{
+											"type": "null"
+										}
+									]
+								}
+							},
+							"required": [
+								"id",
+								"slug",
+								"title",
+								"description",
+								"tags",
+								"category",
+								"authorName",
+								"publishedAt",
+								"updatedAt",
+								"audience",
+								"status",
+								"publishAt"
+							]
+						}
+					},
+					"total": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"counts": {
+						"type": "object",
+						"properties": {
+							"all": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							},
+							"draft": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							},
+							"published": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							},
+							"archived": {
+								"type": "integer",
+								"minimum": 0,
+								"maximum": 9007199254740991
+							}
+						},
+						"required": [
+							"all",
+							"draft",
+							"published",
+							"archived"
+						]
+					}
+				},
+				"required": [
+					"items",
+					"total",
+					"counts"
+				]
+			},
+			"PostSuggestions": {
+				"type": "object",
+				"properties": {
+					"items": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string",
+									"format": "uuid",
+									"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+								},
+								"slug": {
+									"type": "string"
+								},
+								"title": {
+									"type": "string"
+								},
+								"tags": {
+									"type": "array",
+									"items": {
+										"type": "string"
+									}
+								}
+							},
+							"required": [
+								"id",
+								"slug",
+								"title",
+								"tags"
+							]
+						}
+					}
+				},
+				"required": [
+					"items"
+				]
+			},
+			"Tags": {
+				"type": "object",
+				"properties": {
+					"items": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"name": {
+									"type": "string"
+								},
+								"slug": {
+									"type": "string"
+								},
+								"color": {
+									"type": "string",
+									"pattern": "^#[A-Fa-f0-9]{6}$"
+								},
+								"count": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 9007199254740991
+								}
+							},
+							"required": [
+								"name",
+								"slug",
+								"color",
+								"count"
+							]
+						}
+					}
+				},
+				"required": [
+					"items"
+				]
+			},
+			"AdminTags": {
+				"type": "object",
+				"properties": {
+					"items": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string",
+									"format": "uuid",
+									"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+								},
+								"name": {
+									"type": "string"
+								},
+								"slug": {
+									"type": "string"
+								},
+								"color": {
+									"type": "string",
+									"pattern": "^#[A-Fa-f0-9]{6}$"
+								},
+								"count": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 9007199254740991
+								}
+							},
+							"required": [
+								"id",
+								"name",
+								"slug",
+								"color",
+								"count"
+							]
+						}
+					}
+				},
+				"required": [
+					"items"
+				]
+			},
+			"Tag": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid",
+						"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+					},
+					"name": {
+						"type": "string"
+					},
+					"slug": {
+						"type": "string"
+					},
+					"color": {
+						"type": "string",
+						"pattern": "^#[A-Fa-f0-9]{6}$"
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"slug",
+					"color"
+				]
+			},
+			"Categories": {
+				"type": "object",
+				"properties": {
+					"items": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"name": {
+									"type": "string"
+								},
+								"count": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 9007199254740991
+								}
+							},
+							"required": [
+								"name",
+								"count"
+							]
+						}
+					}
+				},
+				"required": [
+					"items"
+				]
+			},
+			"Changed": {
+				"type": "object",
+				"properties": {
+					"changed": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					}
+				},
+				"required": [
+					"changed"
+				]
+			},
+			"Deleted": {
+				"type": "object",
+				"properties": {
+					"count": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					}
+				},
+				"required": [
+					"count"
+				]
+			},
+			"Rendered": {
+				"type": "object",
+				"properties": {
+					"html": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"html"
+				]
+			},
+			"Comments": {
+				"type": "object",
+				"properties": {
+					"items": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string",
+									"format": "uuid",
+									"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+								},
+								"authorName": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								},
+								"createdAt": {
+									"type": "string",
+									"format": "date-time",
+									"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+								}
+							},
+							"required": [
+								"id",
+								"authorName",
+								"content",
+								"createdAt"
+							]
+						}
+					},
+					"hasMore": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"items",
+					"hasMore"
+				]
+			},
+			"ModeratedComment": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid",
+						"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+					},
+					"authorName": {
+						"type": "string"
+					},
+					"content": {
+						"type": "string"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time",
+						"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+					},
+					"postId": {
+						"type": "string",
+						"format": "uuid",
+						"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+					},
+					"status": {
+						"type": "string",
+						"enum": [
+							"pending",
+							"approved",
+							"rejected"
+						]
+					}
+				},
+				"required": [
+					"id",
+					"authorName",
+					"content",
+					"createdAt",
+					"postId",
+					"status"
+				]
+			},
+			"ModerationPage": {
+				"type": "object",
+				"properties": {
+					"items": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string",
+									"format": "uuid",
+									"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+								},
+								"authorName": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								},
+								"createdAt": {
+									"type": "string",
+									"format": "date-time",
+									"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+								},
+								"postId": {
+									"type": "string",
+									"format": "uuid",
+									"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+								},
+								"status": {
+									"type": "string",
+									"enum": [
+										"pending",
+										"approved",
+										"rejected"
+									]
+								},
+								"post": {
+									"anyOf": [
+										{
+											"type": "object",
+											"properties": {
+												"slug": {
+													"type": "string"
+												},
+												"title": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"slug",
+												"title"
+											]
+										},
+										{
+											"type": "null"
+										}
+									]
+								}
+							},
+							"required": [
+								"id",
+								"authorName",
+								"content",
+								"createdAt",
+								"postId",
+								"status",
+								"post"
+							]
+						}
+					},
+					"hasMore": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"items",
+					"hasMore"
+				]
+			},
+			"Likes": {
+				"type": "object",
+				"properties": {
+					"count": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"liked": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"count",
+					"liked"
+				]
+			},
+			"FactorStatus": {
+				"type": "object",
+				"properties": {
+					"enabled": {
+						"type": "boolean"
+					},
+					"available": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"enabled",
+					"available"
+				]
+			},
+			"Enrollment": {
+				"type": "object",
+				"properties": {
+					"secret": {
+						"type": "string"
+					},
+					"ticket": {
+						"type": "string"
+					},
+					"uri": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"secret",
+					"ticket",
+					"uri"
+				]
+			},
+			"Graph": {
+				"type": "object",
+				"properties": {
+					"nodes": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string",
+									"format": "uuid",
+									"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+								},
+								"slug": {
+									"type": "string"
+								},
+								"title": {
+									"type": "string"
+								},
+								"description": {
+									"type": "string"
+								},
+								"publishedAt": {
+									"type": "string",
+									"format": "date-time",
+									"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+								},
+								"tags": {
+									"type": "array",
+									"items": {
+										"type": "object",
+										"properties": {
+											"name": {
+												"type": "string"
+											},
+											"slug": {
+												"type": "string"
+											},
+											"color": {
+												"type": "string",
+												"pattern": "^#[A-Fa-f0-9]{6}$"
+											}
+										},
+										"required": [
+											"name",
+											"slug",
+											"color"
+										]
+									}
+								}
+							},
+							"required": [
+								"id",
+								"slug",
+								"title",
+								"description",
+								"publishedAt",
+								"tags"
+							]
+						}
+					},
+					"edges": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"source": {
+									"type": "string"
+								},
+								"target": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"source",
+								"target"
+							]
+						}
+					}
+				},
+				"required": [
+					"nodes",
+					"edges"
+				]
+			},
+			"AuditPage": {
+				"type": "object",
+				"properties": {
+					"items": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string",
+									"format": "uuid",
+									"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+								},
+								"action": {
+									"type": "string",
+									"enum": [
+										"user.created",
+										"user.changed",
+										"password.changed",
+										"password.reset",
+										"sessions.revoked",
+										"totp.enabled",
+										"totp.disabled",
+										"posts.deleted",
+										"comment.moderated",
+										"comment.deleted"
+									]
+								},
+								"actorId": {
+									"anyOf": [
+										{
+											"type": "string",
+											"format": "uuid",
+											"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+										},
+										{
+											"type": "null"
+										}
+									]
+								},
+								"targetId": {
+									"anyOf": [
+										{
+											"type": "string",
+											"format": "uuid",
+											"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+										},
+										{
+											"type": "null"
+										}
+									]
+								},
+								"count": {
+									"type": "integer",
+									"minimum": 0,
+									"maximum": 9007199254740991
+								},
+								"createdAt": {
+									"type": "string",
+									"format": "date-time",
+									"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+								}
+							},
+							"required": [
+								"id",
+								"action",
+								"actorId",
+								"targetId",
+								"count",
+								"createdAt"
+							]
+						}
+					},
+					"hasMore": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"items",
+					"hasMore"
+				]
+			},
+			"Campaign": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid",
+						"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+					},
+					"subject": {
+						"type": "string"
+					},
+					"body": {
+						"type": "string"
+					},
+					"status": {
+						"type": "string",
+						"enum": [
+							"draft",
+							"sending",
+							"complete"
+						]
+					},
+					"authorId": {
+						"type": "string",
+						"format": "uuid",
+						"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+					},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time",
+						"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+					}
+				},
+				"required": [
+					"id",
+					"subject",
+					"body",
+					"status",
+					"authorId",
+					"createdAt"
+				]
+			},
+			"NewsletterStats": {
+				"type": "object",
+				"properties": {
+					"queued": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"sending": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"sent": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"failed": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"skipped": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					}
+				},
+				"required": [
+					"queued",
+					"sending",
+					"sent",
+					"failed",
+					"skipped"
+				]
+			},
+			"NewsletterDashboard": {
+				"type": "object",
+				"properties": {
+					"items": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"id": {
+									"type": "string",
+									"format": "uuid",
+									"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+								},
+								"subject": {
+									"type": "string"
+								},
+								"body": {
+									"type": "string"
+								},
+								"status": {
+									"type": "string",
+									"enum": [
+										"draft",
+										"sending",
+										"complete"
+									]
+								},
+								"authorId": {
+									"type": "string",
+									"format": "uuid",
+									"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+								},
+								"createdAt": {
+									"type": "string",
+									"format": "date-time",
+									"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+								},
+								"stats": {
+									"type": "object",
+									"properties": {
+										"queued": {
+											"type": "integer",
+											"minimum": 0,
+											"maximum": 9007199254740991
+										},
+										"sending": {
+											"type": "integer",
+											"minimum": 0,
+											"maximum": 9007199254740991
+										},
+										"sent": {
+											"type": "integer",
+											"minimum": 0,
+											"maximum": 9007199254740991
+										},
+										"failed": {
+											"type": "integer",
+											"minimum": 0,
+											"maximum": 9007199254740991
+										},
+										"skipped": {
+											"type": "integer",
+											"minimum": 0,
+											"maximum": 9007199254740991
+										}
+									},
+									"required": [
+										"queued",
+										"sending",
+										"sent",
+										"failed",
+										"skipped"
+									]
+								}
+							},
+							"required": [
+								"id",
+								"subject",
+								"body",
+								"status",
+								"authorId",
+								"createdAt",
+								"stats"
+							]
+						}
+					},
+					"confirmed": {
+						"type": "integer",
+						"minimum": 0,
+						"maximum": 9007199254740991
+					},
+					"enabled": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"items",
+					"confirmed",
+					"enabled"
+				]
+			},
+			"VaultResult": {
+				"type": "object",
+				"properties": {
+					"created": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					},
+					"skipped": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					},
+					"errors": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"file": {
+									"type": "string"
+								},
+								"message": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"file",
+								"message"
+							]
+						}
+					},
+					"warnings": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"file": {
+									"type": "string"
+								},
+								"message": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"file",
+								"message"
+							]
+						}
+					}
+				},
+				"required": [
+					"created",
+					"skipped",
+					"errors",
+					"warnings"
+				]
+			},
+			"Login": {
+				"type": "object",
+				"properties": {
+					"email": {
+						"anyOf": [
+							{
+								"type": "string",
+								"maxLength": 254,
+								"format": "email",
+								"pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+							},
+							{
+								"type": "string",
+								"pattern": "^[a-z][a-z0-9_-]{2,31}$"
+							}
+						]
+					},
+					"username": {
+						"type": "string",
+						"pattern": "^[a-z][a-z0-9_-]{2,31}$"
+					},
+					"password": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200
+					},
+					"code": {
+						"type": "string",
+						"pattern": "^\\d{6}$"
+					}
+				},
+				"required": [
+					"password"
+				],
+				"oneOf": [
+					{
+						"required": [
+							"email"
+						]
+					},
+					{
+						"required": [
+							"username"
+						]
+					}
+				],
+				"description": "Exactly one identifier; the legacy email field also accepts a username. A fresh six-digit code is required when TOTP is enabled."
+			},
+			"Registration": {
+				"type": "object",
+				"properties": {
+					"username": {
+						"type": "string",
+						"pattern": "^[a-z][a-z0-9_-]{2,31}$"
+					},
+					"email": {
+						"type": "string",
+						"maxLength": 254,
+						"format": "email",
+						"pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+					},
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200
+					},
+					"password": {
+						"type": "string",
+						"minLength": 8,
+						"maxLength": 200
+					}
+				},
+				"required": [
+					"username",
+					"email",
+					"name",
+					"password"
+				],
+				"additionalProperties": false
+			},
+			"CreateUser": {
+				"type": "object",
+				"properties": {
+					"username": {
+						"type": "string",
+						"pattern": "^[a-z][a-z0-9_-]{2,31}$"
+					},
+					"email": {
+						"type": "string",
+						"maxLength": 254,
+						"format": "email",
+						"pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+					},
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200
+					},
+					"password": {
+						"type": "string",
+						"minLength": 8,
+						"maxLength": 200
+					},
+					"role": {
+						"type": "string",
+						"enum": [
+							"admin",
+							"reader"
+						]
+					}
+				},
+				"required": [
+					"username",
+					"email",
+					"name",
+					"password",
+					"role"
+				],
+				"additionalProperties": false
+			},
+			"PasswordChange": {
+				"type": "object",
+				"properties": {
+					"currentPassword": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200
+					},
+					"newPassword": {
+						"type": "string",
+						"minLength": 8,
+						"maxLength": 200
+					}
+				},
+				"required": [
+					"currentPassword",
+					"newPassword"
+				],
+				"additionalProperties": false,
+				"description": "The new password must differ from the current password."
+			},
+			"PasswordResetRequest": {
+				"type": "object",
+				"properties": {
+					"email": {
+						"type": "string",
+						"maxLength": 254,
+						"format": "email",
+						"pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+					}
+				},
+				"required": [
+					"email"
+				],
+				"additionalProperties": false
+			},
+			"PasswordReset": {
+				"type": "object",
+				"properties": {
+					"token": {
+						"type": "string",
+						"pattern": "^[A-Za-z0-9_-]{43}$"
+					},
+					"newPassword": {
+						"type": "string",
+						"minLength": 8,
+						"maxLength": 200
+					}
+				},
+				"required": [
+					"token",
+					"newPassword"
+				],
+				"additionalProperties": false
+			},
+			"UserPatch": {
+				"type": "object",
+				"properties": {
+					"role": {
+						"type": "string",
+						"enum": [
+							"admin",
+							"reader"
+						]
+					},
+					"isActive": {
+						"type": "boolean"
+					}
+				},
+				"additionalProperties": false,
+				"minProperties": 1
+			},
+			"FactorPassword": {
+				"type": "object",
+				"properties": {
+					"password": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200
+					}
+				},
+				"required": [
+					"password"
+				],
+				"additionalProperties": false
+			},
+			"FactorConfirmation": {
+				"type": "object",
+				"properties": {
+					"password": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200
+					},
+					"code": {
+						"type": "string",
+						"pattern": "^\\d{6}$"
+					},
+					"ticket": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 2048
+					}
+				},
+				"required": [
+					"password",
+					"code",
+					"ticket"
+				],
+				"additionalProperties": false
+			},
+			"FactorRemoval": {
+				"type": "object",
+				"properties": {
+					"password": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200
+					},
+					"code": {
+						"type": "string",
+						"pattern": "^\\d{6}$"
+					}
+				},
+				"required": [
+					"password",
+					"code"
+				],
+				"additionalProperties": false
+			},
+			"CreatePost": {
+				"type": "object",
+				"properties": {
+					"title": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200
+					},
+					"slug": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100,
+						"pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+					},
+					"description": {
+						"default": "",
+						"type": "string",
+						"maxLength": 500
+					},
+					"status": {
+						"default": "draft",
+						"type": "string",
+						"enum": [
+							"draft",
+							"published",
+							"archived"
+						]
+					},
+					"audience": {
+						"default": "public",
+						"type": "string",
+						"enum": [
+							"public",
+							"readers"
+						]
+					},
+					"category": {
+						"anyOf": [
+							{
+								"type": "string",
+								"minLength": 1,
+								"maxLength": 80
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					"tags": {
+						"default": [],
+						"maxItems": 20,
+						"type": "array",
+						"items": {
+							"type": "string",
+							"minLength": 1,
+							"maxLength": 60
+						}
+					},
+					"publishedAt": {
+						"anyOf": [
+							{
+								"type": "string",
+								"format": "date-time",
+								"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					"publishAt": {
+						"anyOf": [
+							{
+								"type": "string",
+								"format": "date-time",
+								"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					"contentMarkdown": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200000
+					},
+					"coverImage": {
+						"anyOf": [
+							{
+								"type": "string",
+								"maxLength": 500
+							},
+							{
+								"type": "null"
+							}
+						]
+					}
+				},
+				"required": [
+					"title",
+					"slug",
+					"contentMarkdown"
+				]
+			},
+			"UpdatePost": {
+				"type": "object",
+				"properties": {
+					"title": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200
+					},
+					"slug": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 100,
+						"pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+					},
+					"description": {
+						"type": "string",
+						"maxLength": 500
+					},
+					"status": {
+						"type": "string",
+						"enum": [
+							"draft",
+							"published",
+							"archived"
+						]
+					},
+					"audience": {
+						"type": "string",
+						"enum": [
+							"public",
+							"readers"
+						]
+					},
+					"category": {
+						"anyOf": [
+							{
+								"type": "string",
+								"minLength": 1,
+								"maxLength": 80
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					"tags": {
+						"maxItems": 20,
+						"type": "array",
+						"items": {
+							"type": "string",
+							"minLength": 1,
+							"maxLength": 60
+						}
+					},
+					"publishedAt": {
+						"anyOf": [
+							{
+								"type": "string",
+								"format": "date-time",
+								"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					"publishAt": {
+						"anyOf": [
+							{
+								"type": "string",
+								"format": "date-time",
+								"pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					"contentMarkdown": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200000
+					},
+					"coverImage": {
+						"anyOf": [
+							{
+								"type": "string",
+								"maxLength": 500
+							},
+							{
+								"type": "null"
+							}
+						]
+					}
+				}
+			},
+			"CommentInput": {
+				"type": "object",
+				"properties": {
+					"authorName": {
+						"type": "string",
+						"minLength": 2,
+						"maxLength": 80
+					},
+					"content": {
+						"type": "string",
+						"minLength": 2,
+						"maxLength": 2000
+					},
+					"website": {
+						"type": "string",
+						"maxLength": 200
+					}
+				},
+				"required": [
+					"authorName",
+					"content"
+				],
+				"additionalProperties": false
+			},
+			"Moderation": {
+				"type": "object",
+				"properties": {
+					"status": {
+						"type": "string",
+						"enum": [
+							"pending",
+							"approved",
+							"rejected"
+						]
+					}
+				},
+				"required": [
+					"status"
+				],
+				"additionalProperties": false
+			},
+			"TagColor": {
+				"type": "object",
+				"properties": {
+					"color": {
+						"type": "string",
+						"pattern": "^#[A-Fa-f0-9]{6}$"
+					}
+				},
+				"required": [
+					"color"
+				],
+				"additionalProperties": false
+			},
+			"RenderInput": {
+				"type": "object",
+				"properties": {
+					"markdown": {
+						"type": "string",
+						"maxLength": 200000
+					}
+				},
+				"required": [
+					"markdown"
+				]
+			},
+			"BulkDelete": {
+				"type": "object",
+				"properties": {
+					"ids": {
+						"minItems": 1,
+						"maxItems": 100,
+						"type": "array",
+						"items": {
+							"type": "string",
+							"format": "uuid",
+							"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+						}
+					},
+					"confirmation": {
+						"type": "string",
+						"const": "DELETE"
+					}
+				},
+				"required": [
+					"ids",
+					"confirmation"
+				],
+				"additionalProperties": false
+			},
+			"MediaRecord": {
+				"type": "object",
+				"properties": {
+					"key": {
+						"type": "string",
+						"pattern": "^[A-Za-z0-9]{32}\\.(png|jpg|jpeg|webp|gif)$"
+					},
+					"filename": {
+						"type": "string"
+					},
+					"mime": {
+						"type": "string",
+						"enum": [
+							"image/png",
+							"image/jpeg",
+							"image/webp",
+							"image/gif"
+						]
+					},
+					"sizeBytes": {
+						"type": "integer",
+						"exclusiveMinimum": 0,
+						"maximum": 5242880
+					}
+				},
+				"required": [
+					"key",
+					"filename",
+					"mime",
+					"sizeBytes"
+				]
+			},
+			"StoredMedia": {
+				"type": "object",
+				"properties": {
+					"key": {
+						"type": "string",
+						"pattern": "^[A-Za-z0-9]{32}\\.(png|jpg|jpeg|webp|gif)$"
+					},
+					"filename": {
+						"type": "string"
+					},
+					"mime": {
+						"type": "string",
+						"enum": [
+							"image/png",
+							"image/jpeg",
+							"image/webp",
+							"image/gif"
+						]
+					},
+					"sizeBytes": {
+						"type": "integer",
+						"exclusiveMinimum": 0,
+						"maximum": 5242880
+					},
+					"url": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"key",
+					"filename",
+					"mime",
+					"sizeBytes",
+					"url"
+				]
+			},
+			"MediaUsage": {
+				"type": "object",
+				"properties": {
+					"uses": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"slug": {
+									"type": "string"
+								},
+								"title": {
+									"type": "string"
+								},
+								"id": {
+									"type": "string",
+									"format": "uuid",
+									"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+								}
+							},
+							"required": [
+								"slug",
+								"title",
+								"id"
+							]
+						}
+					},
+					"version": {
+						"type": "string",
+						"pattern": "^[a-f0-9]{64}$"
+					}
+				},
+				"required": [
+					"uses",
+					"version"
+				]
+			},
+			"MediaInspection": {
+				"oneOf": [
+					{
+						"$ref": "#/components/schemas/MediaRecord"
+					},
+					{
+						"$ref": "#/components/schemas/MediaUsage"
+					}
+				]
+			},
+			"Upload": {
+				"type": "object",
+				"properties": {
+					"filename": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200
+					},
+					"mime": {
+						"type": "string",
+						"enum": [
+							"image/png",
+							"image/jpeg",
+							"image/webp",
+							"image/gif"
+						]
+					},
+					"contentBase64": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 7500000,
+						"pattern": "^[A-Za-z0-9+/]*={0,2}$"
+					}
+				},
+				"required": [
+					"filename",
+					"mime",
+					"contentBase64"
+				],
+				"additionalProperties": false
+			},
+			"PrepareUpload": {
+				"type": "object",
+				"properties": {
+					"filename": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200
+					},
+					"mime": {
+						"type": "string",
+						"enum": [
+							"image/png",
+							"image/jpeg",
+							"image/webp",
+							"image/gif"
+						]
+					},
+					"sizeBytes": {
+						"type": "integer",
+						"exclusiveMinimum": 0,
+						"maximum": 5242880
+					}
+				},
+				"required": [
+					"filename",
+					"mime",
+					"sizeBytes"
+				],
+				"additionalProperties": false
+			},
+			"CompleteUpload": {
+				"type": "object",
+				"properties": {
+					"ticket": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 4096
+					}
+				},
+				"required": [
+					"ticket"
+				],
+				"additionalProperties": false
+			},
+			"PreparedUpload": {
+				"type": "object",
+				"properties": {
+					"uploadUrl": {
+						"type": "string",
+						"format": "uri"
+					},
+					"ticket": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"uploadUrl",
+					"ticket"
+				]
+			},
+			"MediaDeletion": {
+				"type": "object",
+				"properties": {
+					"version": {
+						"type": "string",
+						"pattern": "^[a-f0-9]{64}$"
+					}
+				},
+				"required": [
+					"version"
+				]
+			},
+			"CategoryChange": {
+				"type": "object",
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 80
+					},
+					"replacement": {
+						"anyOf": [
+							{
+								"type": "string",
+								"minLength": 1,
+								"maxLength": 80
+							},
+							{
+								"type": "null"
+							}
+						]
+					}
+				},
+				"required": [
+					"name",
+					"replacement"
+				],
+				"additionalProperties": false
+			},
+			"VaultImport": {
+				"type": "object",
+				"properties": {
+					"visibility": {
+						"default": "private",
+						"type": "string",
+						"enum": [
+							"private",
+							"public",
+							"readers"
+						]
+					},
+					"files": {
+						"minItems": 1,
+						"maxItems": 500,
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"path": {
+									"type": "string",
+									"minLength": 1,
+									"maxLength": 1000
+								},
+								"source": {
+									"type": "string",
+									"maxLength": 200000
+								}
+							},
+							"required": [
+								"path",
+								"source"
+							],
+							"additionalProperties": false
+						}
+					}
+				},
+				"required": [
+					"files"
+				],
+				"additionalProperties": false,
+				"description": "At most 500 files and 2,000,000 aggregate UTF-8 source bytes. Paths must be safe vault-relative paths: no backslashes, absolute paths, colon, empty, dot or parent segments."
+			},
+			"Subscription": {
+				"type": "object",
+				"properties": {
+					"email": {
+						"type": "string",
+						"maxLength": 254,
+						"format": "email",
+						"pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+					},
+					"consent": {
+						"type": "boolean",
+						"const": true
+					},
+					"website": {
+						"default": "",
+						"type": "string",
+						"maxLength": 200
+					}
+				},
+				"required": [
+					"email",
+					"consent"
+				],
+				"additionalProperties": false
+			},
+			"Confirmation": {
+				"type": "object",
+				"properties": {
+					"token": {
+						"type": "string",
+						"pattern": "^[A-Za-z0-9_-]{43}$"
+					}
+				},
+				"required": [
+					"token"
+				],
+				"additionalProperties": false
+			},
+			"Unsubscribe": {
+				"type": "object",
+				"properties": {
+					"token": {
+						"type": "string",
+						"maxLength": 100
+					}
+				},
+				"required": [
+					"token"
+				],
+				"additionalProperties": false
+			},
+			"CampaignInput": {
+				"type": "object",
+				"properties": {
+					"subject": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200
+					},
+					"body": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 20000
+					}
+				},
+				"required": [
+					"subject",
+					"body"
+				],
+				"additionalProperties": false,
+				"description": "Subject must not contain CR or LF. Saving never sends email."
+			},
+			"SendNewsletter": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "string",
+						"format": "uuid",
+						"pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+					},
+					"confirmation": {
+						"type": "string",
+						"const": "SEND"
+					}
+				},
+				"required": [
+					"id",
+					"confirmation"
+				],
+				"additionalProperties": false
+			},
+			"Health": {
+				"type": "object",
+				"required": [
+					"status"
+				],
+				"properties": {
+					"status": {
+						"type": "string",
+						"const": "ok"
+					},
+					"service": {
+						"type": "string",
+						"const": "benchcore-api"
+					},
+					"license": {
+						"type": "string",
+						"const": "AGPL-3.0-or-later"
+					}
+				}
+			}
+		}
+	}
+}

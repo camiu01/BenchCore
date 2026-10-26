@@ -7,6 +7,13 @@ This reference describes current handlers in `api/src/server.ts` and
 `api/src/http/`, not a versioned or stability-guaranteed public contract.
 Service and HTTP tests live in `api/tests/`; hosted verification is separate.
 
+The machine-readable [OpenAPI 3.1 contract](openapi.json) covers every registered
+API operation, including administrator routes. Generate it with `pnpm api:spec`
+and validate it with `pnpm api:spec:check`. [Contract maintenance](API_CONTRACT.md)
+explains ownership, checks and the remaining API v1 freeze gates. The artifact
+describes the current 0.8.0 implementation; it does not add `/api/v1`, a hosted
+Swagger UI or new runtime endpoints.
+
 ## Base URLs and conventions
 
 The unified runtime exposes `/api/*` on the same origin as

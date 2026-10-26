@@ -6,7 +6,7 @@
 Editorial workflow behind BENCHCORE. Every screen below lives in
 `frontend/src/routes/admin/` with the editor in
 `frontend/src/lib/components/PostEditor.svelte`, and the theme tokens live in
-`frontend/src/app.css` with state in `frontend/src/lib/theme.ts`.
+`frontend/src/lib/styles/tokens.css` with state in `frontend/src/lib/theme.ts`.
 
 ## Access and navigation
 
@@ -190,7 +190,9 @@ Themes: `light`, `dark`, `oled`.
 | Mechanism | Location |
 |---|---|
 | Theme type/state and persistence | `frontend/src/lib/theme.ts` |
-| Design tokens and component styles | `frontend/src/app.css` |
+| Stylesheet imports and cascade order | `frontend/src/app.css` |
+| Design tokens | `frontend/src/lib/styles/tokens.css` |
+| Shared style overrides | `frontend/src/lib/styles/custom.css` |
 | Pre-paint theme restoration | `frontend/src/app.html` |
 | Picker UI | `frontend/src/lib/components/ThemePicker.svelte` |
 | Shared document shell | `frontend/src/lib/components/DocShell.svelte` |
@@ -201,6 +203,9 @@ preference before normal rendering to reduce flashes.
 
 Core tokens include `--bg`, `--sheet-bg`, `--card-bg`, `--grid`, `--ink`,
 `--muted`, `--border`, `--border-light`, and `--accent`.
+
+See [CSS customization](CSS_CUSTOMIZATION.md) for editable tokens, component
+examples, stylesheet ownership and validation.
 
 ## Page recipe
 

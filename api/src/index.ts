@@ -3,35 +3,23 @@
  * @brief API entrypoint: wires persistence, selectable media, security and scheduled publishing.
  */
 import { getDb } from './db/client.js';
-import { createDrizzleRepos } from './db/drizzle.js';
-import { configuredStorage } from './media/configured.js';
+import { configuredServices } from './configured-services.js';
 import { configuredOrigins } from './http/security.js';
-import { configuredPasswordReset } from './auth/password-reset-delivery.js';
-import { configuredTotpKey } from './auth/totp.js';
-import { configuredNewsletter } from './newsletter/delivery.js';
-import { createDrizzleNewsletter } from './db/drizzle-newsletter.js';
 import { startPublishingJob } from './posts/scheduler.js';
 import { DEFAULT_PORT, MEDIA_PREFIX, createHandler, parsePort, startServer } from './server.js';
 
 const db = getDb();
-const repos = createDrizzleRepos(db);
-const backend = process.env['MEDIA_STORAGE'] ?? 'local';
-const passwordReset = configuredPasswordReset(process.env);
-const totpKey = configuredTotpKey(process.env);
-const newsletterMail = configuredNewsletter(process.env);
+const services = configuredServices(db, process.env);
 const handler = createHandler({
-	newsletter: { repository: createDrizzleNewsletter(db), ...(newsletterMail ? { mail: newsletterMail } : {}) },
-	...repos,
-	...(totpKey ? { totpKey } : {}),
-	media: configuredStorage(db, process.env),
-	...(passwordReset ? { passwordReset } : {}),
+	...services,
 	cookieSecure: process.env['NODE_ENV'] === 'production',
 	allowedOrigins: configuredOrigins(process.env)
 });
 
 const port = parsePort(process.env['PORT'], DEFAULT_PORT);
 const server = startServer(port, handler, process.env['HOST']);
-const stopPublishing = process.env['SCHEDULER_ENABLED'] === 'false' ? () => {} : startPublishingJob(repos.posts);
+const stopPublishing =
+	process.env['SCHEDULER_ENABLED'] === 'false' ? () => {} : startPublishingJob(services.posts);
 server.once('close', stopPublishing);
 
 server.on('listening', () => {

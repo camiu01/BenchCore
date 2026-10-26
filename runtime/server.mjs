@@ -15,18 +15,13 @@ import { cachedProbe, createPlatformHandler } from './router.mjs';
 async function main() {
 	const settings = platformSettings(process.env);
 	const dbModule = await import(new URL('../api/dist/db/client.js', import.meta.url).href);
-	const { createDrizzleRepos } = await import(new URL('../api/dist/db/drizzle.js', import.meta.url).href);
+	const { configuredServices } = await import(new URL('../api/dist/configured-services.js', import.meta.url).href);
 	const { createHandler } = await import(new URL('../api/dist/server.js', import.meta.url).href);
-	const { configuredStorage } = await import(new URL('../api/dist/media/configured.js', import.meta.url).href);
 	const { startPublishingJob } = await import(new URL('../api/dist/posts/scheduler.js', import.meta.url).href);
-	const { configuredTotpKey } = await import(new URL('../api/dist/auth/totp.js', import.meta.url).href);
 	await dbModule.checkDb();
 	const db = dbModule.getDb();
-	const repos = createDrizzleRepos(db);
 	const bridge = createBridge();
-	const media = configuredStorage(db, process.env);
-	const totpKey = configuredTotpKey(process.env);
-	const common = { ...repos, media, ...(totpKey ? { totpKey } : {}),
+	const common = { ...configuredServices(db, process.env),
 		cookieSecure: settings.origin.protocol === 'https:', allowedOrigins: [settings.origin.origin] };
 	const internal = createServer(createHandler({ ...common, clientAddress: bridge.address }));
 	internal.requestTimeout = 30_000;
@@ -53,7 +48,7 @@ async function main() {
 	server.listen(settings.port, settings.host);
 	await once(server, 'listening');
 	installShutdown(server, internal, process.env['SCHEDULER_ENABLED'] === 'false' ? () => {}
-		: startPublishingJob(repos.posts), dbModule.closeDb);
+		: startPublishingJob(common.posts), dbModule.closeDb);
 	process.stdout.write(`BenchCore beta listening on port ${settings.port}\n`);
 }
 

@@ -93,6 +93,19 @@ The full milestone history lives below under Done.
 
 ## Done
 
+### Source-level CSS customization (implemented locally)
+
+- [x] Split the global stylesheet into focused theme, shell, records, prose,
+      graph, topics, engagement, responsive and motion files. #theme #dx
+- [x] Centralize shared typography, sizing, spacing, borders and shadows; add
+      a final customization layer so shared component overrides need no
+      specificity escalation. #theme #components
+- [x] Document token and component customization in
+      [CSS customization](docs/CSS_CUSTOMIZATION.md). #docs
+- [x] Check customization overrides, 320/390/768/1280px layouts, theme control
+      semantics and reduced motion; retain all-theme automated accessibility
+      coverage. Manual accessibility review remains pending. #tests #ux
+
 ### Categories and manual opt-in newsletter (implemented, activation pending)
 
 - Optional main post category, independent of tags, with editor assignment,
@@ -269,40 +282,40 @@ The full milestone history lives below under Done.
 ### v0.8.0 milestone: Engagement, moderation and auth hardening (prepared locally)
 
 - [x] Comment moderation and anti-spam. #social #security
-	- [x] Independent bounded per-IP/session submission quotas with `Retry-After`.
-	- [x] First-party honeypot, with no external CAPTCHA or Akismet dependency.
-	- [x] Existing paginated approval/rejection workflow at `/admin/comments`,
-	  with moderation events recorded in the security log.
+  - [x] Independent bounded per-IP/session submission quotas with `Retry-After`.
+  - [x] First-party honeypot, with no external CAPTCHA or Akismet dependency.
+  - [x] Existing paginated approval/rejection workflow at `/admin/comments`,
+        with moderation events recorded in the security log.
 - [x] Session and authentication hardening. #auth #security
-	- [x] Global logout revokes all sessions atomically; password changes and
-	  recovery retain revocation and invalidate outstanding recovery tokens.
-	- [x] Password-confirmed administrator 2FA/TOTP with encrypted secrets,
-	  owner-bound expiring enrollment, atomic replay protection and audited
-	  offline recovery.
+  - [x] Global logout revokes all sessions atomically; password changes and
+        recovery retain revocation and invalidate outstanding recovery tokens.
+  - [x] Password-confirmed administrator 2FA/TOTP with encrypted secrets,
+        owner-bound expiring enrollment, atomic replay protection and audited
+        offline recovery.
 - [x] Security audit log. #security #admin
-	- [x] Transactional records for account creation/management, password
-	  rotation, global logout, TOTP changes and selected post deletion.
-	- [x] Administrator-only paginated viewer at `/admin/audit`, without
-	  credentials, emails, IP addresses or content bodies.
-	- [x] Explicit `DELETE` confirmation for bounded selected deletion.
+  - [x] Transactional records for account creation/management, password
+        rotation, global logout, TOTP changes and selected post deletion.
+  - [x] Administrator-only paginated viewer at `/admin/audit`, without
+        credentials, emails, IP addresses or content bodies.
+  - [x] Explicit `DELETE` confirmation for bounded selected deletion.
 
 Comment quotas remain process-local. Native PostgreSQL concurrency and hosted
 deployment verification remain operator gates, not locally verified results.
 
 ## Milestones
 
-| Version | Focus | Status |
-|:---|---|---|
-| 0.2.0 | Content pipeline and auth core | Shipped |
-| 0.3.0 | Database, API and media | Shipped |
-| 0.4.0 | Public site and admin | Shipped |
-| 0.5.0 | Hardening and release | Prepared locally |
-| 0.6.0-beta.1 | Online beta preparation | Shipped |
-| 0.6.0 | Media management and storage refinement | Shipped |
-| 0.7.0 | Social graph, links and knowledge navigation | Shipped |
-| 0.8.0 | Engagement, moderation and auth hardening | Prepared locally |
-| 0.9.0 | Stabilization, performance and deployment parity | In progress |
-| 1.0.0 | Production readiness and developer experience | Pending |
+| Version      | Focus                                            | Status                                           |
+| :----------- | ------------------------------------------------ | ------------------------------------------------ |
+| 0.2.0        | Content pipeline and auth core                   | Shipped                                          |
+| 0.3.0        | Database, API and media                          | Shipped                                          |
+| 0.4.0        | Public site and admin                            | Shipped                                          |
+| 0.5.0        | Hardening and release                            | Prepared locally                                 |
+| 0.6.0-beta.1 | Online beta preparation                          | Shipped                                          |
+| 0.6.0        | Media management and storage refinement          | Shipped                                          |
+| 0.7.0        | Social graph, links and knowledge navigation     | Shipped                                          |
+| 0.8.0        | Engagement, moderation and auth hardening        | Prepared locally                                 |
+| 0.9.0        | Stabilization, performance and deployment parity | In progress                                      |
+| 1.0.0        | Production readiness and developer experience    | In progress; OpenAPI implemented, freeze pending |
 
 ### Validation anchor (0.8.0)
 
@@ -333,6 +346,30 @@ have offline regression tests. Hosted cold-start/pooling, PostgreSQL, R2/SMTP,
 the actual Vercel frontend and manual accessibility checks remain operator
 gates. No migration, deployment, release or version bump was performed.
 
+### Current local verification evidence
+
+- Operator decision: leave real PostgreSQL recovery, hosted integration and
+  manual accessibility checks **to be tested**. No local PostgreSQL installation
+  or test cluster was created; the remaining release gates are not waived.
+- Latest checks: 324 API and 315 frontend unit tests pass; the opt-in real
+  PostgreSQL recovery drill is skipped. Workspace/runtime typechecks, lint,
+  Node/Vercel builds, compiled backup CLI help and credential-free Vercel API
+  packaging pass. New backup/shared-wiring files pass formatting; no full-repo
+  formatting result is claimed.
+- The prior Chromium run passes 98 accessibility/customization checks using
+  the local Node API fixture, at 320/390/768/1280px. Browser checks were not
+  rerun for the backend-only backup/wiring changes.
+- The backup CLI preserves managed media keys, validates complete archives and
+  refuses nonempty targets. Recovery requires explicit database and media
+  destinations; no overwrite or automatic cleanup is offered.
+- OpenAPI covers 58 operations across 46 paths, with structural/reference
+  validation, exact regeneration and complete method/path inventory checks,
+  plus selected real in-memory HTTP response checks. See
+  [contract maintenance](docs/API_CONTRACT.md) for limits.
+- This evidence does not close the hosted Vercel, PostgreSQL, R2/SMTP, manual
+  accessibility or backup/recovery gates. Metadata remains 0.8.0; no 1.0.0 tag
+  or hosted publication is authorized by updating this roadmap.
+
 ## Pending
 
 ### Version 0.9.0: Stabilization, performance & deployment parity
@@ -343,39 +380,97 @@ See [0.9.0 preparation and completion gates](docs/RELEASE_0.9.0.md).
 Workspace metadata stays at 0.8.0 until the remaining gates are closed.
 
 - [ ] Functional parity between standalone and Vercel serverless deployments. #runtime #ops #perf
-	- [x] Bound and validate shared Drizzle/PostgreSQL pool settings, with explicit session/transaction modes for PgBouncer/Neon and small Vercel defaults.
-	- [x] Keep liveness lazy and coalesce concurrent serverless readiness checks without caching stale results.
-	- [x] Add a dedicated browser CI matrix for Node HTTP and the Vercel API Fetch adapter, using disposable memory fixtures.
-	- [ ] Measure hosted cold/warm starts and provider pooling under concurrent instances.
-	- [ ] Verify the actual Vercel frontend, service bindings and hosted runtime E2E. Both services target Node.js 24, not Edge.
-	- [ ] Resolve/document the remaining scheduler and process-local quota parity gates before claiming full deployment parity.
+  - [x] Bound and validate shared Drizzle/PostgreSQL pool settings, with explicit session/transaction modes for PgBouncer/Neon and small Vercel defaults.
+  - [x] Keep liveness lazy and coalesce concurrent serverless readiness checks without caching stale results.
+  - [x] Add a dedicated browser CI matrix for Node HTTP and the Vercel API Fetch adapter, using disposable memory fixtures.
+  - [x] Share service wiring across all production entrypoints, including previously omitted unified-Node newsletter/password recovery and R2 support.
+  - [ ] Measure hosted cold/warm starts and provider pooling under concurrent instances.
+  - [ ] Verify the actual Vercel frontend, service bindings and hosted runtime E2E. Both services target Node.js 24, not Edge.
+  - [x] Document disabled Vercel scheduling and the required trusted shared-ingress abuse boundary in [Runtime parity](docs/RUNTIME_PARITY.md).
+  - [ ] Verify the documented scheduler/ingress policy on the actual staging targets before claiming full deployment parity.
 - [ ] Accessibility and themes (A11y). #ux #theme
-	- [x] Automatically review every reader/admin page template against selected WCAG 2.1 A/AA rules in light/dark/OLED, with keyboard skip-link and narrow-viewport checks.
-	- [x] Complete tested text/active-control contrast and distinct control-boundary tokens, with system forced-colors support.
-	- [x] Fix missing page titles, keyboard scrolling of the cookie table and skip-link focus order before the cookie notice.
-	- [ ] Complete manual screen-reader, zoom, OS high-contrast and interactive/error-state review; automated results are not WCAG certification.
+  - [x] Automatically review every reader/admin page template against selected WCAG 2.1 A/AA rules in light/dark/OLED, with keyboard skip-link and narrow-viewport checks.
+  - [x] Complete tested text/active-control contrast and distinct control-boundary tokens, with system forced-colors support.
+  - [x] Fix missing page titles, keyboard scrolling of the cookie table and skip-link focus order before the cookie notice.
+  - [ ] Complete manual screen-reader, zoom, OS high-contrast and interactive/error-state review; automated results are not WCAG certification.
 - [x] SEO and dynamic metadata. #seo #tests
-	- [x] Verify dynamic Open Graph and Twitter Cards through SSR for posts and tags, including article dates, optional covers and paginated tag canonicals.
-	- [x] Automatically parse and validate `rss.xml` and `sitemap.xml`, with safe XML 1.0 text and current last-modified dates.
+  - [x] Verify dynamic Open Graph and Twitter Cards through SSR for posts and tags, including article dates, optional covers and paginated tag canonicals.
+  - [x] Automatically parse and validate `rss.xml` and `sitemap.xml`, with safe XML 1.0 text and current last-modified dates.
 - [ ] Backup and restore CLI tools: export/import the complete database and image archive in a portable format, such as a ZIP bundle or JSON + Markdown archive. #ops #data #dx
+  - [x] Implement full native PostgreSQL/custom-dump and checksummed managed-image export, verification and empty-target-only restore with original keys.
+  - [x] Add isolated integrity/overwrite/R2 protocol regressions, artifact CLI/guide packaging and [private recovery instructions](docs/BACKUP.md).
+  - [ ] Run the opt-in real PostgreSQL drill against three empty loopback test databases and verify isolated application behavior. Native clients are not available on this host.
 
 ### Version 1.0.0: Production readiness, documentation & developer experience
 
-Focus: guarantee stability, freeze API v1 and prepare for enterprise deployment.
+Focus: close the 0.9.0 gates, approve API compatibility and make supported
+self-hosted deployments reproducible. A completed contract is not itself a
+production-readiness or API-freeze claim.
 
-- [ ] Public API freeze (API v1): formalize OpenAPI/Swagger specifications for every endpoint exposed under `/api`. #api #docs
+Work order: **OpenAPI baseline → compatibility review → backup/recovery →
+runtime/hosting parity → onboarding and operational checks → release candidate**.
+Documentation and regression tests accompany each implementation.
+
+- [ ] Public API freeze (API v1). #api #docs #compatibility
+  - [x] Generate a complete OpenAPI 3.1 baseline for the existing router,
+        with cookie sessions, required Origin, roles, pagination, request/response
+        shapes, errors and optional-service behavior: [OpenAPI JSON](docs/openapi.json).
+  - [x] Reuse existing Zod input validators; fail tests on regeneration drift,
+        missing/extra route operations, invalid references or missing mutation
+        security requirements. Checks run in the existing unit-test CI job.
+  - [x] Add selected HTTP wire-model regressions and
+        [contract maintenance instructions](docs/API_CONTRACT.md).
+  - [ ] Review and approve compatibility for every operation, including partial
+        PUT updates, stable errors, null/omission semantics and UUID/slug lookups.
+  - [ ] Decide and document the breaking-change/versioning policy. Do not add
+        `/api/v1` or promise a freeze merely because the artifact exists.
+  - [ ] Close live Node/Vercel integration gaps and add contract regressions for
+        identified risks before declaring API v1 stable.
+- [ ] Complete the prerequisite 0.9.0 gates. #release #ops
+  - [ ] Implement the complete database/media backup and restore CLI; prove
+        recovery into isolated empty state, with explicit overwrite behavior,
+        safe archive/path validation and separately protected recovery secrets.
+  - [ ] Record hosted persistence, R2/SMTP and concurrent-instance results;
+        resolve or explicitly approve scheduling/quota differences.
+  - [ ] Complete manual accessibility review; automated checks are insufficient.
 - [ ] Migration guide and official documentation. #docs #ops
-	- [ ] Consolidate the guides in `docs/`, including `ARCHITECTURE.md`, `DEVELOPMENT.md` and `OPERATIONS.md`.
-	- [ ] Write a start-to-finish self-hosted deployment guide using Docker/Docker Compose.
-- [ ] First-run onboarding wizard: provide an interactive browser setup at initial boot to create the primary administrator and configure S3/R2 storage. #auth #media #dx
-- [ ] Test coverage target: exceed 85% coverage for backend unit tests (`api/tests`) and critical frontend components. #tests #quality
-- [ ] Telemetry and detailed health checks: enrich `/health` with database latency, R2 availability and memory usage metrics. #api #ops
+  - [ ] Consolidate the guides in `docs/`, including `ARCHITECTURE.md`, `DEVELOPMENT.md` and `OPERATIONS.md`.
+  - [ ] Verify the supported Node 24 bundle deployment and upgrade path
+        end-to-end, including migrations, rollback limits, recovery and Vercel
+        differences. Docker/Compose was removed and is not a supported target;
+        reintroducing it requires a separate explicit scope decision.
+  - [x] Document editable CSS tokens, shared components and customization.
+- [ ] First-run onboarding wizard. #auth #media #dx #security
+  - [ ] Define an operator-owned one-time bootstrap credential and atomic
+        first-admin claim; never expose an unauthenticated public setup race.
+  - [ ] Create the primary administrator without logging secrets, protect
+        storage configuration and permanently disable setup after completion.
+  - [ ] Test simultaneous setup, retries/failures and already-configured
+        installations; keep the existing private-stdin CLI recovery path.
+- [ ] Test coverage target: measure and exceed 85% for backend unit tests and
+      critical frontend code, with explicit include/exclude rules and enforceable
+      thresholds. Preserve behavior-focused tests; counts are not coverage. #tests #quality
+- [ ] Operational health diagnostics. #api #ops #privacy
+  - [ ] Keep public liveness/readiness responses generic and credential-free.
+  - [ ] Define administrator/operator-only dependency latency, storage
+        availability and memory diagnostics with bounded probe costs.
+  - [ ] No external telemetry or analytics without a separate scope/privacy
+        decision; test unavailable dependencies and avoid leaking infrastructure.
+- [ ] Release-candidate acceptance. #release #tests
+  - [ ] Record final unit, contract, type, lint, format, build, browser,
+        packaging, PostgreSQL and hosted-check evidence for the same candidate.
+  - [ ] Close or explicitly approve every remaining gate above; publish
+        known limits, support targets, upgrade and recovery instructions.
+  - [ ] Align workspace versions/changelog only when ready, validate release
+        metadata and prepare the artifact. Tagging, push and hosted release remain
+        separately authorized actions.
 
 ### Deferred (do not implement yet)
 
-- [ ] Categories #taxonomy
 - [ ] Analytics #data
-- [ ] Newsletters #data
+- Categories and manual double-opt-in newsletters are implemented; real SMTP
+  activation and migration/hosting checks remain operator gates, not deferred
+  feature implementations. See [Newsletter](docs/NEWSLETTER.md).
 - [ ] Multiple authors UI (schema already supports `author_id`) #auth
 - [ ] Public API tokens #api
 

@@ -116,6 +116,32 @@ class R2Storage implements StorageProvider {
 		return record;
 	}
 
+	/** @brief Restores an immutable original public key without replacing objects or metadata. @param value Metadata. @param data Verified bytes. @return Completion. */
+	async restore(value: StoredMedia, data: Buffer): Promise<void> {
+		const record = mediaRecord.parse(value);
+		validateUpload(data, record.mime);
+		if (data.length !== record.sizeBytes) throw new Error('Media length mismatch');
+		await this.client.send(
+			new PutObjectCommand({
+				Bucket: this.settings.bucket,
+				Key: `objects/${record.key}`,
+				IfNoneMatch: '*',
+				ContentType: record.mime,
+				CacheControl: 'private, no-store',
+				Body: data
+			})
+		);
+		await this.client.send(
+			new PutObjectCommand({
+				Bucket: this.settings.bucket,
+				Key: `media/${record.key}.json`,
+				IfNoneMatch: '*',
+				ContentType: 'application/json',
+				Body: JSON.stringify({ ...record, objectKey: record.key })
+			})
+		);
+	}
+
 	/**
 	 * @brief Loads only bounded valid metadata belonging to the requested safe key.
 	 * @param key Opaque storage key.
@@ -178,17 +204,24 @@ class R2Storage implements StorageProvider {
 	 * @brief Lists validated records across paginated metadata objects.
 	 * @return Filename-ordered records.
 	 */
-	async list(): Promise<StoredMedia[]> {
+	async list(options: { strict?: boolean } = {}): Promise<StoredMedia[]> {
 		const records: StoredMedia[] = [];
+		const tokens = new Set<string>();
 		let token: string | undefined;
 		do {
 			const page = await this.client.send(new ListObjectsV2Command({ Bucket: this.settings.bucket, Prefix: 'media/', ContinuationToken: token }));
 			for (const entry of page.Contents ?? []) {
-				if (!entry.Key?.endsWith('.json')) { continue; }
+				if (!entry.Key?.endsWith('.json')) {
+					if (options.strict) throw new Error('Unexpected R2 metadata entry');
+					continue;
+				}
 				const record = await this.metadata(entry.Key.slice('media/'.length, -'.json'.length));
+				if (!record && options.strict) throw new Error('Unreadable R2 metadata');
 				if (record) { records.push(mediaRecord.parse(record)); }
 			}
 			token = page.IsTruncated ? page.NextContinuationToken : undefined;
+			if (page.IsTruncated && (!token || tokens.has(token))) throw new Error('Incomplete R2 inventory');
+			if (token) tokens.add(token);
 		} while (token);
 		return records.sort((a, b) => a.filename.localeCompare(b.filename));
 	}

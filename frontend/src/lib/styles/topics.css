@@ -1,0 +1,72 @@
+/* @file topics.css @brief Topic filters and responsive archive cards. */
+.topic-filter {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--control-height);
+	padding: 6px 14px;
+	border: var(--border-width) solid var(--border);
+	border-radius: var(--control-radius);
+	font: inherit;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+	color: var(--ink);
+	background: none;
+	cursor: pointer;
+}
+
+.topic-filter:hover {
+	border-color: var(--accent);
+	background: var(--accent-bg);
+}
+
+.topic-filter[aria-pressed='true'] {
+	border-color: var(--accent);
+	background: var(--accent);
+	color: var(--accent-ink);
+}
+
+.topic-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+	gap: 16px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.topic-card {
+	display: flex;
+	align-items: start;
+	flex-direction: column;
+	gap: 16px;
+	height: 100%;
+	padding: 24px;
+	box-sizing: border-box;
+	color: var(--ink);
+	border: var(--border-width) solid var(--border);
+	background: var(--sheet-bg);
+	box-shadow: var(--shadow-record);
+	text-decoration: none;
+	transition:
+		transform 80ms linear,
+		box-shadow 80ms linear;
+}
+
+.topic-card:hover {
+	border-color: var(--accent);
+	background: var(--card-bg);
+	transform: translate(-2px, -2px);
+	box-shadow: 6px 6px 0 var(--accent);
+}
+
+.topic-count {
+	font-size: 14px;
+	color: var(--muted);
+}
+
+.topic-open {
+	font-size: 12px;
+	color: var(--accent);
+}

@@ -57,6 +57,7 @@ async function assemble(bundle, temporary, destination) {
 		await cp(join(root, relative), join(bundle, relative));
 	}
 	await cp(join(root, 'docs', 'BETA_DEPLOYMENT.md'), join(bundle, 'README.md'));
+	await cp(join(root, 'docs', 'BACKUP.md'), join(bundle, 'BACKUP.md'));
 }
 
 /**
@@ -91,7 +92,7 @@ async function fixLinks(directory, source, copied, final) {
  * @return {Promise<void>} Completion.
  */
 async function main() {
-	for (const relative of ['api/dist/cli/migrate.js', 'frontend/build/handler.js']) {
+	for (const relative of ['api/dist/cli/migrate.js', 'api/dist/cli/backup.js', 'frontend/build/handler.js']) {
 		if (!existsSync(join(root, relative))) { throw new Error('Run pnpm build first'); }
 	}
 	const manifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
@@ -112,7 +113,8 @@ async function main() {
 			'user:create': 'node --env-file-if-exists=.env api/dist/cli/account.js create',
 			'user:password': 'node --env-file-if-exists=.env api/dist/cli/account.js password',
 			'user:totp:reset': 'node --env-file-if-exists=.env api/dist/cli/account.js totp-reset',
-			'media:cleanup': 'node --env-file-if-exists=.env api/dist/cli/media.js cleanup'
+			'media:cleanup': 'node --env-file-if-exists=.env api/dist/cli/media.js cleanup',
+			backup: 'node --env-file-if-exists=.env api/dist/cli/backup.js'
 		};
 		await writeFile(join(bundle, 'package.json'), JSON.stringify({
 			name: manifest.name, version: manifest.version, private: true,

@@ -39,6 +39,12 @@ describe('single-origin beta runtime', () => {
 		request.headers['x-forwarded-for'] = '203.0.113.10, 203.0.113.20';
 		expect(requestAddress(request, new Set(['127.0.0.1']))).toBe('127.0.0.1');
 	});
+	it('allows all shared storage modes and rejects unknown backends', () => {
+		for (const MEDIA_STORAGE of ['local', 'database', 'r2']) {
+			expect(platformSettings({ ...env, MEDIA_STORAGE }).origin.origin).toBe(env.SITE_URL);
+		}
+		expect(() => platformSettings({ ...env, MEDIA_STORAGE: 'public-bucket' })).toThrow();
+	});
 	it('strips forged bridge headers and routes only the /api boundary to the API', async () => {
 		const bridge = createBridge();
 		const server = createServer(

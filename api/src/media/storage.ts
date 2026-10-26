@@ -6,7 +6,7 @@
  * blobs, ...). Services and routes depend on the interface only.
  */
 import { randomUUID } from 'node:crypto';
-import { mkdir, readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { z } from 'zod';
 
@@ -66,7 +66,10 @@ export interface StorageProvider {
 	/** @brief Optional browser-direct upload support without server body buffering. */
 	direct?: {
 		/** @brief Signs a bounded upload for one authenticated administrator. */
-		prepare(input: { filename: string; mime: string; sizeBytes: number }, owner: string): Promise<{ uploadUrl: string; ticket: string }>;
+		prepare(
+			input: { filename: string; mime: string; sizeBytes: number },
+			owner: string
+		): Promise<{ uploadUrl: string; ticket: string }>;
 		/** @brief Checks the object and publishes metadata for the same administrator. */
 		complete(ticket: string, owner: string): Promise<StoredMedia>;
 	};
@@ -92,11 +95,13 @@ export interface StorageProvider {
 	 * @return True when a file was deleted.
 	 */
 	remove(key: string): Promise<boolean>;
+	/** @brief Restores an original key without replacement. @param record Validated metadata. @param data Verified bytes. @return Completion. */
+	restore?(record: StoredMedia, data: Buffer): Promise<void>;
 	/**
 	 * @brief Lists every stored record.
 	 * @return The records ordered by filename.
 	 */
-	list(): Promise<StoredMedia[]>;
+	list(options?: { strict?: boolean }): Promise<StoredMedia[]>;
 }
 
 /**
@@ -115,11 +120,14 @@ class LocalStorage implements StorageProvider {
 		if (!sanitizeKey(key)) return null;
 		try {
 			const [sidecar, file] = await Promise.all([
-				readFile(`${this.filePath(key)}.json`, 'utf8'), stat(this.filePath(key))
+				readFile(`${this.filePath(key)}.json`, 'utf8'),
+				stat(this.filePath(key))
 			]);
 			const record = mediaRecord.parse(JSON.parse(sidecar));
 			return record.key === key && record.sizeBytes === file.size ? record : null;
-		} catch { return null; }
+		} catch {
+			return null;
+		}
 	}
 	/**
 	 * @brief Retains the media directory.
@@ -151,6 +159,20 @@ class LocalStorage implements StorageProvider {
 		await writeFile(this.filePath(key), data);
 		await writeFile(`${this.filePath(key)}.json`, JSON.stringify(record));
 		return record;
+	}
+
+	/** @brief Imports an original managed key using exclusive file creation. @param value Restored metadata. @param data Verified bytes. @return Completion. */
+	async restore(value: StoredMedia, data: Buffer): Promise<void> {
+		const record = mediaRecord.parse(value);
+		validateUpload(data, record.mime);
+		if (data.length !== record.sizeBytes) throw new Error('Media length mismatch');
+		await mkdir(this.dir, { recursive: true, mode: 0o700 });
+		if ((await lstat(this.dir)).isSymbolicLink()) throw new Error('Unsafe media directory');
+		await writeFile(`${this.filePath(record.key)}.json`, JSON.stringify(record), {
+			flag: 'wx',
+			mode: 0o600
+		});
+		await writeFile(this.filePath(record.key), data, { flag: 'wx', mode: 0o600 });
 	}
 
 	/**
@@ -202,11 +224,16 @@ class LocalStorage implements StorageProvider {
 	 * @param entry The directory entry.
 	 * @return Metadata or null for corrupt and unrelated entries.
 	 */
-	private async metadata(entry: string): Promise<StoredMedia | null> {
-		if (!entry.endsWith('.json')) { return null; }
+	private async metadata(entry: string, strict = false): Promise<StoredMedia | null> {
+		if (!entry.endsWith('.json')) {
+			return null;
+		}
 		try {
+			if (strict && (await lstat(join(this.dir, entry))).size > 16_384) return null;
 			const record = mediaRecord.parse(JSON.parse(await readFile(join(this.dir, entry), 'utf8')));
-			if (`${record.key}.json` !== entry) { return null; }
+			if (`${record.key}.json` !== entry) {
+				return null;
+			}
 			const info = await stat(this.filePath(record.key));
 			return info.isFile() && info.size === record.sizeBytes ? record : null;
 		} catch {
@@ -214,17 +241,40 @@ class LocalStorage implements StorageProvider {
 		}
 	}
 
+	/** @brief Bounds simultaneous file handles during complete recovery inventory reads. @param entries Directory filenames. @return Valid and invalid metadata in input order. */
+	private async strictMetadata(entries: string[]): Promise<(StoredMedia | null)[]> {
+		const records: (StoredMedia | null)[] = [];
+		for (const entry of entries) records.push(await this.metadata(entry, true));
+		return records;
+	}
+
 	/**
 	 * @brief Lists valid sidecars backed by matching upload files.
 	 * @return Metadata ordered by filename.
 	 */
-	async list(): Promise<StoredMedia[]> {
+	async list(options: { strict?: boolean } = {}): Promise<StoredMedia[]> {
 		try {
-			const entries = await readdir(this.dir);
-			const records = await Promise.all(entries.map((entry) => this.metadata(entry)));
-			return records.filter((record): record is StoredMedia => record !== null)
-				.sort((a, b) => a.filename.localeCompare(b.filename));
-		} catch {
+			if (options.strict && (await lstat(this.dir)).isSymbolicLink())
+				throw new Error('Unsafe media directory');
+			const entries = await readdir(this.dir, { withFileTypes: true });
+			if (options.strict && entries.some((entry) => !entry.isFile()))
+				throw new Error('Unsafe media entry');
+			const metadata = options.strict
+				? await this.strictMetadata(entries.map((entry) => entry.name))
+				: await Promise.all(entries.map((entry) => this.metadata(entry.name)));
+			const records = metadata.filter((record): record is StoredMedia => record !== null);
+			const expected = new Set(records.flatMap((record) => [record.key, `${record.key}.json`]));
+			if (
+				options.strict &&
+				(entries.length !== expected.size ||
+					entries.some((entry) => !entry.isFile() || !expected.has(entry.name)))
+			) {
+				throw new Error('Incomplete or unsafe local media inventory');
+			}
+			return records.sort((a, b) => a.filename.localeCompare(b.filename));
+		} catch (error) {
+			if (options.strict && !(error instanceof Error && 'code' in error && error.code === 'ENOENT'))
+				throw error;
 			return [];
 		}
 	}

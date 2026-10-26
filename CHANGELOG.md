@@ -12,8 +12,29 @@ Version 0.8.0 is prepared locally. No tag, hosted release or deployment is creat
 - Add local Node HTTP/Fetch API parity tests and a Chromium CI matrix with
   disposable memory repositories. Both browser modes use the Node frontend;
   hosted Vercel routing, scaling and cold starts remain unverified.
+- Share service wiring across standalone, unified Node and Vercel so the
+  unified runtime also supports configured password reset, opt-in newsletter
+  delivery and private R2. No mail is sent during startup.
+
+### Backup and recovery
+
+- Add private offline `backup export|verify|restore` commands for a complete
+  native PostgreSQL dump and a checksummed managed-image archive.
+- Preserve original media keys, reject invalid/incomplete archives and populated
+  recovery targets, use exclusive storage writes and transactional database
+  restore, and never automatically delete or overwrite existing state.
+- Include the compiled command in Node artifacts and document maintenance,
+  separately protected secrets and isolated partial-failure handling.
+- Add isolated archive/R2 protocol regressions and an opt-in, loopback-only
+  PostgreSQL recovery drill. Actual PostgreSQL and hosted R2 recovery remain
+  unverified; the drill is skipped without three explicit empty test databases.
 
 ### Accessibility, navigation and editing
+
+- Split shared CSS into focused stylesheets with centralized design tokens,
+  a final customization cascade layer and a source-level customization guide.
+  Reduce repeated entrance animations, wrap long content and expose the
+  selected theme to assistive technology.
 
 - Audit reader/admin page templates in light, dark and OLED themes with axe,
   keyboard skip-link and narrow-viewport checks. Improve control contrast,
@@ -30,7 +51,17 @@ Version 0.8.0 is prepared locally. No tag, hosted release or deployment is creat
   dates, and test SSR Open Graph/Twitter metadata and paginated tag canonicals.
 - Record verified local results and remaining release gates in
   `docs/RELEASE_0.9.0.md`. No version bump, migration or release is included.
-  Backup/restore tooling and manual/hosted checks remain pending.
+  Real backup recovery drills and manual/hosted checks remain pending.
+
+### API contract and 1.0.0 preparation
+
+- Add an offline-generated OpenAPI 3.1 artifact for all existing API operations,
+  reusing Zod input validators and documenting cookie roles, exact Origin,
+  pagination, redaction, media and optional delivery behavior.
+- Validate structure, local references, deterministic regeneration, router
+  coverage and selected wire responses in the normal test suite.
+- Update the 1.0.0 roadmap without claiming an API v1 freeze, version bump,
+  hosted validation, deployment or release.
 
 ## 0.8.0 — 2026-10-12
 

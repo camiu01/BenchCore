@@ -28,8 +28,11 @@
 <div class="theme-picker">
 	<span>{t('theme.mode')}</span>
 	{#each THEMES as theme (theme)}
-		<button class="theme-btn" class:active={current === theme} onclick={() => select(theme)}
-			>{t(`theme.${theme}`)}</button
+		<button
+			class="theme-btn"
+			class:active={current === theme}
+			aria-pressed={current === theme}
+			onclick={() => select(theme)}>{t(`theme.${theme}`)}</button
 		>
 	{/each}
 </div>

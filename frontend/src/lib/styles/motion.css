@@ -1,0 +1,41 @@
+/* @file motion.css @brief Restrained, optional sheet entrance and interactive feedback. */
+@keyframes rise-in {
+	from {
+		transform: translateY(8px);
+	}
+	to {
+		transform: translateY(0);
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.wrapper {
+		animation: rise-in 0.35s ease-out;
+	}
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.record:has(.record-title a):hover {
+		border-color: var(--accent);
+	}
+}
+
+a.stamp:hover {
+	background: var(--accent);
+	color: var(--accent-ink);
+}
+
+.inventory-table tbody tr:hover,
+.spec-table tr:hover {
+	background: var(--accent-bg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation: none !important;
+		transition: none !important;
+		scroll-behavior: auto !important;
+	}
+}

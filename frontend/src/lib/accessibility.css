@@ -42,3 +42,19 @@ html .wrapper .field-input::placeholder {
 		outline: 2px solid Highlight;
 	}
 }
+
+:root {
+	-webkit-tap-highlight-color: var(--accent-bg);
+}
+
+:is(a, button, input, select, textarea, summary) {
+	touch-action: manipulation;
+}
+
+:is(input, textarea) {
+	caret-color: var(--accent);
+}
+
+:is(.spec-table, .inventory-table, .topic-count, .page-position) {
+	font-variant-numeric: tabular-nums;
+}

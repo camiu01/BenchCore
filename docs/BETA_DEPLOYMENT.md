@@ -1,5 +1,6 @@
 <!-- @file BETA_DEPLOYMENT.md -->
 <!-- @brief Single-origin Node delivery, installation, account safety and recovery. -->
+
 # BenchCore Node deployment
 
 **Bench-testing, Embedded Networks, & Circuit Hacks: Centralized Open-source Research Engine**
@@ -171,11 +172,15 @@ account deletion workflow**. Optional administrator TOTP is implemented; see
 [setup and offline recovery](RELEASE_0.8.0.md). It requires a stable
 `AUTH_TOTP_KEY`; readers do not have a TOTP enrollment workflow.
 
-The unified `pnpm start` entrypoint currently does **not** wire password-reset
-delivery or newsletter dependencies. SMTP configuration alone does not enable
-them there. The standalone API and Vercel entrypoints do wire these services;
-see [email configuration](DEVELOPMENT.md#optional-email). This is an entrypoint
-implementation gap, not a recommended production workaround.
+Unified Node, standalone API and Vercel share the same service wiring for
+password-reset delivery and explicitly enabled newsletter mail; startup never
+sends mail. See [email configuration](DEVELOPMENT.md#optional-email).
+The unified runtime also accepts `MEDIA_STORAGE=r2` with the same private
+provider settings. Hosted SMTP/R2 verification remains a deployment prerequisite.
+Browser-direct R2 uploads require the frontend to be built with the matching
+`R2_ACCOUNT_ID`, as well as configuring it at runtime. A generic artifact built
+without that account's upload hostname must be rebuilt before enabling direct
+R2 uploads. Do not widen CSP to work around a mismatched build.
 
 Email remains a login identifier, not proof of
 mailbox ownership. Add perimeter abuse protection if public registration attracts
@@ -183,6 +188,10 @@ spam. Never rely on in-memory quotas as distributed multi-instance enforcement.
 
 ## Health, backup and rollback
 
+- The artifact provides `npm run backup -- export|verify|restore`; see
+  [private backup and empty-target recovery](BACKUP.md) for required flags,
+  PostgreSQL client tools and separately protected secrets. `RESTORE_DATABASE_URL`
+  must explicitly select an empty isolated target. There is no overwrite mode.
 - `/health` and `/health/live`: process liveness, no DB access.
 - `/health/ready`: connectivity and migrated runtime columns, 503 on failure;
   coalesced checks with a two-second cache, no secret/error details.

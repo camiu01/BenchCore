@@ -3,15 +3,10 @@
  * @brief API-owned serverless wiring with no listeners, migrations or publishing timers.
  */
 import { createHandler } from '../server.js';
-import { createDrizzleRepos } from '../db/drizzle.js';
+import { configuredServices } from '../configured-services.js';
 import { getDb, checkDb } from '../db/client.js';
-import { configuredStorage } from '../media/configured.js';
 import { configuredOrigins } from '../http/security.js';
 import { nodeHandlerFetch } from '../http/web.js';
-import { configuredPasswordReset } from '../auth/password-reset-delivery.js';
-import { configuredTotpKey } from '../auth/totp.js';
-import { configuredNewsletter } from '../newsletter/delivery.js';
-import { createDrizzleNewsletter } from '../db/drizzle-newsletter.js';
 
 /**
  * @brief Validates Vercel configuration and wires the same API services as Node delivery.
@@ -20,22 +15,24 @@ import { createDrizzleNewsletter } from '../db/drizzle-newsletter.js';
  */
 export function createServerlessApp(env: NodeJS.ProcessEnv) {
 	const origins = configuredOrigins(env);
-	if (env['NODE_ENV'] === 'production' && origins.some((origin) => !origin.startsWith('https://'))) {
+	if (
+		env['NODE_ENV'] === 'production' &&
+		origins.some((origin) => !origin.startsWith('https://'))
+	) {
 		throw new Error('Serverless production requires HTTPS origins');
 	}
 	if (env['VERCEL_URL']) {
-		if (!/^[a-zA-Z0-9-]+\.vercel\.app$/.test(env['VERCEL_URL'])) { throw new Error('Invalid deployment hostname'); }
+		if (!/^[a-zA-Z0-9-]+\.vercel\.app$/.test(env['VERCEL_URL'])) {
+			throw new Error('Invalid deployment hostname');
+		}
 		origins.push(`https://${env['VERCEL_URL']}`);
 	}
 	const db = getDb();
-	const passwordReset = configuredPasswordReset(env);
-	const totpKey = configuredTotpKey(env);
-	const mail = configuredNewsletter(env);
-	const handler = createHandler({ ...createDrizzleRepos(db), media: configuredStorage(db, env),
-		newsletter: { repository: createDrizzleNewsletter(db), ...(mail ? { mail } : {}) },
-		...(passwordReset ? { passwordReset } : {}),
-		...(totpKey ? { totpKey } : {}),
-		cookieSecure: env['NODE_ENV'] === 'production', allowedOrigins: origins });
+	const handler = createHandler({
+		...configuredServices(db, env),
+		cookieSecure: env['NODE_ENV'] === 'production',
+		allowedOrigins: origins
+	});
 	return {
 		handler,
 		/** @brief Executes secured API requests with the hosting platform's peer identity. */

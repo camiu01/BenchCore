@@ -1,0 +1,134 @@
+/* @file shell.css @brief Document sheet, navigation and theme picker. */
+body {
+	margin: 0;
+	padding: 40px 20px;
+	background-color: var(--bg);
+	background-image:
+		linear-gradient(var(--grid) 1px, transparent 1px),
+		linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+	background-size: var(--grid-size) var(--grid-size);
+	color: var(--ink);
+	font-family: var(--font-body);
+	font-size: var(--font-size-body);
+	line-height: var(--line-height-body);
+}
+
+.wrapper {
+	max-width: var(--sheet-width);
+	margin: 0 auto;
+	background: var(--sheet-bg);
+	border: 2px solid var(--border);
+	padding: var(--sheet-padding);
+	box-shadow: var(--shadow-sheet);
+}
+
+.wrapper.wide {
+	max-width: var(--sheet-width-wide);
+}
+
+.doc-meta-bar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	border-bottom: 1px dashed var(--border);
+	padding-bottom: 10px;
+	margin-bottom: 24px;
+	font-size: 11px;
+}
+
+.doc-id {
+	color: var(--muted);
+	letter-spacing: 0.5px;
+}
+
+.theme-picker {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	color: var(--muted);
+}
+
+.theme-btn {
+	background: none;
+	border: 1px solid var(--border);
+	color: var(--muted);
+	font-family: inherit;
+	font-size: 11px;
+	padding: 1px 7px;
+	cursor: pointer;
+}
+
+.theme-btn.active {
+	background: var(--accent);
+	color: var(--accent-ink);
+	border-color: var(--accent);
+	font-weight: bold;
+}
+
+.doc-header {
+	border-bottom: 2px solid var(--border);
+	padding-bottom: 20px;
+	margin-bottom: 32px;
+}
+
+.doc-title {
+	margin: 0 0 6px 0;
+	font-size: 18px;
+	letter-spacing: 0.8px;
+	text-transform: uppercase;
+	font-weight: 700;
+}
+
+.doc-title .accent {
+	color: var(--accent);
+}
+
+.doc-sub {
+	color: var(--muted);
+	font-size: 12px;
+}
+
+.doc-nav {
+	margin-top: 14px;
+	font-size: 12px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 18px;
+}
+
+.doc-nav a {
+	color: var(--ink);
+	text-decoration: none;
+	border-bottom: 1px solid var(--border);
+	padding: 2px 0;
+}
+
+.doc-nav a:hover {
+	color: var(--accent);
+	border-color: var(--accent);
+}
+
+.doc-nav a[aria-current='page'] {
+	color: var(--accent);
+	border-color: var(--accent);
+	font-weight: bold;
+}
+
+.doc-title {
+	text-wrap: balance;
+	overflow-wrap: anywhere;
+}
+
+.doc-meta-bar,
+.theme-picker {
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.doc-meta-bar > *,
+.meta-controls,
+.field-row > *,
+.search-row > *,
+.password-input .field-input {
+	min-width: 0;
+}

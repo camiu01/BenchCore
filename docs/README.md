@@ -13,18 +13,22 @@ procedure is not evidence that it passed on a deployed host.
 
 ## Choose a path
 
-| Goal | Read |
-|---|---|
-| Deliver a Node release | [Node deployment and CI/CD](BETA_DEPLOYMENT.md), [0.8.0 preparation](RELEASE_0.8.0.md) |
-| Configure two-factor authentication | [0.8.0 setup and recovery](RELEASE_0.8.0.md) |
-| Run the project | [Development](DEVELOPMENT.md), [Troubleshooting](TROUBLESHOOTING.md) |
-| Configure services | [Environment reference](DEVELOPMENT.md#environment), [Vercel and R2](VERCEL_DEPLOYMENT.md) |
-| Write and publish | [Authoring](AUTHORING.md), [Admin & themes](ADMIN_AND_THEMES.md) |
-| Manage categories or opt-in email | [Newsletter and categories](NEWSLETTER.md) |
-| Build an API client | [API](API.md), [Threat model](THREAT_MODEL.md) |
-| Change implementation | [Architecture](ARCHITECTURE.md), [Testing](TESTING.md), [Contributing](../CONTRIBUTING.md) |
-| Deploy or recover data | [Operations](OPERATIONS.md), [Security policy](../SECURITY.md) |
-| Check the release review | [Review and validation](REVIEW.md) |
+| Goal                                        | Read                                                                                       |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Deliver a Node release                      | [Node deployment and CI/CD](BETA_DEPLOYMENT.md), [0.8.0 preparation](RELEASE_0.8.0.md)     |
+| Configure two-factor authentication         | [0.8.0 setup and recovery](RELEASE_0.8.0.md)                                               |
+| Run the project                             | [Development](DEVELOPMENT.md), [Troubleshooting](TROUBLESHOOTING.md)                       |
+| Configure services                          | [Environment reference](DEVELOPMENT.md#environment), [Vercel and R2](VERCEL_DEPLOYMENT.md) |
+| Check runtime differences and staging gates | [Runtime parity and abuse boundary](RUNTIME_PARITY.md)                                     |
+| Write and publish                           | [Authoring](AUTHORING.md), [Admin & themes](ADMIN_AND_THEMES.md)                           |
+| Manage categories or opt-in email           | [Newsletter and categories](NEWSLETTER.md)                                                 |
+| Build an API client                         | [API](API.md), [Threat model](THREAT_MODEL.md)                                             |
+| Maintain the OpenAPI contract               | [Contract maintenance](API_CONTRACT.md), [OpenAPI JSON](openapi.json)                      |
+| Change implementation                       | [Architecture](ARCHITECTURE.md), [Testing](TESTING.md), [Contributing](../CONTRIBUTING.md) |
+| Customize CSS and components                | [CSS customization](CSS_CUSTOMIZATION.md)                                                  |
+| Deploy or recover data                      | [Operations](OPERATIONS.md), [Security policy](../SECURITY.md)                             |
+| Export or restore a complete private backup | [Backup CLI and recovery drill](BACKUP.md)                                                 |
+| Check the release review                    | [Review and validation](REVIEW.md)                                                         |
 
 ## Version and scope
 
@@ -41,8 +45,9 @@ Revision tables are groundwork, not a revision product. Public moderated comment
 and anonymous likes are available. Optional categories and manual double-opt-in
 newsletters are implemented; actual SMTP validation and activation remain operator
 checks. There is no automatic newsletter job, collaborative editing, or automatic
-revision history. The unified Node entrypoint does not wire newsletter or password
-recovery dependencies; standalone API and Vercel entrypoints do. Schema presence alone is
+revision history. All three production entrypoints share newsletter, password
+recovery and media dependency wiring. Hosted delivery still needs verification.
+Schema presence alone is
 not evidence of a working user-facing feature. [TODO.md](../TODO.md) owns the
 roadmap; source and committed migrations own exact implementation details.
 

@@ -1,0 +1,100 @@
+/* @file prose.css @brief Sanitized Markdown typography and media. */
+/* Rendered post body (sanitized API HTML). */
+.record-body h1,
+.record-body h2,
+.record-body h3 {
+	font-size: 14px;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+	margin: 18px 0 8px 0;
+}
+
+.record-body p {
+	margin: 0 0 12px 0;
+}
+
+.record-body ul,
+.record-body ol {
+	margin: 0 0 12px 0;
+	padding-left: 20px;
+}
+
+.record-body pre {
+	background: var(--sheet-bg);
+	border: 1px solid var(--border);
+	padding: 12px;
+	overflow-x: auto;
+	font-size: 11px;
+}
+
+.record-body code {
+	font-family: inherit;
+	font-size: 11px;
+}
+
+.record-body math {
+	color: inherit;
+}
+
+.record-body math[display='block'] {
+	max-width: 100%;
+	overflow-x: auto;
+	overflow-y: hidden;
+	margin: 12px 0;
+	padding: 8px 0;
+}
+
+.record-body table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 11px;
+	margin: 14px 0;
+}
+
+.record-body th,
+.record-body td {
+	border: 1px dashed var(--border-light);
+	padding: 5px 8px;
+	text-align: left;
+}
+
+.record-body img {
+	max-width: 100%;
+	border: 1px solid var(--border);
+	display: block;
+	margin: 12px 0;
+}
+
+.record-body a {
+	color: var(--accent);
+}
+
+.record-body a.wikilink {
+	text-decoration: none;
+	border-bottom: 1px solid var(--accent);
+}
+
+.record-body a.wikilink.broken {
+	color: var(--muted);
+	border-bottom: 1px dashed var(--muted);
+}
+
+.record-body :is(h1, h2, h3, h4, h5, h6)[id] {
+	scroll-margin-top: 24px;
+	text-wrap: balance;
+}
+
+.record-body pre {
+	max-width: 100%;
+	overflow-wrap: normal;
+}
+
+.record-body img {
+	height: auto;
+}
+
+.record-body table {
+	display: block;
+	max-width: 100%;
+	overflow-x: auto;
+}

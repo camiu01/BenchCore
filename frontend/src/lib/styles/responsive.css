@@ -1,0 +1,69 @@
+/* @file responsive.css @brief Shared narrow-screen layout adaptations. */
+@media (max-width: 760px) {
+	body {
+		padding: 18px 10px;
+	}
+
+	.wrapper {
+		padding: 20px 16px;
+	}
+
+	.graph-layout {
+		grid-template-columns: 1fr;
+	}
+
+	.graph-canvas {
+		min-height: 420px;
+	}
+
+	.graph-canvas svg {
+		height: 55vh;
+		min-height: 420px;
+	}
+
+	.graph-controls,
+	.datetime-controls {
+		align-items: stretch;
+		flex-direction: column;
+	}
+}
+
+@media (max-width: 600px) {
+	body {
+		padding: 16px 10px;
+	}
+	.wrapper {
+		padding: 18px;
+	}
+	.record {
+		padding: 14px;
+	}
+	.doc-meta-bar {
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+	.doc-nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+	.doc-nav a {
+		margin-right: 0;
+	}
+	.spec-table {
+		table-layout: fixed;
+	}
+	.spec-table td {
+		overflow-wrap: anywhere;
+	}
+	.spec-table td.label {
+		width: 32%;
+	}
+	.doc-footer {
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+	.field-row {
+		grid-template-columns: 1fr;
+	}
+}

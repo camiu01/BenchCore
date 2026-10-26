@@ -1,0 +1,55 @@
+/* @file engagement.css @brief Reader engagement and comment presentation. */
+.engagement {
+	margin-top: 28px;
+}
+
+.engagement-summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.like-button.active {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: var(--accent-ink);
+}
+
+.comment-list {
+	display: grid;
+	gap: 10px;
+	margin: 16px 0 24px;
+}
+
+.comment {
+	border-left: 3px solid var(--border);
+	padding: 8px 12px;
+	background: var(--card-bg);
+}
+
+.comment header {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	color: var(--muted);
+	font-size: 11px;
+}
+
+.comment p {
+	margin-bottom: 0;
+	white-space: pre-wrap;
+}
+
+.comment-form textarea {
+	min-height: 110px;
+}
+
+.moderation-filters {
+	margin-bottom: 20px;
+}
+
+.comment-moderation .btn-row form {
+	display: inline;
+}
