@@ -38,9 +38,9 @@
 			<article class="record">
 				<div class="record-header">
 					<h2>{t('security.totp')}</h2>
-					{#if data.factor}<span class="stamp"
-							>{t(data.factor.enabled ? 'security.enabled' : 'security.disabled')}</span
-						>{/if}
+					{#if data.factor}<span class="stamp">
+							{t(data.factor.enabled ? 'security.enabled' : 'security.disabled')}
+						</span>{/if}
 				</div>
 				<p class="summary">{t('security.totpHelp')}</p>
 				{#if !data.factor}

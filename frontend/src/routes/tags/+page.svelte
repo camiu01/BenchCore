@@ -50,11 +50,11 @@
 					<li>
 						<a class="topic-card" href="/tags/{encodeURIComponent(tag.name)}">
 							<TagChip label={tag.name} color={tag.color} />
-							<span class="topic-count"
-								>{t(tag.count === 1 ? 'public.tags.countOne' : 'public.tags.countMany', {
+							<span class="topic-count">
+								{t(tag.count === 1 ? 'public.tags.countOne' : 'public.tags.countMany', {
 									n: tag.count
-								})}</span
-							>
+								})}
+							</span>
 							<span class="topic-open">{t('public.tags.explore')}</span>
 						</a>
 					</li>

@@ -55,9 +55,9 @@
 						<span class="record-title">
 							<a href="/posts/{encodeURIComponent(post.slug)}">{post.title}</a>
 						</span>
-						<span class="stamp"
-							>{post.audience === 'readers' ? t('public.readersOnly') : t('public.published')}</span
-						>
+						<span class="stamp">
+							{post.audience === 'readers' ? t('public.readersOnly') : t('public.published')}
+						</span>
 					</div>
 					{#if post.locked}<ReaderGate slug={post.slug} />{:else}<p class="summary">
 							{post.description}
@@ -67,18 +67,18 @@
 		{/if}
 		{#if data.totalPages > 1}
 			<nav class="btn-row" aria-label={t('public.tag.pagesAria')}>
-				<span class="page-position"
-					>{t('public.pagePosition', { page: data.page, total: data.totalPages })}</span
-				>
+				<span class="page-position">
+					{t('public.pagePosition', { page: data.page, total: data.totalPages })}
+				</span>
 				{#if data.page > 1}
-					<a class="btn" href="/tags/{encodeURIComponent(data.tag)}?page={data.page - 1}"
-						>{t('public.previous')}</a
-					>
+					<a class="btn" href="/tags/{encodeURIComponent(data.tag)}?page={data.page - 1}">
+						{t('public.previous')}
+					</a>
 				{/if}
 				{#if data.page < data.totalPages}
-					<a class="btn" href="/tags/{encodeURIComponent(data.tag)}?page={data.page + 1}"
-						>{t('public.next')}</a
-					>
+					<a class="btn" href="/tags/{encodeURIComponent(data.tag)}?page={data.page + 1}">
+						{t('public.next')}
+					</a>
 				{/if}
 			</nav>
 		{/if}

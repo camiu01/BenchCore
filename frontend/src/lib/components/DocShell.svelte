@@ -56,9 +56,9 @@
 		<div class="doc-sub">{sub}</div>
 		<nav class="doc-nav" aria-label={t('common.mainNavigation')}>
 			{#each nav as item (item.href)}
-				<a href={item.href} aria-current={item.href === activeHref ? 'page' : undefined}
-					>{navigationLabel(item.href, item.label, currentLocale())}</a
-				>
+				<a href={item.href} aria-current={item.href === activeHref ? 'page' : undefined}>
+					{navigationLabel(item.href, item.label, currentLocale())}
+				</a>
 			{/each}
 		</nav>
 	</header>
@@ -78,9 +78,9 @@
 		</div>
 		<nav class="site-links" aria-label={t('pages.footer.navigation')}>
 			{#each FOOTER_LINKS as link (link.href)}
-				<a href={link.href} aria-current={link.href === activeHref ? 'page' : undefined}
-					>{t(link.label)}</a
-				>
+				<a href={link.href} aria-current={link.href === activeHref ? 'page' : undefined}>
+					{t(link.label)}
+				</a>
 			{/each}
 		</nav>
 	</footer>

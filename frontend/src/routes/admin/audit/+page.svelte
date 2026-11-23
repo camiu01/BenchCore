@@ -36,9 +36,9 @@
 				<dl class="audit-details">
 					<dt>{t('security.auditTime')}</dt>
 					<dd>
-						<time datetime={event.createdAt}
-							>{publicationDate(event.createdAt, currentLocale())}</time
-						>
+						<time datetime={event.createdAt}>
+							{publicationDate(event.createdAt, currentLocale())}
+						</time>
 					</dd>
 					<dt>{t('security.auditActor')}</dt>
 					<dd>{event.actorId ?? t('security.operator')}</dd>
@@ -50,13 +50,18 @@
 			{#if data.online}<p class="summary">{t('security.auditEmpty')}</p>{/if}
 		{/each}
 		<nav class="btn-row" aria-label={t('security.audit')}>
-			{#if data.offset > 0}<a class="btn" href="/admin/audit?offset={Math.max(0, data.offset - 50)}"
-					>{t('security.previous')}</a
-				>{/if}
+			{#if data.offset > 0}<a
+					class="btn"
+					href="/admin/audit?offset={Math.max(0, data.offset - 50)}"
+				>
+					{t('security.previous')}
+				</a>{/if}
 			{#if data.hasMore && data.offset <= 99950}<a
 					class="btn"
-					href="/admin/audit?offset={data.offset + 50}">{t('security.next')}</a
-				>{/if}
+					href="/admin/audit?offset={data.offset + 50}"
+				>
+					{t('security.next')}
+				</a>{/if}
 		</nav>
 	</main>
 </DocShell>

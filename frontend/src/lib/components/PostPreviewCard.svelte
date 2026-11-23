@@ -47,8 +47,10 @@
 			class="btn"
 			type="button"
 			onclick={() => controller.dismiss()}
-			aria-label={t('public.preview.closeAria')}>{t('public.preview.close')}</button
+			aria-label={t('public.preview.closeAria')}
 		>
+			{t('public.preview.close')}
+		</button>
 	</div>
 	{#if loading}<p role="status">{t('public.preview.loading')}</p>
 	{:else if preview}

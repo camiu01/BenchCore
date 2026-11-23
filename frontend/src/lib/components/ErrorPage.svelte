@@ -51,8 +51,9 @@
 		{#if status === 404}
 			<section class="record">
 				<form class="error-search" method="GET" action="/posts">
-					<label class="field-label" for="missing-page-search">{t('pages.error.searchLabel')}</label
-					>
+					<label class="field-label" for="missing-page-search">
+						{t('pages.error.searchLabel')}
+					</label>
 					<div class="search-controls">
 						<input
 							class="field-input"

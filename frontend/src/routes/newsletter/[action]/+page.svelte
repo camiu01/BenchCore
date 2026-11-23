@@ -34,9 +34,9 @@
 				<p>{t(confirming ? 'newsletter.confirmHelp' : 'newsletter.unsubscribeHelp')}</p>
 				<form method="POST">
 					<input type="hidden" name="token" value={data.token} />
-					<button class="btn btn-accent" type="submit"
-						>{t(confirming ? 'newsletter.confirmTitle' : 'newsletter.unsubscribeTitle')}</button
-					>
+					<button class="btn btn-accent" type="submit">
+						{t(confirming ? 'newsletter.confirmTitle' : 'newsletter.unsubscribeTitle')}
+					</button>
 				</form>
 			{/if}
 		</article>

@@ -54,9 +54,9 @@
 					<span class="record-title">{t('public.home.noPosts')}</span>
 				</div>
 				<p class="summary">{t('public.noPosts.body')}</p>
-				{#if data.sessionRole === 'admin'}<a class="btn" href="/admin/posts/new"
-						>{t('public.home.createPost')}</a
-					>{/if}
+				{#if data.sessionRole === 'admin'}<a class="btn" href="/admin/posts/new">
+						{t('public.home.createPost')}
+					</a>{/if}
 			</article>
 		{:else}
 			{#each data.posts.items as post (post.id)}
@@ -65,9 +65,9 @@
 						<h2 class="record-title">
 							<a href="/posts/{encodeURIComponent(post.slug)}">{post.title}</a>
 						</h2>
-						<span class="stamp"
-							>{post.audience === 'readers' ? t('public.readersOnly') : t('public.published')}</span
-						>
+						<span class="stamp">
+							{post.audience === 'readers' ? t('public.readersOnly') : t('public.published')}
+						</span>
 					</div>
 					{#if post.locked}<ReaderGate slug={post.slug} />{:else}<p class="summary">
 							{post.description}
@@ -76,19 +76,19 @@
 						<tbody>
 							<tr>
 								<td class="label">{t('public.published')}</td>
-								<td
-									><time datetime={post.publishedAt ?? undefined}
-										>{publicationDate(post.publishedAt, currentLocale())}</time
-									></td
-								>
+								<td>
+									<time datetime={post.publishedAt ?? undefined}>
+										{publicationDate(post.publishedAt, currentLocale())}
+									</time>
+								</td>
 							</tr>
 							{#if post.tags.length > 0}
 								<tr>
 									<td class="label">{t('public.field.tags')}</td>
 									<td>
-										{#each post.tags as tag, index (tag)}<a href="/tags/{encodeURIComponent(tag)}"
-												>{tag}</a
-											>{#if index < post.tags.length - 1},
+										{#each post.tags as tag, index (tag)}<a href="/tags/{encodeURIComponent(tag)}">
+												{tag}
+											</a>{#if index < post.tags.length - 1},
 											{/if}{/each}
 									</td>
 								</tr>
@@ -105,8 +105,10 @@
 						<a
 							class="btn"
 							href="/posts/{encodeURIComponent(post.slug)}"
-							aria-label={t('public.readAria', { title: post.title })}>{t('public.read')}</a
+							aria-label={t('public.readAria', { title: post.title })}
 						>
+							{t('public.read')}
+						</a>
 					</div>
 				</article>
 			{/each}

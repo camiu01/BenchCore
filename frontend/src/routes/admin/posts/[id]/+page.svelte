@@ -39,9 +39,9 @@
 	<main>
 		<article class="record">
 			<div class="record-header">
-				<span class="record-title"
-					>{t('admin.edit.recordTitle', { slug: values.slug || t('admin.edit.unsaved') })}</span
-				>
+				<span class="record-title">
+					{t('admin.edit.recordTitle', { slug: values.slug || t('admin.edit.unsaved') })}
+				</span>
 				<span class="stamp">{statusLabel}</span>
 			</div>
 			<PostEditor
