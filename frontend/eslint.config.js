@@ -27,7 +27,11 @@ export default [
 			}
 		},
 		rules: {
-			'no-console': ['warn', { allow: ['warn', 'error'] }]
+			'no-console': ['warn', { allow: ['warn', 'error'] }],
+			// Added to the recommended set in eslint-plugin-svelte 3.x. BenchCore is served
+			// from the domain root (no paths.base), so root-relative links are already
+			// correct. Re-enable and route links through resolve() if a base path is adopted.
+			'svelte/no-navigation-without-resolve': 'off'
 		}
 	},
 	{
