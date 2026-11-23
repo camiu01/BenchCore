@@ -75,7 +75,7 @@ jobs:
           sha256sum "benchcore-$VERSION-linux-x64.tar.gz" > SHA256SUMS
       - name: Upload delivery artifact
         id: upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: benchcore-${{ steps.version.outputs.version }}-linux-x64-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
