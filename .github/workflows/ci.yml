@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   browser:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -54,7 +54,7 @@ jobs:
           path: frontend/test-results
           retention-days: 7
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -85,7 +85,7 @@ jobs:
       - name: Verify production Vercel API packaging
         run: pnpm test:vercel-api
   postgres:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
       postgres:
