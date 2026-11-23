@@ -31,9 +31,9 @@
 		{#each data.items as account (account.id)}
 			<article class="record">
 				<div class="record-header">
-					<span class="record-title">{account.name}</span><span class="stamp"
-						>{account.isActive ? t('admin.users.active') : t('admin.users.disabled')}</span
-					>
+					<span class="record-title">{account.name}</span><span class="stamp">
+						{account.isActive ? t('admin.users.active') : t('admin.users.disabled')}
+					</span>
 				</div>
 				<p class="summary">
 					{account.username ?? t('admin.users.emailLogin')} · {account.email} · {account.createdAt.slice(
@@ -45,25 +45,25 @@
 					<input type="hidden" name="id" value={account.id} />
 					<label class="field-label" for="role-{account.id}">{t('admin.users.role')}</label>
 					<select class="field-input" id="role-{account.id}" name="role" value={account.role}>
-						<option value="reader">{t('admin.users.reader')}</option><option value="admin"
-							>{t('admin.users.administrator')}</option
-						>
-						{#if account.role === 'editor'}<option value="editor" disabled
-								>{t('admin.users.legacyEditor')}</option
-							>{/if}
+						<option value="reader">{t('admin.users.reader')}</option><option value="admin">
+							{t('admin.users.administrator')}
+						</option>
+						{#if account.role === 'editor'}<option value="editor" disabled>
+								{t('admin.users.legacyEditor')}
+							</option>{/if}
 					</select>
-					<label class="field-label" for="active-{account.id}"
-						>{t('admin.users.accountState')}</label
-					>
+					<label class="field-label" for="active-{account.id}">
+						{t('admin.users.accountState')}
+					</label>
 					<select
 						class="field-input"
 						id="active-{account.id}"
 						name="isActive"
 						value={String(account.isActive)}
 					>
-						<option value="true">{t('admin.users.stateActive')}</option><option value="false"
-							>{t('admin.users.stateDisabled')}</option
-						>
+						<option value="true">{t('admin.users.stateActive')}</option><option value="false">
+							{t('admin.users.stateDisabled')}
+						</option>
 					</select>
 					<div class="btn-row">
 						<button class="btn" type="submit">{t('admin.users.apply')}</button>
@@ -72,13 +72,18 @@
 			</article>
 		{/each}
 		<nav class="btn-row" aria-label={t('admin.users.pages')}>
-			{#if data.offset > 0}<a class="btn" href="/admin/users?offset={Math.max(0, data.offset - 25)}"
-					>{t('admin.users.previous')}</a
-				>{/if}
+			{#if data.offset > 0}<a
+					class="btn"
+					href="/admin/users?offset={Math.max(0, data.offset - 25)}"
+				>
+					{t('admin.users.previous')}
+				</a>{/if}
 			{#if data.offset + 25 < data.total}<a
 					class="btn"
-					href="/admin/users?offset={data.offset + 25}">{t('admin.users.next')}</a
-				>{/if}
+					href="/admin/users?offset={data.offset + 25}"
+				>
+					{t('admin.users.next')}
+				</a>{/if}
 		</nav>
 		<article class="record">
 			<div class="record-header">
@@ -126,11 +131,11 @@
 					autocomplete="new-password"
 				/>
 				<label class="field-label" for="newRole">{t('admin.users.role')}</label>
-				<select class="field-input" id="newRole" name="role"
-					><option value="reader">{t('admin.users.reader')}</option><option value="admin"
-						>{t('admin.users.administrator')}</option
-					></select
-				>
+				<select class="field-input" id="newRole" name="role">
+					<option value="reader">{t('admin.users.reader')}</option><option value="admin">
+						{t('admin.users.administrator')}
+					</option>
+				</select>
 				<div class="btn-row">
 					<button class="btn btn-accent" type="submit">{t('admin.users.create')}</button>
 				</div>

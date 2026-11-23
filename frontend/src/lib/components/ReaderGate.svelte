@@ -14,9 +14,9 @@
 		<strong>{t('public.readersOnly')}</strong>
 		<p>{t('public.gate.body')}</p>
 		<div class="btn-row">
-			<a class="btn btn-accent" href="/login?next={encodeURIComponent(`/posts/${slug}`)}"
-				>{t('public.gate.signIn')}</a
-			>
+			<a class="btn btn-accent" href="/login?next={encodeURIComponent(`/posts/${slug}`)}">
+				{t('public.gate.signIn')}
+			</a>
 			<a class="btn" href="/register">{t('public.gate.create')}</a>
 		</div>
 	</div>

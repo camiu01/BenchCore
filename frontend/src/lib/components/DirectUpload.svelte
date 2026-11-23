@@ -94,10 +94,11 @@
 		type="button"
 		onclick={upload}
 		disabled={busy || disabled || !pending}
-		>{busy
-			? t('editor.upload.uploading', { done: completed, total: items.length })
-			: t('editor.upload.start')}</button
 	>
+		{busy
+			? t('editor.upload.uploading', { done: completed, total: items.length })
+			: t('editor.upload.start')}
+	</button>
 </div>
 <p class="summary" aria-live="polite">{message}</p>
 <p class="summary">
@@ -118,13 +119,14 @@
 					max="100"
 					value={item.progress}
 					aria-label={t('editor.upload.progressAria', { name: item.file.name })}
-					>{item.progress}%</progress
 				>
-				<span class="field-help"
-					>{item.progress}%{item.progress === 95 && item.status === 'uploading'
+					{item.progress}%
+				</progress>
+				<span class="field-help">
+					{item.progress}%{item.progress === 95 && item.status === 'uploading'
 						? ` · ${t('editor.upload.verifying')}`
-						: ''}</span
-				>
+						: ''}
+				</span>
 				{#if !completed}
 					<button
 						class="btn"
@@ -133,8 +135,10 @@
 						aria-label={t('editor.upload.moveEarlierAria', { name: item.file.name })}
 						onclick={() => {
 							items = moveQueuedImage(items, index, -1);
-						}}>{t('editor.images.moveUp')}</button
+						}}
 					>
+						{t('editor.images.moveUp')}
+					</button>
 					<button
 						class="btn"
 						type="button"
@@ -142,8 +146,10 @@
 						aria-label={t('editor.upload.moveLaterAria', { name: item.file.name })}
 						onclick={() => {
 							items = moveQueuedImage(items, index, 1);
-						}}>{t('editor.images.moveDown')}</button
+						}}
 					>
+						{t('editor.images.moveDown')}
+					</button>
 				{/if}
 				{#if item.status === 'uploaded' && item.url}
 					<CopyImageLink url={item.url} name={item.file.name} />
@@ -153,8 +159,8 @@
 		{/each}
 	</ul>
 {/if}
-<noscript
-	><p class="summary">
+<noscript>
+	<p class="summary">
 		{t('editor.upload.noscript')}
-	</p></noscript
->
+	</p>
+</noscript>

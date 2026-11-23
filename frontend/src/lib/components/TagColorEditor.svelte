@@ -39,10 +39,11 @@
 				aria-pressed={color.toUpperCase() === preset}
 				title={preset}
 				onclick={() => (color = preset)}
-				><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-					<rect width="18" height="18" fill={preset} />
-				</svg></button
 			>
+				<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+					<rect width="18" height="18" fill={preset} />
+				</svg>
+			</button>
 		{/each}
 	</div>
 	<div class="tag-custom-color">

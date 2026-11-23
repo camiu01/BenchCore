@@ -20,8 +20,10 @@
 			value={code}
 			lang={code}
 			aria-pressed={active === code}
-			aria-label={t('lang.switchTo', { name: LOCALE_NAMES[code] })}>{code}</button
+			aria-label={`${code} · ${t('lang.switchTo', { name: LOCALE_NAMES[code] })}`}
 		>
+			{code}
+		</button>
 	{/each}
 </form>
 

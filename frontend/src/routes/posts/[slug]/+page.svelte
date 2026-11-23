@@ -63,35 +63,35 @@
 	<main>
 		<nav class="breadcrumb" aria-label={t('public.post.breadcrumb')}>
 			<a href="/">{t('public.post.breadcrumbIndex')}</a><span aria-hidden="true">/</span><a
-				href="/posts">{t('public.post.breadcrumbPosts')}</a
-			><span aria-hidden="true">/</span><span aria-current="page">{data.post.slug}</span>
+				href="/posts"
+			>
+				{t('public.post.breadcrumbPosts')}
+			</a><span aria-hidden="true">/</span><span aria-current="page">{data.post.slug}</span>
 		</nav>
 		<article class="record">
 			<div class="record-header">
 				<span class="record-title">{t('public.post.record', { slug: data.post.slug })}</span>
-				<span class="stamp"
-					>{data.post.audience === 'readers'
-						? t('public.readersOnly')
-						: t('public.published')}</span
-				>
+				<span class="stamp">
+					{data.post.audience === 'readers' ? t('public.readersOnly') : t('public.published')}
+				</span>
 			</div>
 			<table class="spec-table">
 				<tbody>
-					{#if data.post.category}<tr
-							><td class="label">{t('publishing.category')}</td>
-							<td
-								><a href="/posts?category={encodeURIComponent(data.post.category)}"
-									>{data.post.category}</a
-								></td
-							></tr
-						>{/if}
+					{#if data.post.category}<tr>
+							<td class="label">{t('publishing.category')}</td>
+							<td>
+								<a href="/posts?category={encodeURIComponent(data.post.category)}">
+									{data.post.category}
+								</a>
+							</td>
+						</tr>{/if}
 					<tr>
 						<td class="label">{t('public.published')}</td>
-						<td
-							><time datetime={data.post.publishedAt ?? undefined}
-								>{publicationDate(data.post.publishedAt, currentLocale())}</time
-							></td
-						>
+						<td>
+							<time datetime={data.post.publishedAt ?? undefined}>
+								{publicationDate(data.post.publishedAt, currentLocale())}
+							</time>
+						</td>
 					</tr>
 					{#if data.post.authorName !== null}
 						<tr>
@@ -103,9 +103,9 @@
 						<tr>
 							<td class="label">{t('public.field.tags')}</td>
 							<td>
-								{#each data.post.tags as tag, index (tag)}<a href="/tags/{encodeURIComponent(tag)}"
-										>{tag}</a
-									>{#if index < data.post.tags.length - 1},
+								{#each data.post.tags as tag, index (tag)}<a href="/tags/{encodeURIComponent(tag)}">
+										{tag}
+									</a>{#if index < data.post.tags.length - 1},
 									{/if}{/each}
 							</td>
 						</tr>
@@ -143,12 +143,14 @@
 							<tr>
 								<td class="code">BK-{String(index + 1).padStart(2, '0')}</td>
 								<td class="item">{link.title}</td>
-								<td class="dim"
-									><a
+								<td class="dim">
+									<a
 										href="/posts/{encodeURIComponent(link.slug)}"
-										aria-label={t('public.readAria', { title: link.title })}>{t('public.read')}</a
-									></td
-								>
+										aria-label={t('public.readAria', { title: link.title })}
+									>
+										{t('public.read')}
+									</a>
+								</td>
 							</tr>
 						{/each}
 					</tbody>

@@ -307,16 +307,18 @@
 			</div>
 		</div>
 		<div class="btn-row editor-actions">
-			<button class="btn btn-accent" type="submit" formaction="?/save" disabled={editingMedia}
-				>{t('editor.action.save')}</button
-			>
+			<button class="btn btn-accent" type="submit" formaction="?/save" disabled={editingMedia}>
+				{t('editor.action.save')}
+			</button>
 			<button
 				class="btn"
 				type="submit"
 				formaction="?/preview"
 				formnovalidate
-				disabled={editingMedia}>{t('editor.action.preview')}</button
+				disabled={editingMedia}
 			>
+				{t('editor.action.preview')}
+			</button>
 			{#if !isNew}
 				<button
 					class="btn danger"
@@ -326,8 +328,10 @@
 					aria-controls="post-delete-confirmation"
 					onclick={() => {
 						deleteConfirmation = !deleteConfirmation;
-					}}>{t('editor.action.delete')}</button
+					}}
 				>
+					{t('editor.action.delete')}
+				</button>
 			{/if}
 		</div>
 		{#if deleteConfirmation}
@@ -373,9 +377,9 @@
 				accept="image/png,image/jpeg,image/webp,image/gif"
 			/>
 			<div class="btn-row">
-				<button class="btn" type="submit" formaction="?/upload" formnovalidate
-					>{t('editor.action.upload')}</button
-				>
+				<button class="btn" type="submit" formaction="?/upload" formnovalidate>
+					{t('editor.action.upload')}
+				</button>
 			</div>
 		{/if}
 		{#if uploadedUrl !== null}

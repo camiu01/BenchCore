@@ -147,8 +147,9 @@
 								class="btn"
 								href="/admin/posts/{post.id}"
 								aria-label={t('admin.deck.editPost', { title: post.title })}
-								>{t('admin.deck.edit')}</a
 							>
+								{t('admin.deck.edit')}
+							</a>
 						</div>
 					</li>
 				{:else}
@@ -158,9 +159,9 @@
 							{t('admin.deck.noMatchText')}
 						</p>
 						<a class="btn" href="/admin">{t('admin.deck.clearFilters')}</a>
-						<a class="btn" href={adminPageHref(data.search, data.status)}
-							>{t('admin.deck.firstPage')}</a
-						>
+						<a class="btn" href={adminPageHref(data.search, data.status)}>
+							{t('admin.deck.firstPage')}
+						</a>
 					</li>
 				{/each}
 			</ul>
@@ -197,17 +198,19 @@
 							class="btn"
 							rel="prev"
 							href={adminPageHref(data.search, data.status, data.page - 1)}
-							>{t('admin.deck.previous')}</a
-						>{/if}
-					<span class="field-help"
-						>{t('admin.deck.pageOf', { page: data.page, total: data.totalPages })}</span
-					>
+						>
+							{t('admin.deck.previous')}
+						</a>{/if}
+					<span class="field-help">
+						{t('admin.deck.pageOf', { page: data.page, total: data.totalPages })}
+					</span>
 					{#if data.page < data.totalPages}<a
 							class="btn"
 							rel="next"
 							href={adminPageHref(data.search, data.status, data.page + 1)}
-							>{t('admin.deck.next')}</a
-						>{/if}
+						>
+							{t('admin.deck.next')}
+						</a>{/if}
 				</nav>
 			{/if}
 		{/if}

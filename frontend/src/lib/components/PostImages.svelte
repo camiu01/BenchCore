@@ -98,8 +98,10 @@
 							type="button"
 							aria-label={t('editor.images.moveEarlierAria', { key })}
 							disabled={disabled || pendingKey !== null || movable.indexOf(key) === 0}
-							onclick={() => onmove?.(key, -1)}>{t('editor.images.moveUp')}</button
+							onclick={() => onmove?.(key, -1)}
 						>
+							{t('editor.images.moveUp')}
+						</button>
 						<button
 							class="btn"
 							type="button"
@@ -107,24 +109,29 @@
 							disabled={disabled ||
 								pendingKey !== null ||
 								movable.indexOf(key) === movable.length - 1}
-							onclick={() => onmove?.(key, 1)}>{t('editor.images.moveDown')}</button
+							onclick={() => onmove?.(key, 1)}
 						>
+							{t('editor.images.moveDown')}
+						</button>
 					{/if}
 					{#if oncover}<button
 							class="btn"
 							type="button"
 							disabled={disabled || pendingKey !== null || managedImageKey(cover) === key}
 							onclick={() => oncover?.(key)}
-							>{managedImageKey(cover) === key
+						>
+							{managedImageKey(cover) === key
 								? t('editor.images.currentCover')
-								: t('editor.images.useAsCover')}</button
-						>{/if}
+								: t('editor.images.useAsCover')}
+						</button>{/if}
 					<button
 						class="btn"
 						type="button"
 						disabled={disabled || pendingKey !== null}
-						onclick={() => prepareRemoval(key)}>{t('editor.images.remove')}</button
+						onclick={() => prepareRemoval(key)}
 					>
+						{t('editor.images.remove')}
+					</button>
 				</li>
 			{/each}
 		</ul>
@@ -151,9 +158,9 @@
 			</p>
 		{/if}
 		<div class="btn-row">
-			<button class="btn" type="button" onclick={cancelRemoval} disabled={deleting}
-				>{t('editor.images.cancel')}</button
-			>
+			<button class="btn" type="button" onclick={cancelRemoval} disabled={deleting}>
+				{t('editor.images.cancel')}
+			</button>
 			<button class="btn btn-accent" type="button" onclick={confirmRemoval} disabled={deleting}>
 				{deleting ? t('editor.images.deleting') : t('editor.images.deleteAll')}
 			</button>

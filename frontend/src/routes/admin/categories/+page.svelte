@@ -41,10 +41,10 @@
 						value={category.name}
 					/>
 					<p class="field-help">{t('publishing.clearHelp')}</p>
-					<label
-						><input type="checkbox" name="confirm" value="yes" required />
-						{t('publishing.confirm')}</label
-					>
+					<label>
+						<input type="checkbox" name="confirm" value="yes" required />
+						{t('publishing.confirm')}
+					</label>
 					<button class="btn" type="submit">{t('publishing.save')}</button>
 				</form>
 			</article>

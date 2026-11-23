@@ -69,9 +69,9 @@
 >
 	<div class="btn-row">
 		<strong>{details?.filename ?? name}</strong>
-		<button class="btn" type="button" onclick={() => dialog.close()}
-			>{t('editor.preview.close')}</button
-		>
+		<button class="btn" type="button" onclick={() => dialog.close()}>
+			{t('editor.preview.close')}
+		</button>
 	</div>
 	<img src={url} alt={name} loading="lazy" onload={dimensions} />
 	<p class="field-help">

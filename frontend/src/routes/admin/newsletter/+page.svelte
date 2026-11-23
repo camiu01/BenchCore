@@ -70,10 +70,10 @@
 					{#if campaign.status === 'draft' || campaign.stats.queued > 0}
 						<form method="POST" action="?/send" class="form-grid">
 							<input type="hidden" name="id" value={campaign.id} />
-							<label
-								><input type="checkbox" name="approved" value="yes" required />
-								{t('newsletter.approve')}</label
-							>
+							<label>
+								<input type="checkbox" name="approved" value="yes" required />
+								{t('newsletter.approve')}
+							</label>
 							<label class="field-label" for="send-{campaign.id}">{t('newsletter.typeSend')}</label>
 							<input
 								class="field-input"
@@ -83,9 +83,9 @@
 								pattern="SEND"
 								autocomplete="off"
 							/>
-							<button class="btn btn-accent" type="submit" disabled={!data.dashboard.enabled}
-								>{t('newsletter.sendBatch')}</button
-							>
+							<button class="btn btn-accent" type="submit" disabled={!data.dashboard.enabled}>
+								{t('newsletter.sendBatch')}
+							</button>
 						</form>
 					{/if}
 				</article>

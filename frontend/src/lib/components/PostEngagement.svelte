@@ -139,9 +139,9 @@
 				<article class="comment">
 					<header>
 						<strong>{comment.authorName}</strong>
-						<time datetime={comment.createdAt}
-							>{publicationDate(comment.createdAt, currentLocale())}</time
-						>
+						<time datetime={comment.createdAt}>
+							{publicationDate(comment.createdAt, currentLocale())}
+						</time>
 					</header>
 					<p>{comment.content}</p>
 				</article>

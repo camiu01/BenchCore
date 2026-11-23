@@ -26,9 +26,9 @@
 		</div>
 		<p>{t('cookieNotice.body')}</p>
 		<div class="btn-row">
-			<button class="btn btn-accent" type="button" onclick={accept}
-				>{t('cookieNotice.accept')}</button
-			>
+			<button class="btn btn-accent" type="button" onclick={accept}>
+				{t('cookieNotice.accept')}
+			</button>
 			<a class="btn" href="/cookies">{t('cookieNotice.details')}</a>
 		</div>
 	</section>

@@ -63,10 +63,10 @@
 					<legend class="field-label">{t('public.posts.filterByTags')}</legend>
 					<div class="archive-tags">
 						{#each [...new Set( [...data.availableTags.map((tag) => tag.name), ...data.tags] )] as tag (tag)}
-							<label
-								><input type="checkbox" name="tag" value={tag} checked={data.tags.includes(tag)} />
-								{tag}</label
-							>
+							<label>
+								<input type="checkbox" name="tag" value={tag} checked={data.tags.includes(tag)} />
+								{tag}
+							</label>
 						{/each}
 					</div>
 					<p class="field-help">{t('public.posts.tagsHelp')}</p>
@@ -75,26 +75,26 @@
 					<div>
 						<label class="field-label" for="tag-mode">{t('public.posts.combineLabel')}</label>
 						<select class="field-input" id="tag-mode" name="tagMode">
-							<option value="and" selected={data.tagMode === 'and'}
-								>{t('public.posts.combineAnd')}</option
-							>
-							<option value="or" selected={data.tagMode === 'or'}
-								>{t('public.posts.combineOr')}</option
-							>
+							<option value="and" selected={data.tagMode === 'and'}>
+								{t('public.posts.combineAnd')}
+							</option>
+							<option value="or" selected={data.tagMode === 'or'}>
+								{t('public.posts.combineOr')}
+							</option>
 						</select>
 					</div>
 					<div>
 						<label class="field-label" for="sort">{t('public.posts.sortLabel')}</label>
 						<select class="field-input" id="sort" name="sort">
-							<option value="published" selected={data.sort === 'published'}
-								>{t('public.posts.sortPublished')}</option
-							>
-							<option value="updated" selected={data.sort === 'updated'}
-								>{t('public.posts.sortUpdated')}</option
-							>
-							<option value="popular" selected={data.sort === 'popular'}
-								>{t('public.posts.sortPopular')}</option
-							>
+							<option value="published" selected={data.sort === 'published'}>
+								{t('public.posts.sortPublished')}
+							</option>
+							<option value="updated" selected={data.sort === 'updated'}>
+								{t('public.posts.sortUpdated')}
+							</option>
+							<option value="popular" selected={data.sort === 'popular'}>
+								{t('public.posts.sortPopular')}
+							</option>
 						</select>
 					</div>
 				</div>
@@ -106,8 +106,10 @@
 				<button class="btn" type="submit">{t('public.posts.apply')}</button>
 				{#if data.search || data.tags.length || data.sort !== 'published'}<a
 						class="btn"
-						href="/posts">{t('public.posts.clear')}</a
-					>{/if}
+						href="/posts"
+					>
+						{t('public.posts.clear')}
+					</a>{/if}
 			</div>
 		</form>
 		{#if !data.online}
@@ -121,16 +123,16 @@
 		{:else if data.items.length === 0}
 			<article class="record">
 				<div class="record-header">
-					<span class="record-title"
-						>{data.search ? t('public.posts.noMatches') : t('public.posts.noneOnPage')}</span
-					>
+					<span class="record-title">
+						{data.search ? t('public.posts.noMatches') : t('public.posts.noneOnPage')}
+					</span>
 				</div>
 				<p class="summary">
 					{data.search ? t('public.posts.noMatchesBody') : t('public.noPosts.body')}
 				</p>
-				{#if data.search || data.page > 1}<a class="btn" href="/posts"
-						>{t('public.posts.showAll')}</a
-					>{/if}
+				{#if data.search || data.page > 1}<a class="btn" href="/posts">
+						{t('public.posts.showAll')}
+					</a>{/if}
 			</article>
 		{:else}
 			{#each data.items as post (post.id)}
@@ -139,9 +141,9 @@
 						<span class="record-title">
 							<a href="/posts/{encodeURIComponent(post.slug)}">{post.title}</a>
 						</span>
-						<span class="stamp"
-							>{post.audience === 'readers' ? t('public.readersOnly') : t('public.published')}</span
-						>
+						<span class="stamp">
+							{post.audience === 'readers' ? t('public.readersOnly') : t('public.published')}
+						</span>
 					</div>
 					{#if post.locked}<ReaderGate slug={post.slug} />{:else}<p class="summary">
 							{post.description}
@@ -150,29 +152,29 @@
 						<tbody>
 							<tr>
 								<td class="label">{t('public.published')}</td>
-								<td
-									><time datetime={post.publishedAt ?? undefined}
-										>{publicationDate(post.publishedAt, currentLocale())}</time
-									></td
-								>
+								<td>
+									<time datetime={post.publishedAt ?? undefined}>
+										{publicationDate(post.publishedAt, currentLocale())}
+									</time>
+								</td>
 							</tr>
-							{#if data.sort === 'updated' && post.updatedAt}<tr
-									><td class="label">{t('public.field.updated')}</td><td
-										><time datetime={post.updatedAt}
-											>{publicationDate(post.updatedAt, currentLocale())}</time
-										></td
-									></tr
-								>{/if}
-							{#if data.sort === 'popular' && !post.locked}<tr
-									><td class="label">{t('public.field.likes')}</td><td>{post.likesCount}</td></tr
-								>{/if}
+							{#if data.sort === 'updated' && post.updatedAt}<tr>
+									<td class="label">{t('public.field.updated')}</td><td>
+										<time datetime={post.updatedAt}>
+											{publicationDate(post.updatedAt, currentLocale())}
+										</time>
+									</td>
+								</tr>{/if}
+							{#if data.sort === 'popular' && !post.locked}<tr>
+									<td class="label">{t('public.field.likes')}</td><td>{post.likesCount}</td>
+								</tr>{/if}
 							{#if post.tags.length > 0}
 								<tr>
 									<td class="label">{t('public.field.tags')}</td>
 									<td>
-										{#each post.tags as tag, index (tag)}<a href="/tags/{encodeURIComponent(tag)}"
-												>{tag}</a
-											>{#if index < post.tags.length - 1},
+										{#each post.tags as tag, index (tag)}<a href="/tags/{encodeURIComponent(tag)}">
+												{tag}
+											</a>{#if index < post.tags.length - 1},
 											{/if}{/each}
 									</td>
 								</tr>
@@ -183,17 +185,19 @@
 						<a
 							class="btn"
 							href="/posts/{encodeURIComponent(post.slug)}"
-							aria-label={t('public.readAria', { title: post.title })}>{t('public.read')}</a
+							aria-label={t('public.readAria', { title: post.title })}
 						>
+							{t('public.read')}
+						</a>
 					</div>
 				</article>
 			{/each}
 		{/if}
 		{#if data.totalPages > 1}
 			<nav class="btn-row" aria-label={t('public.posts.pagesAria')}>
-				<span class="page-position"
-					>{t('public.pagePosition', { page: data.page, total: data.totalPages })}</span
-				>
+				<span class="page-position">
+					{t('public.pagePosition', { page: data.page, total: data.totalPages })}
+				</span>
 				{#if data.page > 1}
 					<a class="btn" href={archiveHref(data, data.page - 1)}>{t('public.previous')}</a>
 				{/if}

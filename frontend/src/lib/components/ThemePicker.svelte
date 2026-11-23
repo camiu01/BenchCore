@@ -32,7 +32,9 @@
 			class="theme-btn"
 			class:active={current === theme}
 			aria-pressed={current === theme}
-			onclick={() => select(theme)}>{t(`theme.${theme}`)}</button
+			onclick={() => select(theme)}
 		>
+			{t(`theme.${theme}`)}
+		</button>
 	{/each}
 </div>

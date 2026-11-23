@@ -49,13 +49,13 @@
 						<label for="newsletter-website">Website</label>
 						<input id="newsletter-website" name="website" tabindex="-1" autocomplete="off" />
 					</div>
-					<label
-						><input type="checkbox" name="consent" value="yes" required />
-						{t('newsletter.consent')}</label
-					>
-					<button class="btn btn-accent" type="submit" disabled={!data.enabled}
-						>{t('newsletter.subscribe')}</button
-					>
+					<label>
+						<input type="checkbox" name="consent" value="yes" required />
+						{t('newsletter.consent')}
+					</label>
+					<button class="btn btn-accent" type="submit" disabled={!data.enabled}>
+						{t('newsletter.subscribe')}
+					</button>
 				</form>
 			{/if}
 		</article>

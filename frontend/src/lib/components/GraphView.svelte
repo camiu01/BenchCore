@@ -95,26 +95,30 @@
 			class="btn"
 			type="button"
 			aria-label={t('public.graphView.zoomInAria')}
-			onclick={() => zoomView(1.4)}>{t('public.graphView.zoomIn')}</button
+			onclick={() => zoomView(1.4)}
 		>
+			{t('public.graphView.zoomIn')}
+		</button>
 		<button
 			class="btn"
 			type="button"
 			aria-label={t('public.graphView.zoomOutAria')}
-			onclick={() => zoomView(1 / 1.4)}>{t('public.graphView.zoomOut')}</button
+			onclick={() => zoomView(1 / 1.4)}
 		>
-		<button class="btn" type="button" onclick={() => resetView()}
-			>{t('public.graphView.fit')}</button
-		>
-		{#if selected}<button class="btn" type="button" aria-pressed={focused} onclick={toggleFocus}
-				>{focused ? t('public.graphView.showFull') : t('public.graphView.focus')}</button
-			>{/if}
-		{#if query}<button class="btn" type="button" onclick={() => searchGraph('')}
-				>{t('public.graphView.clearSearch')}</button
-			>{/if}
-		{#if selectedSlug}<button class="btn" type="button" onclick={() => selectNode(null)}
-				>{t('public.graphView.showAll')}</button
-			>{/if}
+			{t('public.graphView.zoomOut')}
+		</button>
+		<button class="btn" type="button" onclick={() => resetView()}>
+			{t('public.graphView.fit')}
+		</button>
+		{#if selected}<button class="btn" type="button" aria-pressed={focused} onclick={toggleFocus}>
+				{focused ? t('public.graphView.showFull') : t('public.graphView.focus')}
+			</button>{/if}
+		{#if query}<button class="btn" type="button" onclick={() => searchGraph('')}>
+				{t('public.graphView.clearSearch')}
+			</button>{/if}
+		{#if selectedSlug}<button class="btn" type="button" onclick={() => selectNode(null)}>
+				{t('public.graphView.showAll')}
+			</button>{/if}
 	</div>
 </div>
 {#if focused && selected}<p class="field-help" role="status">
@@ -126,8 +130,10 @@
 		class="topic-filter"
 		type="button"
 		aria-pressed={query === ''}
-		onclick={() => searchGraph('')}>{t('public.graphView.allTopics')}</button
+		onclick={() => searchGraph('')}
 	>
+		{t('public.graphView.allTopics')}
+	</button>
 	{#each Array.from(new Map(graph.nodes
 				.flatMap((node) => node.tags)
 				.map((tag) => [tag.slug, tag])).values()).slice(0, 12) as tag (tag.slug)}
@@ -162,9 +168,9 @@
 					<TagChip label={tag.name} color={tag.color} />
 				{/each}
 			</div>
-			<a class="btn btn-accent" href="/posts/{encodeURIComponent(selected.slug)}"
-				>{t('public.graphView.readPost')}</a
-			>
+			<a class="btn btn-accent" href="/posts/{encodeURIComponent(selected.slug)}">
+				{t('public.graphView.readPost')}
+			</a>
 			<h3>{t('public.graphView.connected', { n: related.length })}</h3>
 			<ul class="graph-related">
 				{#each related as node (node.slug)}
@@ -201,8 +207,9 @@
 					type="button"
 					onclick={() => selectNode(node.slug)}
 					aria-label={t('public.graphView.showConnectionsFor', { title: node.title })}
-					>{t('public.graphView.connections')}</button
 				>
+					{t('public.graphView.connections')}
+				</button>
 			</li>
 		{:else}
 			<li role="status">{t('public.graphView.noMatch', { query })}</li>

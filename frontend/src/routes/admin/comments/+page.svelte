@@ -85,13 +85,14 @@
 					<a
 						class="btn"
 						href="/admin/comments?status={data.status}&offset={Math.max(0, data.offset - 100)}"
-						>{t('admin.comments.previous')}</a
 					>
+						{t('admin.comments.previous')}
+					</a>
 				{/if}
 				{#if data.hasMore}
-					<a class="btn" href="/admin/comments?status={data.status}&offset={data.offset + 100}"
-						>{t('admin.comments.next')}</a
-					>
+					<a class="btn" href="/admin/comments?status={data.status}&offset={data.offset + 100}">
+						{t('admin.comments.next')}
+					</a>
 				{/if}
 			</nav>
 		{/if}
