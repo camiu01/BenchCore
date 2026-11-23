@@ -3,6 +3,8 @@
 
 # Troubleshooting
 
+[← README](../README.md) · [Docs index](README.md)
+
 Failure model behind BENCHCORE. Every symptom below maps to a layer in
 [Architecture](ARCHITECTURE.md); check the cheap local evidence first
 (`node --version`, `/health`, sanitized logs) before changing configuration.

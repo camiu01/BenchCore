@@ -3,6 +3,8 @@
 
 # Newsletter and categories
 
+[← README](../README.md) · [Docs index](README.md)
+
 ## Categories
 
 Each post has one optional main category, separate from its tags. Assign it in

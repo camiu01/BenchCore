@@ -3,6 +3,8 @@
 
 # Operations
 
+[← README](../README.md) · [Docs index](README.md)
+
 Runbook behind BENCHCORE. Every procedure below acts on the single-origin
 Node service in `runtime/server.mjs` with PostgreSQL 17 as the stateful
 dependency; the packaged artifact is assembled by `scripts/package-beta.mjs`.

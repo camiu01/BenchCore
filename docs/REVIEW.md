@@ -3,6 +3,8 @@
 
 # Review and validation
 
+[← README](../README.md) · [Docs index](README.md)
+
 Review record behind BENCHCORE. Every finding below was verified against
 `api/src/`, `frontend/src/` and `runtime/` with regression tests where the
 behavior is testable; this is a code review and release check, not a

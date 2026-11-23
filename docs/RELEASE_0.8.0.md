@@ -3,6 +3,8 @@
 
 # Preparing 0.8.0
 
+[← README](../README.md) · [Docs index](README.md)
+
 Version 0.8.0 completes the engagement, moderation and authentication milestone.
 The implementation is complete. Version tags and hosted releases remain
 separate operator actions; deployments follow the configured CI/CD.

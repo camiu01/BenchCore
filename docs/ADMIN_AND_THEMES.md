@@ -3,6 +3,8 @@
 
 # Admin workbench and themes
 
+[← README](../README.md) · [Docs index](README.md)
+
 Editorial workflow behind BENCHCORE. Every screen below lives in
 `frontend/src/routes/admin/` with the editor in
 `frontend/src/lib/components/PostEditor.svelte`, and the theme tokens live in

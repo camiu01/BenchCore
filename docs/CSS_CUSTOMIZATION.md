@@ -2,6 +2,8 @@
 
 # Customize the interface
 
+[← README](../README.md) · [Docs index](README.md)
+
 BenchCore keeps its engineering-log appearance and its light, dark and OLED
 themes. No CSS framework knowledge or new dependencies are required to change
 the shared design.

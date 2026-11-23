@@ -3,6 +3,8 @@
 
 # Preparing 0.9.0
 
+[← README](../README.md) · [Docs index](README.md)
+
 Version 0.9.0 is **in progress**, not release-ready. Workspace metadata remains
 at 0.8.0. This document records local evidence, not a hosted deployment result.
 The source of truth for milestone scope is [TODO.md](../TODO.md).

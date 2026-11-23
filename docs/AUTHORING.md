@@ -3,6 +3,8 @@
 
 # Authoring and publishing
 
+[← README](../README.md) · [Docs index](README.md)
+
 Authoring model behind BENCHCORE. Every field below is validated in
 `api/src/markdown/` and applied by the import pipeline in `api/src/posts/`,
 and mirrored by the suites in `api/tests/`.

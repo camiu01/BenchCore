@@ -3,6 +3,8 @@
 
 # Architecture
 
+[← README](../README.md) · [Docs index](README.md)
+
 Paths are relative to the repository root unless stated otherwise.
 Tests exercise service and transport behavior; they do not establish hosted
 deployment parity.

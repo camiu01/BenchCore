@@ -3,6 +3,8 @@
 
 # Preparing 0.7.0
 
+[← README](../README.md) · [Docs index](README.md)
+
 **Bench-testing, Embedded Networks, & Circuit Hacks: Centralized Open-source Research Engine**
 
 Local preparation behind BENCHCORE 0.7.0. Every check below runs from the

@@ -3,6 +3,8 @@
 
 # API reference
 
+[← README](../README.md) · [Docs index](README.md)
+
 This reference describes current handlers in `api/src/server.ts` and
 `api/src/http/`, not a versioned or stability-guaranteed public contract.
 Service and HTTP tests live in `api/tests/`; hosted verification is separate.

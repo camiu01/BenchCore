@@ -3,6 +3,8 @@
 
 # Vercel and private R2
 
+[← README](../README.md) · [Docs index](README.md)
+
 Serverless target behind BENCHCORE. The API entrypoint is `api/src/vercel.ts`,
 the build is assembled by `scripts/build-vercel.mjs`, and the checks are
 mirrored by `pnpm test:vercel-api` and CI in `.github/`.

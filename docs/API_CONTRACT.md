@@ -2,6 +2,8 @@
 
 # Maintain the API contract
 
+[← README](../README.md) · [Docs index](README.md)
+
 The checked-in [OpenAPI 3.1 JSON](openapi.json) describes the current
 unversioned HTTP API. Its version follows `api/package.json`, currently 0.8.0.
 The contract is an integration artifact, not a declaration that 1.0.0 or API v1

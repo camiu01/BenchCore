@@ -1,212 +1,196 @@
 # Changelog
 
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+
 Changes follow [Conventional Commits](https://www.conventionalcommits.org/).
 Version 0.8.0 is prepared locally. No tag, hosted release or deployment is created.
 
-## Unreleased — 0.9.0 in progress
+## [Unreleased]
 
-### Runtime and regression checks
+0.9.0 in progress.
 
-- Validate bounded PostgreSQL pool settings for Node and Vercel, with explicit
-  session/transaction modes and shared concurrent serverless readiness probes.
-- Add local Node HTTP/Fetch API parity tests and a Chromium CI matrix with
+### Added
+
+- **Runtime and regression checks:** Add local Node HTTP/Fetch API parity tests and a Chromium CI matrix with
   disposable memory repositories. Both browser modes use the Node frontend;
   hosted Vercel routing, scaling and cold starts remain unverified.
-- Share service wiring across standalone, unified Node and Vercel so the
-  unified runtime also supports configured password reset, opt-in newsletter
-  delivery and private R2. No mail is sent during startup.
-
-### Backup and recovery
-
-- Add private offline `backup export|verify|restore` commands for a complete
+- **Backup and recovery:** Add private offline `backup export|verify|restore` commands for a complete
   native PostgreSQL dump and a checksummed managed-image archive.
-- Preserve original media keys, reject invalid/incomplete archives and populated
-  recovery targets, use exclusive storage writes and transactional database
-  restore, and never automatically delete or overwrite existing state.
-- Include the compiled command in Node artifacts and document maintenance,
-  separately protected secrets and isolated partial-failure handling.
-- Add isolated archive/R2 protocol regressions and an opt-in, loopback-only
+- **Backup and recovery:** Add isolated archive/R2 protocol regressions and an opt-in, loopback-only
   PostgreSQL recovery drill. Actual PostgreSQL and hosted R2 recovery remain
   unverified; the drill is skipped without three explicit empty test databases.
+- **API contract and 1.0.0 preparation:** Add an offline-generated OpenAPI 3.1 artifact for all existing API operations,
+  reusing Zod input validators and documenting cookie roles, exact Origin,
+  pagination, redaction, media and optional delivery behavior.
 
-### Accessibility, navigation and editing
+### Changed
 
-- Split shared CSS into focused stylesheets with centralized design tokens,
+- Documentation aligned with the shared camiu01 conventions: README layout, TODO grouped by area, this changelog format and the docs/ index.
+- **Runtime and regression checks:** Validate bounded PostgreSQL pool settings for Node and Vercel, with explicit
+  session/transaction modes and shared concurrent serverless readiness probes.
+- **Runtime and regression checks:** Share service wiring across standalone, unified Node and Vercel so the
+  unified runtime also supports configured password reset, opt-in newsletter
+  delivery and private R2. No mail is sent during startup.
+- **Backup and recovery:** Preserve original media keys, reject invalid/incomplete archives and populated
+  recovery targets, use exclusive storage writes and transactional database
+  restore, and never automatically delete or overwrite existing state.
+- **Backup and recovery:** Include the compiled command in Node artifacts and document maintenance,
+  separately protected secrets and isolated partial-failure handling.
+- **Accessibility, navigation and editing:** Split shared CSS into focused stylesheets with centralized design tokens,
   a final customization cascade layer and a source-level customization guide.
   Reduce repeated entrance animations, wrap long content and expose the
   selected theme to assistive technology.
-
-- Audit reader/admin page templates in light, dark and OLED themes with axe,
+- **Accessibility, navigation and editing:** Audit reader/admin page templates in light, dark and OLED themes with axe,
   keyboard skip-link and narrow-viewport checks. Improve control contrast,
   forced-colors styles, page titles and cookie-table keyboard scrolling.
-- Improve skip-link visibility, cookie-notice placement, login form behavior,
+- **Accessibility, navigation and editing:** Improve skip-link visibility, cookie-notice placement, login form behavior,
   cover-image layout and browser theme-color updates.
-- Preserve graph search, selection and neighborhood state in shareable URLs.
+- **Accessibility, navigation and editing:** Preserve graph search, selection and neighborhood state in shareable URLs.
   Add accessible editor wikilink suggestion relationships.
-- Keep unsaved editor fields when body changes trigger reactive updates.
-
-### Discovery and release status
-
-- Validate RSS/sitemap XML and safe Unicode, use current sitemap modification
+- **Accessibility, navigation and editing:** Keep unsaved editor fields when body changes trigger reactive updates.
+- **Discovery and release status:** Validate RSS/sitemap XML and safe Unicode, use current sitemap modification
   dates, and test SSR Open Graph/Twitter metadata and paginated tag canonicals.
-- Record verified local results and remaining release gates in
+- **Discovery and release status:** Record verified local results and remaining release gates in
   `docs/RELEASE_0.9.0.md`. No version bump, migration or release is included.
   Real backup recovery drills and manual/hosted checks remain pending.
-
-### API contract and 1.0.0 preparation
-
-- Add an offline-generated OpenAPI 3.1 artifact for all existing API operations,
-  reusing Zod input validators and documenting cookie roles, exact Origin,
-  pagination, redaction, media and optional delivery behavior.
-- Validate structure, local references, deterministic regeneration, router
+- **API contract and 1.0.0 preparation:** Validate structure, local references, deterministic regeneration, router
   coverage and selected wire responses in the normal test suite.
-- Update the 1.0.0 roadmap without claiming an API v1 freeze, version bump,
+- **API contract and 1.0.0 preparation:** Update the 1.0.0 roadmap without claiming an API v1 freeze, version bump,
   hosted validation, deployment or release.
 
-## 0.8.0 — 2026-10-12
+## [0.8.0] - 2026-10-12
 
-### Engagement and moderation
+### Added
 
-- Add independent, bounded per-IP and per-session comment submission quotas with
+- **Engagement and moderation:** Add independent, bounded per-IP and per-session comment submission quotas with
   `Retry-After`, plus a first-party honeypot. Legitimate comments remain pending
   until approved in the existing paginated `/admin/comments` queue.
-- Record moderation and deletion events without storing comment bodies.
-
-### Authentication and security history
-
-- Add authenticated global logout with atomic session-epoch advancement and
+- **Authentication and security history:** Add authenticated global logout with atomic session-epoch advancement and
   session deletion. Password changes and operator rotation also invalidate
   outstanding recovery tokens.
-- Add password-confirmed administrator TOTP setup at `/account/security`.
+- **Authentication and security history:** Add password-confirmed administrator TOTP setup at `/account/security`.
   Verify six-digit RFC 6238 codes with bounded clock skew and an atomic replay
   watermark. Encrypt factor secrets with an operator-configured AES-GCM key.
   Activation/removal revoke sessions; password recovery does not remove 2FA.
-- Add a locally generated, theme-independent authenticator QR next to the
+- **Authentication and security history:** Add a locally generated, theme-independent authenticator QR next to the
   manual setup key. Validate its otpauth payload against the enrollment secret;
   no external image service receives factor material.
-- Preserve the literal six-digit HTML pattern in enrollment, removal and login
-  so Svelte does not interpolate the regex quantifier.
-- Add explicit, audited offline factor recovery through private stdin.
-- Persist transactional audit records for account creation/changes, password
-  rotation, global logout, factor changes and selected post deletion.
-- Add `/admin/audit` and typed-confirmation bulk deletion of up to 100 selected
+- **Authentication and security history:** Add explicit, audited offline factor recovery through private stdin.
+- **Authentication and security history:** Add `/admin/audit` and typed-confirmation bulk deletion of up to 100 selected
   posts. Logs contain identifiers and counts, never credentials or post content.
-- Add the offline-generated `0007_faithful_darkhawk.sql` migration and align
+- **Authentication and security history:** Add the offline-generated `0007_faithful_darkhawk.sql` migration and align
   workspace metadata at 0.8.0. No live migration or publication runs automatically.
-
-### Interface language
-
-- Add an English and Italian interface. The language comes from the `lang`
+- **Interface language:** Add an English and Italian interface. The language comes from the `lang`
   cookie (one year, first party, HttpOnly), otherwise from the browser's
   `Accept-Language`, otherwise English. The picker works without JavaScript and
   returns only to same-site paths. `<html lang>` and dates follow the language.
-- Localize API messages (`message` fields) from the same cookie or header. Error
+- **Design and speed:** Add a non-blocking cookie notice and a `/cookies` page.
+- **Public pages and discovery:** Add a localized root error page with a real HTTP 404, archive search and
+  recovery links. Other errors show safe text without upstream diagnostics.
+- **Public pages and discovery:** Add `/about`, `/help` and `/privacy`, with shared footer navigation.
+
+### Changed
+
+- **Engagement and moderation:** Record moderation and deletion events without storing comment bodies.
+- **Authentication and security history:** Preserve the literal six-digit HTML pattern in enrollment, removal and login
+  so Svelte does not interpolate the regex quantifier.
+- **Authentication and security history:** Persist transactional audit records for account creation/changes, password
+  rotation, global logout, factor changes and selected post deletion.
+- **Interface language:** Localize API messages (`message` fields) from the same cookie or header. Error
   `code` values stay stable, and Zod `issues` stay English diagnostics.
-- Show the new cookie in the cookie notice and on `/cookies`.
-
-### Design and speed
-
-- Restyle the site as paper-and-engineering neo-brutalism with hard offset
+- **Interface language:** Show the new cookie in the cookie notice and on `/cookies`.
+- **Design and speed:** Restyle the site as paper-and-engineering neo-brutalism with hard offset
   shadows, square controls and filled active states. Improve the archive filter
   panel, breadcrumbs and card actions.
-- Separate post selection from ledger actions, give titles their own flexible
+- **Design and speed:** Separate post selection from ledger actions, give titles their own flexible
   column and wrap long metadata and the translated bulk-delete button on mobile.
-- Cut public page latency: batched author lookups, a targeted backlink query,
+- **Design and speed:** Cut public page latency: batched author lookups, a targeted backlink query,
   parallel list and count queries, and a 15-second guest-only API read cache.
-- Add a non-blocking cookie notice and a `/cookies` page.
-- Center breadcrumb separators without shrinking touch targets.
-- Preserve the existing interface animations and reduced-motion support.
-
-### Public pages and discovery
-
-- Add a localized root error page with a real HTTP 404, archive search and
-  recovery links. Other errors show safe text without upstream diagnostics.
-- Add `/about`, `/help` and `/privacy`, with shared footer navigation.
-- Extend the existing sitemap with public information pages and the graph.
+- **Design and speed:** Center breadcrumb separators without shrinking touch targets.
+- **Design and speed:** Preserve the existing interface animations and reduced-motion support.
+- **Public pages and discovery:** Extend the existing sitemap with public information pages and the graph.
   Exclude accounts, recovery and API routes from crawler directions and add
   RSS autodiscovery.
-- Mark failed responses and password-recovery pages noindex and no-store.
+- **Public pages and discovery:** Mark failed responses and password-recovery pages noindex and no-store.
   Document the existing `like_voter` cookie alongside login and preferences.
 
-## 0.7.0 — 2026-10-06
+## [0.7.0] - 2026-10-06
 
-### Knowledge navigation
+### Added
 
-- Preview linked posts by hovering or focusing wikilinks and graph nodes.
-  Lightweight preview endpoints mask unpublished records and redact reader-only
-  descriptions and covers. No persistent client preview cache is created.
-- Rank editor suggestions with accent-insensitive fuzzy title, slug and tag matches.
-- Add a collapsible heading index, automatically fitted graph views and focused
+- **Knowledge navigation:** Add a collapsible heading index, automatically fitted graph views and focused
   neighborhoods.
-- Combine up to 20 tags using AND/OR and preserve filters across archive pages.
-  Sort by publication, last update or existing likes without new tracking.
-  Restricted engagement counts and popularity rank are hidden from guests.
-
-### Media and editing
-
-- Add an operator-only orphan cleanup CLI, dry-run by default, with bounded
+- **Media and editing:** Add an operator-only orphan cleanup CLI, dry-run by default, with bounded
   batches and saved-reference rechecks. Applying requires stopped writers and an
   explicit maintenance acknowledgement; no cleanup runs automatically.
-- Enforce the existing 5 MiB direct-upload limit, exact signed MIME/length,
-  owner-bound completion and conditional publication. No image resizing or
-  byte-level decoder is claimed.
-- Show immediate bounded local image previews, measured upload progress and
-  per-file verification/failure states. Reorder queued uploads and stand-alone
-  Markdown attachments without rewriting code, captions or prose.
-- Add private browser revalidation for public local/database images. Audience
+- **Media and editing:** Add private browser revalidation for public local/database images. Audience
   checks precede 304 responses; reader-only media and R2 URLs remain no-store.
   Shared CDN caching is disabled because saved audiences can change.
-- Protect unsaved edits, add server-side admin pagination/status counts and
-  enlarge image previews with metadata and quick cover selection.
-- Connect shared-tag graph groups and retain keyboard/mobile targets with the
-  original square monospace buttons.
-- Correct `tsx watch` argument ordering and add an architecture/workflow diagram.
-
-### Delivery
-
-- Set all workspace versions to 0.7.0. Validate stable/beta semver and exact tag
-  matches before packaging or publication.
-- Keep branch builds artifact-only. Stable tags use the `stable-release`
-  approval environment; beta tags retain `beta-release`.
-- Ship the maintenance CLI in the allowlisted Node bundle. Existing `beta:*`
-  commands remain compatible aliases.
-- Support both native Windows and JavaScript pnpm launchers during packaging
+- **Delivery:** Support both native Windows and JavaScript pnpm launchers during packaging
   and Vercel build checks, without invoking a shell.
+- **Changes since 0.6.0-beta.1:** Support the complete app and secured API on Vercel Node.js 24 Functions,
+  retaining persistent Node delivery and temporarily disabling the scheduler.
+- **Changes since 0.6.0-beta.1:** Add private Cloudflare R2 with owner-bound direct upload tickets, exact-size
+  signed PUTs, immutable publication and short-lived signed read redirects.
+- **Changes since 0.6.0-beta.1:** Add offline R2, transport and browser-upload regressions and a deployment guide.
 
-### Changes since 0.6.0-beta.1
+### Changed
 
-- Relicense BenchCore under AGPL-3.0-or-later: replace `LICENSE` with the
+- **Knowledge navigation:** Preview linked posts by hovering or focusing wikilinks and graph nodes.
+  Lightweight preview endpoints mask unpublished records and redact reader-only
+  descriptions and covers. No persistent client preview cache is created.
+- **Knowledge navigation:** Rank editor suggestions with accent-insensitive fuzzy title, slug and tag matches.
+- **Knowledge navigation:** Combine up to 20 tags using AND/OR and preserve filters across archive pages.
+  Sort by publication, last update or existing likes without new tracking.
+  Restricted engagement counts and popularity rank are hidden from guests.
+- **Media and editing:** Enforce the existing 5 MiB direct-upload limit, exact signed MIME/length,
+  owner-bound completion and conditional publication. No image resizing or
+  byte-level decoder is claimed.
+- **Media and editing:** Show immediate bounded local image previews, measured upload progress and
+  per-file verification/failure states. Reorder queued uploads and stand-alone
+  Markdown attachments without rewriting code, captions or prose.
+- **Media and editing:** Protect unsaved edits, add server-side admin pagination/status counts and
+  enlarge image previews with metadata and quick cover selection.
+- **Media and editing:** Connect shared-tag graph groups and retain keyboard/mobile targets with the
+  original square monospace buttons.
+- **Delivery:** Set all workspace versions to 0.7.0. Validate stable/beta semver and exact tag
+  matches before packaging or publication.
+- **Delivery:** Keep branch builds artifact-only. Stable tags use the `stable-release`
+  approval environment; beta tags retain `beta-release`.
+- **Delivery:** Ship the maintenance CLI in the allowlisted Node bundle. Existing `beta:*`
+  commands remain compatible aliases.
+- **Changes since 0.6.0-beta.1:** Relicense BenchCore under AGPL-3.0-or-later: replace `LICENSE` with the
   official GNU Affero text, update manifest `license` fields, expose `license`
   in `GET /health`, add the footer AGPL notice and refresh README/CONTRIBUTING.
-
-- Preserve the installed pnpm store explicitly in the credential-free Vercel
+- **Changes since 0.6.0-beta.1:** Preserve the installed pnpm store explicitly in the credential-free Vercel
   packaging test so CI environment isolation does not break offline installs.
-
-- Prevent Vercel's API builder from selecting standalone `dist/index.js` instead
+- **Changes since 0.6.0-beta.1:** Prevent Vercel's API builder from selecting standalone `dist/index.js` instead
   of the Fetch entrypoint. Bundle a self-contained ESM API and verify production
   packaging without cloud credentials.
-
-- Configure root Vercel Services for independently built `api` and `frontend`,
+- **Changes since 0.6.0-beta.1:** Configure root Vercel Services for independently built `api` and `frontend`,
   same-origin API/health routing and runtime-only frontend-to-API binding.
-
-- Support the complete app and secured API on Vercel Node.js 24 Functions,
-  retaining persistent Node delivery and temporarily disabling the scheduler.
-- Add private Cloudflare R2 with owner-bound direct upload tickets, exact-size
-  signed PUTs, immutable publication and short-lived signed read redirects.
-- Add offline R2, transport and browser-upload regressions and a deployment guide.
-
-- Keep legacy pnpm deployment within an isolated metadata-only workspace
+- **Changes since 0.6.0-beta.1:** Keep legacy pnpm deployment within an isolated metadata-only workspace
   under writable artifact staging to avoid Linux `/home/tmp` EACCES.
-- Remove Dockerfiles, Compose, Docker commands and container deployment guides;
+
+### Removed
+
+- **Changes since 0.6.0-beta.1:** Remove Dockerfiles, Compose, Docker commands and container deployment guides;
   keep the unified Node artifact and isolated PostgreSQL CI services.
 
-## 0.6.0-beta.1 — 2026-10-02
+### Fixed
+
+- **Media and editing:** Correct `tsx watch` argument ordering and add an architecture/workflow diagram.
+
+## [0.6.0-beta.1] - 2026-10-02
+
+### Changed
 
 - Name the project BenchCore: Bench-testing, Embedded Networks, & Circuit Hacks:
   Centralized Open-source Research Engine; update interface, feeds, packages and artifacts.
-- Remove the development milestone ledger from the public homepage.
 - Version artifact names by workflow run/attempt and expose a direct download link.
-
 - One public Node listener for SvelteKit and `/api/*`, with an authenticated
   loopback SSR bridge retaining each visitor's rate-limit identity.
 - Explicit HTTPS/origin configuration, trusted immediate proxy IPs, readiness
@@ -219,11 +203,15 @@ Version 0.8.0 is prepared locally. No tag, hosted release or deployment is creat
 - GitHub CI with isolated PostgreSQL integration checks; CD delivering an
   allowlisted production Node archive and checksum, without GHCR/images.
 - Tag-gated beta prereleases and a single-origin hosting/recovery runbook.
+
+### Removed
+
+- Remove the development milestone ledger from the public homepage.
 - Remove obsolete frontend database placeholder commands and improve empty admin state.
 
-## 0.5.0 — 2026-10-02
+## [0.5.0] - 2026-10-02
 
-### Features
+### Added
 
 - Exact-origin CSRF protection, bounded per-client rate limits and security headers.
 - Strict frontend CSP and documented no-telemetry policy.
@@ -238,7 +226,7 @@ Version 0.8.0 is prepared locally. No tag, hosted release or deployment is creat
 - Private-stdin administrator provisioning without persistent admin environment fields.
 - Contributor, security, authoring, API, architecture and deployment documentation.
 
-### Fixes
+### Fixed
 
 - Correct repository contract syntax and implementation mismatches.
 - Prevent draft-only tags from leaking through the public tag index.
@@ -254,14 +242,18 @@ Version 0.8.0 is prepared locally. No tag, hosted release or deployment is creat
 - Validate API identifiers before issuing PostgreSQL UUID queries.
 - Normalize Windows CRLF frontmatter and resolve imported forward wikilinks.
 
-## 0.1.0 — Initial platform
+## [0.1.0]
+
+Initial platform.
 
 Source: `bb9ff0c` (`feat: initial commit personal publishing platform`).
+
+The initial commit contains the work described as milestones 0.2–0.4 in
+`TODO.md`; these were not separately versioned releases.
+
+### Changed
 
 - pnpm monorepo with SvelteKit frontend and standalone Node HTTP API.
 - TOML-frontmatter Markdown pipeline, sanitized rendering and wikilinks.
 - PostgreSQL repositories, import scripts, session authentication and local media.
 - Public pages, feeds, SEO, three themes, admin editor and Docker stack.
-
-The initial commit contains the work described as milestones 0.2–0.4 in
-`TODO.md`; these were not separately versioned releases.

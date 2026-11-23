@@ -3,6 +3,8 @@
 
 # Development
 
+[← README](../README.md) · [Docs index](README.md)
+
 Reproducible local setup behind BENCHCORE. Every command below runs from the
 repository root with Node.js 24 and pnpm 10.15.0, and the checks are mirrored
 by CI in `.github/`.

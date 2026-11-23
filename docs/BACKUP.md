@@ -3,6 +3,8 @@
 
 # Backup and recovery
 
+[← README](../README.md) · [Docs index](README.md)
+
 The `backup` CLI exports the **entire PostgreSQL database** and completed managed
 images through the configured storage provider. Content import is not recovery.
 This tooling has isolated unit/protocol tests. A successful real PostgreSQL

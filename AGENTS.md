@@ -131,3 +131,9 @@ CHANGELOG.md                # local release history; publishing is a separate au
   `pnpm --filter benchcore-api exec drizzle-kit generate` (offline-safe).
 - IDs are application-generated UUIDs (`crypto.randomUUID()`), no DB extensions.
 - Import upserts by `slug`, never duplicates; per-file errors, non-zero exit.
+
+## Documentation conventions
+
+README, TODO, CHANGELOG and `docs/` follow the shared rules in
+[CONTRIBUTING.md](CONTRIBUTING.md#documentation-conventions). Read them before editing any Markdown
+file, and never add AI attribution lines to commits or pull requests.

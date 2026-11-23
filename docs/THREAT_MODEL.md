@@ -3,6 +3,8 @@
 
 # Threat model
 
+[← README](../README.md) · [Docs index](README.md)
+
 Security model behind BENCHCORE. Every control below is enforced in
 `api/src/` (Origin guard, rate limits, sanitizer, repository parameterization)
 with the frontend CSP in `frontend/`; report new vectors privately under

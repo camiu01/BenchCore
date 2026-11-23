@@ -1,7 +1,21 @@
 <!-- @file README.md -->
 <!-- @brief Purpose, setup, workflows, configuration, and operational boundaries. -->
 
+<div align="center">
+
 # BenchCore
+### Self-hosted publishing platform for engineering notes
+
+[![License AGPL-3.0](https://img.shields.io/badge/License_AGPL--3.0-blue)](LICENSE)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![SvelteKit](https://img.shields.io/badge/SvelteKit-FF3E00?logo=svelte&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+
+<img src="docs/images/site.png" alt="BenchCore home page with the post list, light theme" width="480" />
+
+[Website](https://benchcore-ten.vercel.app) · [What it does](#what-it-does) · [Getting started](#getting-started) · [Usage](#usage) · [Configuration](#configuration) · [How it works](#how-it-works) · [Limitations](#limitations) · [Development](#development) · [License](#license)
+
+</div>
 
 BenchCore is a self-hosted website for writing and sharing engineering notes.
 It is for authors who want Markdown editing, linked notes, searchable archives,
@@ -11,10 +25,6 @@ The application combines a SvelteKit frontend, a TypeScript HTTP API, and Postgr
 Administrators manage content and accounts; readers browse and access reader-only posts.
 It is not a bench-testing tool, an encrypted vault, or a collaborative editor.
 Markdown files are an import source, not a live, two-way copy of database content.
-
-[![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)](LICENSE)
-
-[Features](#what-it-does) · [Requirements](#requirements) · [Setup](#build-and-run) · [Use](#controls-and-everyday-use) · [Configuration](#configuration) · [Architecture](#architecture) · [Troubleshooting](#limitations-and-troubleshooting) · [Development](#development)
 
 ## What it does
 
@@ -53,7 +63,9 @@ and portable backup/restore CLI tooling. Revision tables exist, but automatic
 history, diffs, and restoration are not implemented. API v1 stabilization is future
 work, not a compatibility guarantee for the current API.
 
-## Requirements
+## Getting started
+
+### Requirements
 
 | Use | Requirements |
 | --- | --- |
@@ -66,12 +78,12 @@ work, not a compatibility guarantee for the current API.
 GitHub Pages cannot run this backend. See [Node deployment](docs/BETA_DEPLOYMENT.md)
 and [Vercel deployment](docs/VERCEL_DEPLOYMENT.md) for their different requirements.
 
-## Build and run
+### Build and run
 
 Run commands from the repository root unless stated otherwise. Initialization
 commands below write to your selected database; review the connection first.
 
-### 1. Prerequisites
+#### 1. Prerequisites
 
 Install Git, Node.js **24**, pnpm **10.15.0**, and PostgreSQL **17**.
 Create a local PostgreSQL database and user with permission to apply migrations.
@@ -85,20 +97,20 @@ pnpm --version
 For a disposable visual preview without PostgreSQL, use the
 [database-free preview](docs/DEVELOPMENT.md#database-free-visual-preview).
 
-### 2. Clone
+#### 2. Clone
 
 ```sh
 git clone https://github.com/camiu01/BenchCore.git
 cd BenchCore
 ```
 
-### 3. Install dependencies
+#### 3. Install dependencies
 
 ```sh
 pnpm install --frozen-lockfile
 ```
 
-### 4. Configure the environment
+#### 4. Configure the environment
 
 PowerShell:
 
@@ -128,7 +140,7 @@ API development and data scripts load the root `.env`; Vite loads selected
 frontend settings. See the [environment reference](docs/DEVELOPMENT.md#environment)
 for precedence, defaults, required settings, and server/browser boundaries.
 
-### 5. Initialize local data
+#### 5. Initialize local data
 
 Against the new local database:
 
@@ -146,7 +158,7 @@ imports files without creating an account. Both imports **can overwrite database
 posts with matching slugs**, including later administrator edits. Neither runs
 automatically at startup.
 
-### 6. Run locally
+#### 6. Run locally
 
 Terminal 1:
 
@@ -164,7 +176,7 @@ Open `http://localhost:5173`. The standalone API defaults to port **5181**;
 it reads `PORT`, not the unused `API_PORT` entry in the example file.
 Sign in through the local site to access the administrator workbench.
 
-### 7. Build and preview
+#### 7. Build and preview
 
 ```sh
 pnpm build
@@ -186,7 +198,8 @@ persistent storage, and operator checks.
 it still needs a separately running API. It is not a full production deployment.
 Use `pnpm build:vercel` only for the separately configured Vercel target.
 
-## Controls and everyday use
+<a id="controls-and-everyday-use"></a>
+## Usage
 
 | Action | Result |
 | --- | --- |
@@ -266,7 +279,8 @@ Do not infer browser safety from a variable's prefix.
 | Frontend adapter and CSP | `frontend/vite.config.ts`; `DEPLOYMENT_TARGET=vercel` selects the Vercel build. `R2_ACCOUNT_ID` also sets the allowed upload hostname in CSP and requires rebuilding when changed. |
 | File authoring | Markdown/TOML under `content/posts/`; `CONTENT_DIR` selects another import directory, not a live content watcher. |
 
-## Architecture
+<a id="architecture"></a>
+## How it works
 
 Paths below are relative to the repository root.
 
@@ -304,7 +318,8 @@ serves one public origin with an internal loopback listener. Vercel builds two
 services with a runtime API binding. Neither deployment runs migrations at startup.
 See [Architecture](docs/ARCHITECTURE.md) and the [API reference](docs/API.md).
 
-## Limitations and troubleshooting
+<a id="limitations-and-troubleshooting"></a>
+## Limitations
 
 | Symptom / limitation | Checks and boundary |
 | --- | --- |
@@ -359,7 +374,8 @@ tests before committing. Do not commit private environment files or runtime data
 | [Operations](docs/OPERATIONS.md) | Persistence, migrations, backup examples, and restore drill |
 | [Security policy](SECURITY.md) | Private vulnerability reporting |
 
-## Credits and license
+<a id="credits-and-license"></a>
+## License
 
 Maintained by [Camiu (@camiu01)](https://github.com/camiu01).
 The expanded project name is “Bench-testing, Embedded Networks, & Circuit Hacks:

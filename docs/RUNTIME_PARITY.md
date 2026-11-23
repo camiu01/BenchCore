@@ -3,6 +3,8 @@
 
 # Runtime parity and staging evidence
 
+[← README](../README.md) · [Docs index](README.md)
+
 All production entrypoints use `api/src/configured-services.ts` for repositories,
 media, administrator TOTP, configured password recovery and optional newsletter
 mail. Construction performs no migrations, provisioning, uploads or email sends.

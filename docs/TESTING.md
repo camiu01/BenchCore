@@ -3,6 +3,8 @@
 
 # Testing
 
+[← README](../README.md) · [Docs index](README.md)
+
 Quality gates behind BENCHCORE. Unit suites live in `api/tests/` and
 `frontend/tests/`, browser journeys in `frontend/e2e/`, and packaging checks in
 `scripts/`. Service tests use in-memory repositories; CI in `.github/` runs

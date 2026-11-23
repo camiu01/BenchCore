@@ -3,6 +3,8 @@
 
 # BenchCore Node deployment
 
+[← README](../README.md) · [Docs index](README.md)
+
 **Bench-testing, Embedded Networks, & Circuit Hacks: Centralized Open-source Research Engine**
 
 The Node delivery path combines frontend and API as one Node.js service.

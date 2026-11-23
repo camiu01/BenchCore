@@ -3,6 +3,36 @@
 
 # Documentation
 
+[← README](../README.md)
+
+## Documents
+
+| Document | What it covers |
+| :--- | :--- |
+| [Admin workbench and themes](ADMIN_AND_THEMES.md) | Admin workflows, public media caveats, and presentation conventions. |
+| [API reference](API.md) | REST routes, payload examples, security requirements, and error semantics. |
+| [Maintain the API contract](API_CONTRACT.md) | OpenAPI ownership, regeneration and compatibility gates. |
+| [Architecture](ARCHITECTURE.md) | Layer responsibilities, data flow, persistence, and design decisions. |
+| [Authoring and publishing](AUTHORING.md) | Markdown/TOML authoring, import semantics, links, and publishing. |
+| [Backup and recovery](BACKUP.md) | Private offline backup format, empty-target recovery and isolated PostgreSQL drill. |
+| [BenchCore Node deployment](BETA_DEPLOYMENT.md) | Single-origin Node delivery, installation, account safety and recovery. |
+| [Customize the interface](CSS_CUSTOMIZATION.md) | Source-level styling and component customization guide. |
+| [Development](DEVELOPMENT.md) | Reproducible local setup, environment configuration, and commands. |
+| [Interface language (English and Italian)](I18N.md) | BenchCore renders its interface in English or Italian. |
+| [Newsletter and categories](NEWSLETTER.md) | Explicit newsletter consent, deployment and safe manual delivery. |
+| [Operations](OPERATIONS.md) | Deployment, migration, backup, recovery, and operational checks. |
+| [Preparing 0.7.0](RELEASE_0.7.0.md) | Local 0.7.0 preparation, maintenance safety and separate publication gates. |
+| [Preparing 0.8.0](RELEASE_0.8.0.md) | Local 0.8.0 preparation, second-factor recovery and explicit deployment gates. |
+| [Preparing 0.9.0](RELEASE_0.9.0.md) | Verified stabilization work and remaining gates before releasing 0.9.0. |
+| [Review and validation](REVIEW.md) | Resolved review findings and validation records through the prepared Node beta. |
+| [Runtime parity and staging evidence](RUNTIME_PARITY.md) | Explicit deployment differences and the trusted multi-instance abuse-control boundary. |
+| [Testing](TESTING.md) | Automated quality gates, regression expectations, and manual smoke tests. |
+| [Threat model](THREAT_MODEL.md) | Security assets, trust boundaries, attacker capabilities, and residual risks. |
+| [Troubleshooting](TROUBLESHOOTING.md) | Diagnose common local, editorial, security, and deployment failures. |
+| [Vercel and private R2](VERCEL_DEPLOYMENT.md) | Full-app Vercel deployment with private R2 storage and disabled scheduled publication. |
+
+## Reading paths
+
 **Bench-testing, Embedded Networks, & Circuit Hacks: Centralized Open-source Research Engine**
 
 BenchCore publishes linked engineering notes through a public reading site and
@@ -11,26 +41,10 @@ These guides describe implementation and operator procedures; a documented
 procedure is not evidence that it passed on a deployed host.
 [Testing](TESTING.md) separates checks; [TODO.md](../TODO.md) owns the roadmap.
 
-## Choose a path
+### Choose a path
 
-| Goal                                        | Read                                                                                       |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Deliver a Node release                      | [Node deployment and CI/CD](BETA_DEPLOYMENT.md), [0.8.0 preparation](RELEASE_0.8.0.md)     |
-| Configure two-factor authentication         | [0.8.0 setup and recovery](RELEASE_0.8.0.md)                                               |
-| Run the project                             | [Development](DEVELOPMENT.md), [Troubleshooting](TROUBLESHOOTING.md)                       |
-| Configure services                          | [Environment reference](DEVELOPMENT.md#environment), [Vercel and R2](VERCEL_DEPLOYMENT.md) |
-| Check runtime differences and staging gates | [Runtime parity and abuse boundary](RUNTIME_PARITY.md)                                     |
-| Write and publish                           | [Authoring](AUTHORING.md), [Admin & themes](ADMIN_AND_THEMES.md)                           |
-| Manage categories or opt-in email           | [Newsletter and categories](NEWSLETTER.md)                                                 |
-| Build an API client                         | [API](API.md), [Threat model](THREAT_MODEL.md)                                             |
-| Maintain the OpenAPI contract               | [Contract maintenance](API_CONTRACT.md), [OpenAPI JSON](openapi.json)                      |
-| Change implementation                       | [Architecture](ARCHITECTURE.md), [Testing](TESTING.md), [Contributing](../CONTRIBUTING.md) |
-| Customize CSS and components                | [CSS customization](CSS_CUSTOMIZATION.md)                                                  |
-| Deploy or recover data                      | [Operations](OPERATIONS.md), [Security policy](../SECURITY.md)                             |
-| Export or restore a complete private backup | [Backup CLI and recovery drill](BACKUP.md)                                                 |
-| Check the release review                    | [Review and validation](REVIEW.md)                                                         |
 
-## Version and scope
+### Version and scope
 
 Documentation targets **0.8.0**, with comment anti-spam, administrator TOTP,
 global session revocation and security history, alongside knowledge navigation
